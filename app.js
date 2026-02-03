@@ -1,17 +1,10 @@
-import { createDeck, countCards, shuffle } from "./src/shared/utils.js";
+import { createInitialState } from "./src/game/state.js";
+import { countCards, shuffle } from "./src/shared/utils.js";
 
 const MAX_PLAYS = 5;
 const MAX_TRADES = 5;
 
-const state = {
-  players: [],
-  currentPlayer: 0,
-  tradesThisTurn: 0,
-  phase: "main",
-  winner: null,
-  turnCount: 1,
-  pendingArchive: null,
-};
+const state = createInitialState();
 
 const elements = {
   turnIndicator: document.getElementById("turnIndicator"),
@@ -291,16 +284,14 @@ function startTurn() {
 }
 
 function resetGame() {
-  state.players = [
-    { deck: createDeck(), hand: [], active: [], archive: [], discard: [] },
-    { deck: createDeck(), hand: [], active: [], archive: [], discard: [] },
-  ];
-  state.currentPlayer = 0;
-  state.tradesThisTurn = 0;
-  state.phase = "main";
-  state.winner = null;
-  state.turnCount = 1;
-  state.pendingArchive = null;
+  const freshState = createInitialState();
+  state.players = freshState.players;
+  state.currentPlayer = freshState.currentPlayer;
+  state.tradesThisTurn = freshState.tradesThisTurn;
+  state.phase = freshState.phase;
+  state.winner = freshState.winner;
+  state.turnCount = freshState.turnCount;
+  state.pendingArchive = freshState.pendingArchive;
   elements.winnerPanel.hidden = true;
   elements.winnerOverlay.hidden = true;
   elements.confirmOverlay.hidden = true;
