@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Five Star Cards</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="app">
+      <header class="topbar">
+        <div>
+          <h1>Five Star Cards</h1>
+          <p class="subtitle">A two-player race to archive five gold stars.</p>
+        </div>
+        <div class="turn">
+          <span id="turnIndicator"></span>
+          <span class="divider">•</span>
+          <span id="turnCounter"></span>
+        </div>
+      </header>
+
+      <section class="board">
+        <aside class="sidebar">
+          <section class="panel info">
+            <h2>How To Play</h2>
+            <ul class="rules">
+              <li>Each player starts with a shuffled deck and draws 5 cards.</li>
+              <li>On your turn, trade (up to 5 times), then play up to 5 cards.</li>
+              <li>End your turn to archive active cards and draw from them.</li>
+              <li>Win immediately when your Archive contains 5 gold stars.</li>
+            </ul>
+            <div class="legend">
+              <span class="chip bronze">Bronze</span>
+              <span class="chip silver">Silver</span>
+              <span class="chip gold">Gold</span>
+            </div>
+          </section>
+
+          <section class="panel actions-panel">
+            <div class="trade-box">
+              <h3>Trades</h3>
+              <p class="muted">Use Archive cards. Max 5 trades per turn.</p>
+              <div class="trade-buttons">
+                <button id="tradeBronze">Trade 5 Bronze → 1 Silver</button>
+                <button id="tradeSilver">Trade 5 Silver → 1 Gold</button>
+              </div>
+              <div class="trade-info" id="tradeInfo"></div>
+            </div>
+
+            <div class="end-turn">
+              <button class="primary" id="endTurn">Archive & End Turn</button>
+              <div class="deck-info" id="deckInfo"></div>
+              <div class="discard-info" id="discardInfo"></div>
+            </div>
+          </section>
+        </aside>
+
+        <section class="panel play">
+          <div class="player-summary" id="opponentSummary"></div>
+
+          <div class="zones">
+            <div class="zone">
+              <div class="zone-header">
+                <h3>Archive</h3>
+                <div class="counts" id="archiveCounts"></div>
+              </div>
+              <div class="pile" id="archivePile"></div>
+            </div>
+
+            <div class="zone">
+              <div class="zone-header">
+                <h3>Active Cards</h3>
+                <span class="zone-note">Play up to 5 cards</span>
+              </div>
+              <div class="hand" id="activeCards"></div>
+              <button class="ghost" id="undoPlays">Return All To Hand</button>
+            </div>
+
+            <div class="zone">
+              <div class="zone-header">
+                <h3>Hand</h3>
+                <div class="counts" id="handCounts"></div>
+              </div>
+              <div class="hand" id="handCards"></div>
+            </div>
+          </div>
+        </section>
+      </section>
+
+      <section class="panel results" id="winnerPanel" hidden>
+        <h2 id="winnerText"></h2>
+        <button class="primary" id="restartGame">Play Again</button>
+      </section>
+    </main>
+
+    <div class="overlay" id="turnOverlay" hidden>
+      <div class="overlay-card">
+        <h2 id="overlayTitle"></h2>
+        <p>Pass the device to the next player.</p>
+        <button class="primary" id="startTurn">Start Turn</button>
+      </div>
+    </div>
+
+    <div class="overlay confirm-overlay" id="confirmOverlay" hidden>
+      <div class="overlay-card">
+        <h2>Confirm Archive</h2>
+        <div class="confirm-summary" id="confirmSummary"></div>
+        <div class="confirm-cards" id="confirmCards"></div>
+        <div class="confirm-actions">
+          <button class="ghost" id="cancelArchive">Go Back</button>
+          <button class="primary" id="confirmArchive">Archive & End Turn</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="overlay winner-overlay" id="winnerOverlay" hidden>
+      <div class="overlay-card">
+        <h2 id="winnerModalText"></h2>
+        <p>Great run. Ready for a rematch?</p>
+        <button class="primary" id="restartGameModal">Play Again</button>
+      </div>
+    </div>
+
+    <script src="app.js"></script>
+  </body>
+</html>
