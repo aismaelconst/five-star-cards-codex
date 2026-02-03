@@ -1,8 +1,20 @@
 import { createInitialState } from "./src/game/state.js";
-import { countCards, shuffle } from "./src/shared/utils.js";
+import {
+  MAX_TRADES,
+  canTrade,
+  cancelArchive as applyCancelArchive,
+  finalizeArchive as applyFinalizeArchive,
+  getCurrentPlayer,
+  performTrade as applyTrade,
+  playCard as applyPlayCard,
+  playCardByType as applyPlayCardByType,
+  prepareArchive,
+  returnAllCards as applyReturnAllCards,
+  returnCard as applyReturnCard,
+  drawCards,
+} from "./src/game/rules.js";
+import { countCards } from "./src/shared/utils.js";
 
-const MAX_PLAYS = 5;
-const MAX_TRADES = 5;
 
 const state = createInitialState();
 
@@ -38,98 +50,40 @@ const elements = {
   startTurn: document.getElementById("startTurn"),
 };
 
-function drawCards(player, count) {
-  const drawn = [];
-  for (let i = 0; i < count; i += 1) {
-    if (player.deck.length === 0) break;
-    drawn.push(player.deck.pop());
-  }
-  player.hand.push(...drawn);
-  return drawn;
-}
-
-function canTrade(player, type) {
-  const archiveCounts = countCards(player.archive);
-  const deckCounts = countCards(player.deck);
-  if (state.tradesThisTurn >= MAX_TRADES) return false;
-  if (type === "bronze") {
-    return archiveCounts.bronze >= 5 && deckCounts.silver > 0;
-  }
-  return archiveCounts.silver >= 5 && deckCounts.gold > 0;
-}
-
-function trade(player, type) {
-  if (!canTrade(player, type)) return;
-  const costType = type;
-  const rewardType = type === "bronze" ? "silver" : "gold";
-
-  let removed = 0;
-  player.archive = player.archive.filter((card) => {
-    if (card === costType && removed < 5) {
-      removed += 1;
-      player.discard.push(card);
-      return false;
-    }
-    return true;
-  });
-
-  const rewardIndex = player.deck.findIndex((card) => card === rewardType);
-  if (rewardIndex === -1) return;
-  const [reward] = player.deck.splice(rewardIndex, 1);
-  player.hand.push(reward);
-  player.deck = shuffle(player.deck);
-  state.tradesThisTurn += 1;
+function trade(type) {
+  const player = currentPlayer();
+  if (!applyTrade(state, player, type)) return;
   render();
 }
 
 function playCard(index) {
   const player = currentPlayer();
-  if (state.phase !== "main") return;
-  if (player.active.length >= MAX_PLAYS) return;
-  const [card] = player.hand.splice(index, 1);
-  player.active.push(card);
+  if (!applyPlayCard(state, player, index)) return;
   render();
 }
 
 function playCardByType(type) {
   const player = currentPlayer();
-  if (state.phase !== "main") return;
-  if (player.active.length >= MAX_PLAYS) return;
-  const index = player.hand.findIndex((card) => card === type);
-  if (index === -1) return;
-  playCard(index);
+  if (!applyPlayCardByType(state, player, type)) return;
+  render();
 }
 
 function returnCard(index) {
   const player = currentPlayer();
-  if (state.phase !== "main") return;
-  const [card] = player.active.splice(index, 1);
-  player.hand.push(card);
+  if (!applyReturnCard(state, player, index)) return;
   render();
 }
 
 function returnAllCards() {
   const player = currentPlayer();
-  if (state.phase !== "main") return;
-  if (player.active.length === 0) return;
-  player.hand.push(...player.active);
-  player.active = [];
+  if (!applyReturnAllCards(state, player)) return;
   render();
 }
 
 function endTurn() {
-  const player = currentPlayer();
   if (state.phase !== "main") return;
-
-  const playedCards = [...player.active];
-  const counts = countCards(playedCards);
-  const drawCount = counts.bronze + counts.silver * 2 + counts.gold * 3;
-  state.pendingArchive = {
-    playedCards,
-    drawCount,
-    playerIndex: state.currentPlayer,
-  };
-  state.phase = "confirm";
+  const pending = prepareArchive(state);
+  if (!pending) return;
   render();
   showConfirmOverlay();
 }
@@ -143,7 +97,7 @@ function declareWinner(playerIndex) {
 }
 
 function currentPlayer() {
-  return state.players[state.currentPlayer];
+  return getCurrentPlayer(state);
 }
 
 function renderCards(container, cards, clickHandler) {
@@ -213,8 +167,8 @@ function render() {
   });
 
   const inMainPhase = state.phase === "main";
-  elements.tradeBronze.disabled = !inMainPhase || !canTrade(player, "bronze");
-  elements.tradeSilver.disabled = !inMainPhase || !canTrade(player, "silver");
+  elements.tradeBronze.disabled = !inMainPhase || !canTrade(state, player, "bronze");
+  elements.tradeSilver.disabled = !inMainPhase || !canTrade(state, player, "silver");
   elements.endTurn.disabled = state.phase !== "main";
   elements.undoPlays.disabled = !inMainPhase || player.active.length === 0;
 }
@@ -247,32 +201,20 @@ function showConfirmOverlay() {
 }
 
 function finalizeArchive() {
-  const pending = state.pendingArchive;
-  if (!pending) return;
-  const player = state.players[pending.playerIndex];
-
-  player.archive.push(...pending.playedCards);
-  player.active = [];
-  drawCards(player, pending.drawCount);
-
-  state.pendingArchive = null;
+  const result = applyFinalizeArchive(state);
   elements.confirmOverlay.hidden = true;
 
-  if (countCards(player.archive).gold >= 5) {
-    declareWinner(pending.playerIndex);
+  if (result.winnerIndex !== null && result.winnerIndex !== undefined) {
+    declareWinner(result.winnerIndex);
     return;
   }
 
-  state.tradesThisTurn = 0;
-  state.currentPlayer = pending.playerIndex === 0 ? 1 : 0;
-  state.turnCount += 1;
-  state.phase = "between";
   showOverlay();
+  render();
 }
 
 function cancelArchive() {
-  state.pendingArchive = null;
-  state.phase = "main";
+  applyCancelArchive(state);
   elements.confirmOverlay.hidden = true;
   render();
 }
@@ -301,8 +243,8 @@ function resetGame() {
 }
 
 function wireEvents() {
-  elements.tradeBronze.addEventListener("click", () => trade(currentPlayer(), "bronze"));
-  elements.tradeSilver.addEventListener("click", () => trade(currentPlayer(), "silver"));
+  elements.tradeBronze.addEventListener("click", () => trade("bronze"));
+  elements.tradeSilver.addEventListener("click", () => trade("silver"));
   elements.endTurn.addEventListener("click", endTurn);
   elements.undoPlays.addEventListener("click", returnAllCards);
   elements.restartGame.addEventListener("click", resetGame);
