@@ -1,9 +1,63 @@
 import { ActionTypes, applyAction, drawCards } from "../game/rules.js";
 import { renderApp, showConfirmOverlay, showTurnOverlay } from "./render.js";
 import { createInitialState } from "../game/state.js";
-import { generateRoomCode } from "../shared/utils.js";
+import { createOnlineClient } from "../online/client.js";
 
-export function createHandlers(state, elements, onWinner) {
+export function createHandlers(state, elements, onWinner, options = {}) {
+  const socketUrl = options.socketUrl ?? "ws://localhost:8080";
+  const clientFactory = options.clientFactory ?? createOnlineClient;
+  let onlineClient = null;
+
+  function ensureOnlineClient() {
+    if (!onlineClient) {
+      onlineClient = clientFactory({
+        url: socketUrl,
+        onMessage: handleServerMessage,
+        onStatus: handleConnectionStatus,
+      });
+    }
+    onlineClient.connect();
+  }
+
+  function handleConnectionStatus(status) {
+    state.online.connection = status;
+    if (elements.lobbyStatus) {
+      elements.lobbyStatus.textContent = `Connection: ${status}`;
+    }
+  }
+
+  function applyServerState(payload) {
+    if (!payload?.state) return;
+    state.players = payload.state.players;
+    state.currentPlayer = payload.state.currentPlayer;
+    state.tradesThisTurn = payload.state.tradesThisTurn;
+    state.phase = payload.state.phase;
+    state.winner = payload.state.winner;
+    state.turnCount = payload.state.turnCount;
+    state.pendingArchive = payload.state.pendingArchive;
+    state.gameId = payload.state.gameId;
+    state.ruleset = payload.state.ruleset;
+    state.online.roomId = payload.roomId ?? state.online.roomId;
+    state.online.playerId = payload.playerId ?? state.online.playerId;
+    renderApp(state, elements, handlers);
+  }
+
+  function handleServerMessage(message) {
+    if (message.type === "state_update") {
+      applyServerState(message);
+      return;
+    }
+    if (message.type === "room_created" || message.type === "room_joined") {
+      state.online.roomId = message.roomId;
+      state.online.playerId = message.playerId;
+      applyServerState(message);
+      elements.lobbyStatus.textContent = `Connected to room ${message.roomId}.`;
+      return;
+    }
+    if (message.type === "error") {
+      elements.lobbyStatus.textContent = message.message;
+    }
+  }
   function showModePicker() {
     elements.modeOverlay.hidden = false;
   }
@@ -24,88 +78,104 @@ export function createHandlers(state, elements, onWinner) {
 
   function createRoom() {
     state.mode = "online";
-    const roomId = generateRoomCode();
+    ensureOnlineClient();
     const playerName = elements.playerNameInput.value.trim() || "Host";
-    state.online = {
-      roomId,
-      role: "host",
-      status: "waiting",
-      playerName,
-    };
-    elements.roomCodeInput.value = roomId;
-    elements.lobbyStatus.textContent = `Room ${roomId} created. Waiting for opponent...`;
+    state.online.role = "host";
+    state.online.status = "waiting";
+    state.online.playerName = playerName;
+    elements.roomCodeInput.value = "";
+    elements.lobbyStatus.textContent = "Creating room...";
+    onlineClient.send({ type: "create_room", playerName });
   }
 
   function joinRoom() {
     state.mode = "online";
+    ensureOnlineClient();
     const roomId = elements.roomCodeInput.value.trim().toUpperCase();
     if (!roomId) {
       elements.lobbyStatus.textContent = "Enter a room code to join.";
       return;
     }
     const playerName = elements.playerNameInput.value.trim() || "Guest";
-    state.online = {
-      roomId,
-      role: "guest",
-      status: "joined",
-      playerName,
-    };
+    state.online.roomId = roomId;
+    state.online.role = "guest";
+    state.online.status = "joined";
+    state.online.playerName = playerName;
     elements.lobbyStatus.textContent = `Joined room ${roomId}. Waiting to start...`;
+    onlineClient.send({ type: "join_room", roomId, playerName });
+  }
+
+  function sendOrApply(action) {
+    if (state.mode === "online" && onlineClient) {
+      const ok = onlineClient.send({
+        type: "action",
+        roomId: state.online.roomId,
+        playerId: state.online.playerId,
+        action,
+      });
+      if (!ok) {
+        elements.lobbyStatus.textContent = "Unable to send action to server.";
+      }
+      return;
+    }
+    return applyAction(state, action);
   }
 
   function trade(type) {
-    applyAction(state, { type: ActionTypes.TRADE, payload: { type } });
+    sendOrApply({ type: ActionTypes.TRADE, payload: { type } });
     renderApp(state, elements, handlers);
   }
 
   function playCard(index) {
-    applyAction(state, { type: ActionTypes.PLAY_CARD, payload: { index } });
+    sendOrApply({ type: ActionTypes.PLAY_CARD, payload: { index } });
     renderApp(state, elements, handlers);
   }
 
   function playCardByType(type) {
-    applyAction(state, { type: ActionTypes.PLAY_CARD_BY_TYPE, payload: { type } });
+    sendOrApply({ type: ActionTypes.PLAY_CARD_BY_TYPE, payload: { type } });
     renderApp(state, elements, handlers);
   }
 
   function returnCard(index) {
-    applyAction(state, { type: ActionTypes.RETURN_CARD, payload: { index } });
+    sendOrApply({ type: ActionTypes.RETURN_CARD, payload: { index } });
     renderApp(state, elements, handlers);
   }
 
   function returnAllCards() {
-    applyAction(state, { type: ActionTypes.RETURN_ALL });
+    sendOrApply({ type: ActionTypes.RETURN_ALL });
     renderApp(state, elements, handlers);
   }
 
   function endTurn() {
     if (state.phase !== "main") return;
-    applyAction(state, { type: ActionTypes.END_TURN });
+    sendOrApply({ type: ActionTypes.END_TURN });
     renderApp(state, elements, handlers);
     showConfirmOverlay(state, elements);
   }
 
   function finalizeArchive() {
-    const result = applyAction(state, { type: ActionTypes.CONFIRM_ARCHIVE });
+    const result = sendOrApply({ type: ActionTypes.CONFIRM_ARCHIVE });
     elements.confirmOverlay.hidden = true;
 
-    if (result.event?.winnerIndex !== null && result.event?.winnerIndex !== undefined) {
-      onWinner(result.event.winnerIndex);
-      return;
-    }
+    if (state.mode !== "online") {
+      if (result.event?.winnerIndex !== null && result.event?.winnerIndex !== undefined) {
+        onWinner(result.event.winnerIndex);
+        return;
+      }
 
-    showTurnOverlay(state, elements);
-    renderApp(state, elements, handlers);
+      showTurnOverlay(state, elements);
+      renderApp(state, elements, handlers);
+    }
   }
 
   function cancelArchive() {
-    applyAction(state, { type: ActionTypes.CANCEL_ARCHIVE });
+    sendOrApply({ type: ActionTypes.CANCEL_ARCHIVE });
     elements.confirmOverlay.hidden = true;
     renderApp(state, elements, handlers);
   }
 
   function startTurn() {
-    applyAction(state, { type: ActionTypes.START_TURN });
+    sendOrApply({ type: ActionTypes.START_TURN });
     elements.turnOverlay.hidden = true;
     renderApp(state, elements, handlers);
   }

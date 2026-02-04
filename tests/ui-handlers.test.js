@@ -161,7 +161,13 @@ describe("ui/handlers", () => {
   });
 
   it("creates a room in online mode", () => {
-    const handlers = createHandlers(state, elements, onWinner);
+    const sendSpy = vi.fn();
+    const handlers = createHandlers(state, elements, onWinner, {
+      clientFactory: () => ({
+        connect: vi.fn(),
+        send: sendSpy,
+      }),
+    });
     elements.playerNameInput.value = "Hoster";
 
     handlers.createRoom();
@@ -169,12 +175,19 @@ describe("ui/handlers", () => {
     expect(state.mode).toBe("online");
     expect(state.online.role).toBe("host");
     expect(state.online.status).toBe("waiting");
-    expect(elements.roomCodeInput.value).toHaveLength(6);
-    expect(elements.lobbyStatus.textContent).toContain("Waiting");
+    expect(elements.roomCodeInput.value).toBe("");
+    expect(elements.lobbyStatus.textContent).toContain("Creating room");
+    expect(sendSpy).toHaveBeenCalledWith({ type: "create_room", playerName: "Hoster" });
   });
 
   it("joins a room in online mode", () => {
-    const handlers = createHandlers(state, elements, onWinner);
+    const sendSpy = vi.fn();
+    const handlers = createHandlers(state, elements, onWinner, {
+      clientFactory: () => ({
+        connect: vi.fn(),
+        send: sendSpy,
+      }),
+    });
     elements.playerNameInput.value = "Guesty";
     elements.roomCodeInput.value = "abc123";
 
@@ -185,6 +198,11 @@ describe("ui/handlers", () => {
     expect(state.online.status).toBe("joined");
     expect(state.online.roomId).toBe("ABC123");
     expect(elements.lobbyStatus.textContent).toContain("Joined room");
+    expect(sendSpy).toHaveBeenCalledWith({
+      type: "join_room",
+      roomId: "ABC123",
+      playerName: "Guesty",
+    });
   });
 
   it("starts a turn from between phase", () => {

@@ -29,6 +29,8 @@ describe("state", () => {
       role: null,
       status: null,
       playerName: null,
+      playerId: null,
+      connection: "disconnected",
     });
   });
 });

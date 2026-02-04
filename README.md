@@ -16,6 +16,22 @@ python3 -m http.server 8000
 http://localhost:8000
 ```
 
+## Run The Online Server (Prototype)
+
+1. Install dependencies:
+
+```bash
+npm install
+```
+
+2. Start the WebSocket server:
+
+```bash
+npm run server
+```
+
+3. Open the app and choose Online mode. Use the lobby to create or join a room.
+
 ## Run Tests
 
 1. Install dependencies:

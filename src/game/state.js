@@ -27,6 +27,8 @@ export function createInitialState(options = {}) {
       role: null,
       status: null,
       playerName: null,
+      playerId: null,
+      connection: "disconnected",
     },
     players: [
       createPlayerState(ruleset, playerIds[0]),
