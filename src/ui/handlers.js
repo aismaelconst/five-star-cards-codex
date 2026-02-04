@@ -1,6 +1,7 @@
 import { ActionTypes, applyAction, drawCards } from "../game/rules.js";
 import { renderApp, showConfirmOverlay, showTurnOverlay } from "./render.js";
 import { createInitialState } from "../game/state.js";
+import { generateRoomCode } from "../shared/utils.js";
 
 export function createHandlers(state, elements, onWinner) {
   function showModePicker() {
@@ -10,13 +11,46 @@ export function createHandlers(state, elements, onWinner) {
   function selectOfflineMode() {
     state.mode = "offline";
     elements.modeOverlay.hidden = true;
+    elements.onlineLobby.hidden = true;
     resetGame();
   }
 
   function selectOnlineMode() {
     state.mode = "online";
     elements.modeOverlay.hidden = false;
-    elements.onlineNote.textContent = "Online mode is coming soon.";
+    elements.onlineNote.textContent = "Lobby ready. Multiplayer coming soon.";
+    elements.onlineLobby.hidden = false;
+  }
+
+  function createRoom() {
+    state.mode = "online";
+    const roomId = generateRoomCode();
+    const playerName = elements.playerNameInput.value.trim() || "Host";
+    state.online = {
+      roomId,
+      role: "host",
+      status: "waiting",
+      playerName,
+    };
+    elements.roomCodeInput.value = roomId;
+    elements.lobbyStatus.textContent = `Room ${roomId} created. Waiting for opponent...`;
+  }
+
+  function joinRoom() {
+    state.mode = "online";
+    const roomId = elements.roomCodeInput.value.trim().toUpperCase();
+    if (!roomId) {
+      elements.lobbyStatus.textContent = "Enter a room code to join.";
+      return;
+    }
+    const playerName = elements.playerNameInput.value.trim() || "Guest";
+    state.online = {
+      roomId,
+      role: "guest",
+      status: "joined",
+      playerName,
+    };
+    elements.lobbyStatus.textContent = `Joined room ${roomId}. Waiting to start...`;
   }
 
   function trade(type) {
@@ -87,6 +121,7 @@ export function createHandlers(state, elements, onWinner) {
     state.pendingArchive = freshState.pendingArchive;
     state.gameId = freshState.gameId;
     state.ruleset = freshState.ruleset;
+    state.online = freshState.online;
     elements.winnerPanel.hidden = true;
     elements.winnerOverlay.hidden = true;
     elements.confirmOverlay.hidden = true;
@@ -99,6 +134,8 @@ export function createHandlers(state, elements, onWinner) {
     showModePicker,
     selectOfflineMode,
     selectOnlineMode,
+    createRoom,
+    joinRoom,
     trade,
     playCard,
     playCardByType,

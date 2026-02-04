@@ -25,3 +25,12 @@ export function generateId() {
   }
   return `id-${Math.random().toString(36).slice(2, 10)}`;
 }
+
+export function generateRoomCode(length = 6) {
+  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let code = "";
+  for (let i = 0; i < length; i += 1) {
+    code += alphabet[Math.floor(Math.random() * alphabet.length)];
+  }
+  return code;
+}

@@ -39,6 +39,12 @@ const elements = {
   offlineMode: document.getElementById("offlineMode"),
   onlineMode: document.getElementById("onlineMode"),
   onlineNote: document.getElementById("onlineNote"),
+  onlineLobby: document.getElementById("onlineLobby"),
+  playerNameInput: document.getElementById("playerNameInput"),
+  roomCodeInput: document.getElementById("roomCodeInput"),
+  createRoom: document.getElementById("createRoom"),
+  joinRoom: document.getElementById("joinRoom"),
+  lobbyStatus: document.getElementById("lobbyStatus"),
 };
 
 function declareWinner(playerIndex) {

@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { createInitialState, createPlayerState } from "../src/game/state.js";
 import { createDeck, createCard } from "../src/game/cards.js";
 import { baseRuleset } from "../src/game/ruleset.js";
-import { countCards, shuffle } from "../src/shared/utils.js";
+import { countCards, generateRoomCode, shuffle } from "../src/shared/utils.js";
 
 describe("state", () => {
   it("creates a player with a full deck and empty zones", () => {
@@ -24,6 +24,12 @@ describe("state", () => {
     expect(state.turnCount).toBe(1);
     expect(state.pendingArchive).toBe(null);
     expect(state.mode).toBe(null);
+    expect(state.online).toEqual({
+      roomId: null,
+      role: null,
+      status: null,
+      playerName: null,
+    });
   });
 });
 
@@ -71,5 +77,11 @@ describe("utils", () => {
     const shuffled = shuffle(list);
     expect(shuffled).toHaveLength(list.length);
     expect(shuffled.sort()).toEqual([...list].sort());
+  });
+
+  it("generateRoomCode creates expected length and charset", () => {
+    const code = generateRoomCode(6);
+    expect(code).toHaveLength(6);
+    expect(/^[A-Z2-9]+$/.test(code)).toBe(true);
   });
 });

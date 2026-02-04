@@ -111,6 +111,21 @@
           <button class="ghost" id="onlineMode">Online (Lobby)</button>
         </div>
         <p class="muted" id="onlineNote">Online mode is coming soon.</p>
+        <div class="online-lobby" id="onlineLobby" hidden>
+          <label class="field">
+            <span>Player Name</span>
+            <input id="playerNameInput" type="text" placeholder="Your name" />
+          </label>
+          <div class="lobby-actions">
+            <button class="primary" id="createRoom">Create Room</button>
+            <button class="ghost" id="joinRoom">Join Room</button>
+          </div>
+          <label class="field">
+            <span>Room Code</span>
+            <input id="roomCodeInput" type="text" placeholder="ABC123" />
+          </label>
+          <p class="muted" id="lobbyStatus"></p>
+        </div>
       </div>
     </div>
 

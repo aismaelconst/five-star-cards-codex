@@ -387,6 +387,36 @@ button:not(:disabled):hover {
   max-width: 420px;
 }
 
+.online-lobby {
+  margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  text-align: left;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.9rem;
+  color: var(--ink-2);
+}
+
+.field input {
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(31, 27, 22, 0.2);
+  font-size: 1rem;
+  font-family: "Space Grotesk", sans-serif;
+}
+
+.lobby-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
 .overlay[hidden],
 .results[hidden] {
   display: none;

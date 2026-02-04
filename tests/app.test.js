@@ -35,6 +35,12 @@ function setupDom() {
     <button id="offlineMode"></button>
     <button id="onlineMode"></button>
     <div id="onlineNote"></div>
+    <div id="onlineLobby"></div>
+    <input id="playerNameInput" />
+    <input id="roomCodeInput" />
+    <button id="createRoom"></button>
+    <button id="joinRoom"></button>
+    <div id="lobbyStatus"></div>
   `;
 }
 

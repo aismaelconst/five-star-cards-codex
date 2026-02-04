@@ -12,6 +12,8 @@ describe("ui/events", () => {
     const elements = {
       offlineMode: makeButton("offlineMode"),
       onlineMode: makeButton("onlineMode"),
+      createRoom: makeButton("createRoom"),
+      joinRoom: makeButton("joinRoom"),
       tradeBronze: makeButton("tradeBronze"),
       tradeSilver: makeButton("tradeSilver"),
       endTurn: makeButton("endTurn"),
@@ -26,6 +28,8 @@ describe("ui/events", () => {
     const handlers = {
       selectOfflineMode: vi.fn(),
       selectOnlineMode: vi.fn(),
+      createRoom: vi.fn(),
+      joinRoom: vi.fn(),
       trade: vi.fn(),
       endTurn: vi.fn(),
       returnAllCards: vi.fn(),
@@ -39,6 +43,8 @@ describe("ui/events", () => {
 
     elements.offlineMode.click();
     elements.onlineMode.click();
+    elements.createRoom.click();
+    elements.joinRoom.click();
     elements.tradeBronze.click();
     elements.tradeSilver.click();
     elements.endTurn.click();
@@ -51,6 +57,8 @@ describe("ui/events", () => {
 
     expect(handlers.selectOfflineMode).toHaveBeenCalled();
     expect(handlers.selectOnlineMode).toHaveBeenCalled();
+    expect(handlers.createRoom).toHaveBeenCalled();
+    expect(handlers.joinRoom).toHaveBeenCalled();
     expect(handlers.trade).toHaveBeenCalledWith("bronze");
     expect(handlers.trade).toHaveBeenCalledWith("silver");
     expect(handlers.endTurn).toHaveBeenCalled();

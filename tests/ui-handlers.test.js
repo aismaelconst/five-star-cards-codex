@@ -18,6 +18,10 @@ function makeElements() {
     confirmCards: document.createElement("div"),
     modeOverlay: document.createElement("div"),
     onlineNote: document.createElement("div"),
+    onlineLobby: document.createElement("div"),
+    playerNameInput: Object.assign(document.createElement("input"), { value: "" }),
+    roomCodeInput: Object.assign(document.createElement("input"), { value: "" }),
+    lobbyStatus: document.createElement("div"),
   };
 }
 
@@ -152,7 +156,35 @@ describe("ui/handlers", () => {
 
     expect(state.mode).toBe("online");
     expect(elements.modeOverlay.hidden).toBe(false);
-    expect(elements.onlineNote.textContent).toContain("coming soon");
+    expect(elements.onlineNote.textContent).toContain("Lobby ready");
+    expect(elements.onlineLobby.hidden).toBe(false);
+  });
+
+  it("creates a room in online mode", () => {
+    const handlers = createHandlers(state, elements, onWinner);
+    elements.playerNameInput.value = "Hoster";
+
+    handlers.createRoom();
+
+    expect(state.mode).toBe("online");
+    expect(state.online.role).toBe("host");
+    expect(state.online.status).toBe("waiting");
+    expect(elements.roomCodeInput.value).toHaveLength(6);
+    expect(elements.lobbyStatus.textContent).toContain("Waiting");
+  });
+
+  it("joins a room in online mode", () => {
+    const handlers = createHandlers(state, elements, onWinner);
+    elements.playerNameInput.value = "Guesty";
+    elements.roomCodeInput.value = "abc123";
+
+    handlers.joinRoom();
+
+    expect(state.mode).toBe("online");
+    expect(state.online.role).toBe("guest");
+    expect(state.online.status).toBe("joined");
+    expect(state.online.roomId).toBe("ABC123");
+    expect(elements.lobbyStatus.textContent).toContain("Joined room");
   });
 
   it("starts a turn from between phase", () => {

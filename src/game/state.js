@@ -22,6 +22,12 @@ export function createInitialState(options = {}) {
     gameId,
     ruleset,
     mode,
+    online: {
+      roomId: null,
+      role: null,
+      status: null,
+      playerName: null,
+    },
     players: [
       createPlayerState(ruleset, playerIds[0]),
       createPlayerState(ruleset, playerIds[1]),
