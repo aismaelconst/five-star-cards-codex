@@ -225,11 +225,14 @@ h3 {
 }
 
 .pile-count {
-  font-weight: 600;
-  color: var(--bg-1);
-  background-color: var(--ink-1);
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  font-weight: 700;
+  color: #fff;
+  background-color: rgba(0, 0, 0, 0.85);
   padding: 4px 8px;
-  border-radius: 12px;
+  border-radius: 999px;
   font-size: 0.85rem;
 }
 
@@ -245,8 +248,7 @@ h3 {
 }
 
 .card .stars {
-  font-size: 1.4rem;
-  letter-spacing: 1px;
+  display: none;
 }
 
 .card.bronze {

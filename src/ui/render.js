@@ -8,7 +8,7 @@ function renderCards(container, cards, clickHandler) {
     const el = document.createElement("div");
     el.className = `card ${type}`;
     el.dataset.cardType = type;
-    el.innerHTML = `<div class="label">${type}</div><div class="stars"></div>`;
+    el.innerHTML = ``;
     el.addEventListener("click", () => clickHandler(index));
     container.appendChild(el);
   });
