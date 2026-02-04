@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
 import { renderApp, showConfirmOverlay, showTurnOverlay } from "../src/ui/render.js";
+import { baseRuleset } from "../src/game/ruleset.js";
 
 function makeElements() {
   const ids = [
@@ -52,6 +53,7 @@ function makeState() {
       },
       { deck: [], hand: [], active: [], archive: [], discard: [] },
     ],
+    ruleset: baseRuleset,
     currentPlayer: 0,
     tradesThisTurn: 0,
     phase: "main",

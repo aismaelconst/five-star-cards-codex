@@ -1,13 +1,14 @@
-import { countCards } from "../shared/utils.js";
-import { canTrade, getCurrentPlayer, MAX_TRADES } from "../game/rules.js";
+import { countCards, getCardType } from "../shared/utils.js";
+import { canTrade, getCurrentPlayer } from "../game/rules.js";
 
 function renderCards(container, cards, clickHandler) {
   container.innerHTML = "";
   cards.forEach((card, index) => {
+    const type = getCardType(card);
     const el = document.createElement("div");
-    el.className = `card ${card}`;
-    el.innerHTML = `<div class="label">${card}</div><div class="stars">${
-      card === "gold" ? "★★★★★" : card === "silver" ? "★★" : "★"
+    el.className = `card ${type}`;
+    el.innerHTML = `<div class="label">${type}</div><div class="stars">${
+      type === "gold" ? "★★★" : type === "silver" ? "★★" : "★"
     }</div>`;
     el.addEventListener("click", () => clickHandler(index));
     container.appendChild(el);
@@ -54,7 +55,7 @@ export function renderApp(state, elements, handlers) {
 
   elements.deckInfo.textContent = `Deck: ${player.deck.length} cards`;
   elements.discardInfo.textContent = `Discard: ${player.discard.length} cards`;
-  elements.tradeInfo.textContent = `Trades used: ${state.tradesThisTurn}/${MAX_TRADES}`;
+  elements.tradeInfo.textContent = `Trades used: ${state.tradesThisTurn}/${state.ruleset.maxTrades}`;
 
   renderHand(state, player, elements, handlers);
   renderCards(elements.activeCards, player.active, handlers.returnCard);

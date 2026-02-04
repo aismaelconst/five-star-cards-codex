@@ -7,18 +7,21 @@ export function shuffle(array) {
   return copy;
 }
 
-export function createDeck() {
-  const deck = [];
-  for (let i = 0; i < 5; i += 1) deck.push("gold");
-  for (let i = 0; i < 25; i += 1) deck.push("silver");
-  for (let i = 0; i < 125; i += 1) deck.push("bronze");
-  return shuffle(deck);
-}
-
 export function countCards(cards) {
   return {
-    bronze: cards.filter((card) => card === "bronze").length,
-    silver: cards.filter((card) => card === "silver").length,
-    gold: cards.filter((card) => card === "gold").length,
+    bronze: cards.filter((card) => getCardType(card) === "bronze").length,
+    silver: cards.filter((card) => getCardType(card) === "silver").length,
+    gold: cards.filter((card) => getCardType(card) === "gold").length,
   };
+}
+
+export function getCardType(card) {
+  return typeof card === "string" ? card : card.type;
+}
+
+export function generateId() {
+  if (typeof crypto !== "undefined" && crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
+  return `id-${Math.random().toString(36).slice(2, 10)}`;
 }

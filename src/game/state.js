@@ -1,8 +1,11 @@
-import { createDeck } from "../shared/utils.js";
+import { shuffle } from "../shared/utils.js";
+import { createDeck } from "./cards.js";
+import { baseRuleset } from "./ruleset.js";
 
-export function createPlayerState() {
+export function createPlayerState(ruleset, playerId) {
   return {
-    deck: createDeck(),
+    id: playerId,
+    deck: shuffle(createDeck(ruleset)),
     hand: [],
     active: [],
     archive: [],
@@ -10,9 +13,17 @@ export function createPlayerState() {
   };
 }
 
-export function createInitialState() {
+export function createInitialState(options = {}) {
+  const ruleset = options.ruleset ?? baseRuleset;
+  const gameId = options.gameId ?? `game-${Date.now()}`;
+  const playerIds = options.playerIds ?? ["player-1", "player-2"];
   return {
-    players: [createPlayerState(), createPlayerState()],
+    gameId,
+    ruleset,
+    players: [
+      createPlayerState(ruleset, playerIds[0]),
+      createPlayerState(ruleset, playerIds[1]),
+    ],
     currentPlayer: 0,
     tradesThisTurn: 0,
     phase: "main",

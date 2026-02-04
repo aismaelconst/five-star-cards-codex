@@ -1,10 +1,12 @@
 import { describe, it, expect } from "vitest";
 import { createInitialState, createPlayerState } from "../src/game/state.js";
-import { createDeck, countCards, shuffle } from "../src/shared/utils.js";
+import { createDeck, createCard } from "../src/game/cards.js";
+import { baseRuleset } from "../src/game/ruleset.js";
+import { countCards, shuffle } from "../src/shared/utils.js";
 
 describe("state", () => {
   it("creates a player with a full deck and empty zones", () => {
-    const player = createPlayerState();
+    const player = createPlayerState(baseRuleset, "player-test");
     expect(player.deck.length).toBe(155);
     expect(player.hand.length).toBe(0);
     expect(player.active.length).toBe(0);
@@ -25,8 +27,22 @@ describe("state", () => {
 });
 
 describe("utils", () => {
+  it("createCard includes type, tier, and draw", () => {
+    const card = createCard("silver", baseRuleset);
+    expect(card.type).toBe("silver");
+    expect(card.tier).toBe("silver");
+    expect(card.draw).toBe(2);
+    expect(card.id).toBeTruthy();
+  });
+
+  it("baseRuleset has expected defaults", () => {
+    expect(baseRuleset.maxPlays).toBe(5);
+    expect(baseRuleset.maxTrades).toBe(5);
+    expect(baseRuleset.winCondition.goldInArchive).toBe(5);
+  });
+
   it("createDeck builds correct counts", () => {
-    const deck = createDeck();
+    const deck = createDeck(baseRuleset);
     const counts = countCards(deck);
     expect(deck.length).toBe(155);
     expect(counts.gold).toBe(5);
@@ -37,6 +53,16 @@ describe("utils", () => {
   it("countCards tallies correctly", () => {
     const counts = countCards(["gold", "silver", "silver", "bronze"]);
     expect(counts).toEqual({ bronze: 1, silver: 2, gold: 1 });
+  });
+
+  it("countCards tallies card objects correctly", () => {
+    const cards = [
+      createCard("gold", baseRuleset),
+      createCard("silver", baseRuleset),
+      createCard("silver", baseRuleset),
+    ];
+    const counts = countCards(cards);
+    expect(counts).toEqual({ bronze: 0, silver: 2, gold: 1 });
   });
 
   it("shuffle preserves all items", () => {

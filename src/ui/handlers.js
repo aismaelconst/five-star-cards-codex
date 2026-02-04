@@ -1,67 +1,46 @@
-import {
-  cancelArchive as applyCancelArchive,
-  finalizeArchive as applyFinalizeArchive,
-  getCurrentPlayer,
-  performTrade as applyTrade,
-  playCard as applyPlayCard,
-  playCardByType as applyPlayCardByType,
-  prepareArchive,
-  returnAllCards as applyReturnAllCards,
-  returnCard as applyReturnCard,
-  drawCards,
-} from "../game/rules.js";
+import { ActionTypes, applyAction, drawCards } from "../game/rules.js";
 import { renderApp, showConfirmOverlay, showTurnOverlay } from "./render.js";
 import { createInitialState } from "../game/state.js";
 
 export function createHandlers(state, elements, onWinner) {
-  function currentPlayer() {
-    return getCurrentPlayer(state);
-  }
-
   function trade(type) {
-    const player = currentPlayer();
-    if (!applyTrade(state, player, type)) return;
+    applyAction(state, { type: ActionTypes.TRADE, payload: { type } });
     renderApp(state, elements, handlers);
   }
 
   function playCard(index) {
-    const player = currentPlayer();
-    if (!applyPlayCard(state, player, index)) return;
+    applyAction(state, { type: ActionTypes.PLAY_CARD, payload: { index } });
     renderApp(state, elements, handlers);
   }
 
   function playCardByType(type) {
-    const player = currentPlayer();
-    if (!applyPlayCardByType(state, player, type)) return;
+    applyAction(state, { type: ActionTypes.PLAY_CARD_BY_TYPE, payload: { type } });
     renderApp(state, elements, handlers);
   }
 
   function returnCard(index) {
-    const player = currentPlayer();
-    if (!applyReturnCard(state, player, index)) return;
+    applyAction(state, { type: ActionTypes.RETURN_CARD, payload: { index } });
     renderApp(state, elements, handlers);
   }
 
   function returnAllCards() {
-    const player = currentPlayer();
-    if (!applyReturnAllCards(state, player)) return;
+    applyAction(state, { type: ActionTypes.RETURN_ALL });
     renderApp(state, elements, handlers);
   }
 
   function endTurn() {
     if (state.phase !== "main") return;
-    const pending = prepareArchive(state);
-    if (!pending) return;
+    applyAction(state, { type: ActionTypes.END_TURN });
     renderApp(state, elements, handlers);
     showConfirmOverlay(state, elements);
   }
 
   function finalizeArchive() {
-    const result = applyFinalizeArchive(state);
+    const result = applyAction(state, { type: ActionTypes.CONFIRM_ARCHIVE });
     elements.confirmOverlay.hidden = true;
 
-    if (result.winnerIndex !== null && result.winnerIndex !== undefined) {
-      onWinner(result.winnerIndex);
+    if (result.event?.winnerIndex !== null && result.event?.winnerIndex !== undefined) {
+      onWinner(result.event.winnerIndex);
       return;
     }
 
@@ -70,13 +49,13 @@ export function createHandlers(state, elements, onWinner) {
   }
 
   function cancelArchive() {
-    applyCancelArchive(state);
+    applyAction(state, { type: ActionTypes.CANCEL_ARCHIVE });
     elements.confirmOverlay.hidden = true;
     renderApp(state, elements, handlers);
   }
 
   function startTurn() {
-    state.phase = "main";
+    applyAction(state, { type: ActionTypes.START_TURN });
     elements.turnOverlay.hidden = true;
     renderApp(state, elements, handlers);
   }
