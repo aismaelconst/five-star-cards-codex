@@ -2,6 +2,7 @@ import { WebSocketServer } from "ws";
 import { createInitialState } from "../src/game/state.js";
 import { applyAction } from "../src/game/rules.js";
 import { initializeOnlineGame } from "../src/game/online.js";
+import { normalizeOnlinePhase } from "../src/game/lifecycle.js";
 import {
   getPlayerIndexById,
   isPlayersTurn,
@@ -21,6 +22,7 @@ function createRoom(hostName) {
     mode: "online",
     gameId: roomId,
     playerIds: [hostId, `pending-${roomId}`],
+    playerNames: [hostName, "Guest"],
   });
   rooms.set(roomId, {
     state,
@@ -39,6 +41,7 @@ function joinRoom(roomId, playerName) {
   const openIndex = room.state.players.findIndex((p) => p.id.startsWith("pending-"));
   if (openIndex !== -1) {
     room.state.players[openIndex].id = playerId;
+    room.state.players[openIndex].name = playerName;
   }
   return { roomId, playerId };
 }
@@ -116,6 +119,7 @@ wss.on("connection", (ws) => {
         })
       );
       broadcastLobby(roomId);
+      console.log(`[room ${roomId}] created by ${hostId}`);
       return;
     }
 
@@ -139,6 +143,7 @@ wss.on("connection", (ws) => {
       );
       broadcastLobby(result.roomId);
       broadcastState(result.roomId);
+      console.log(`[room ${result.roomId}] joined by ${result.playerId}`);
       return;
     }
 
@@ -155,6 +160,7 @@ wss.on("connection", (ws) => {
       }
       info.ready = true;
       broadcastLobby(message.roomId);
+      console.log(`[room ${message.roomId}] ${message.playerId} ready`);
       if (canStart(room)) {
         if (!room.started) {
           initializeOnlineGame(room.state);
@@ -191,7 +197,11 @@ wss.on("connection", (ws) => {
         return;
       }
       applyAction(room.state, message.action);
+      normalizeOnlinePhase(room.state);
       broadcastState(message.roomId);
+      console.log(
+        `[room ${message.roomId}] action ${message.action?.type} by ${playerId} | phase ${room.state.phase} | winner ${room.state.winner ?? "none"}`
+      );
       return;
     }
   });

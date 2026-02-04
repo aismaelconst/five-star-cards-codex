@@ -29,6 +29,11 @@ export function isPlayersTurn(state, playerId) {
   return current?.id === playerId;
 }
 
+export function isMyTurn(state) {
+  if (!state.online?.playerId) return false;
+  return isPlayersTurn(state, state.online.playerId);
+}
+
 export function countHandByType(hand) {
   return hand.reduce(
     (acc, card) => {

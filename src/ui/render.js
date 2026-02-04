@@ -1,5 +1,6 @@
 import { countCards, getCardType } from "../shared/utils.js";
 import { canTrade, getCurrentPlayer } from "../game/rules.js";
+import { isMyTurn } from "../game/multiplayer.js";
 
 function renderCards(container, cards, clickHandler) {
   container.innerHTML = "";
@@ -9,7 +10,9 @@ function renderCards(container, cards, clickHandler) {
     el.className = `card ${type}`;
     el.dataset.cardType = type;
     el.innerHTML = ``;
-    el.addEventListener("click", () => clickHandler(index));
+    if (clickHandler) {
+      el.addEventListener("click", () => clickHandler(index));
+    }
     container.appendChild(el);
   });
 }
@@ -28,25 +31,32 @@ function renderHand(state, player, elements, handlers) {
     el.className = `card ${type} pile`;
     el.dataset.cardType = type;
     el.innerHTML = `<div class="pile-count">x ${counts[type]}</div>`;
-    el.addEventListener("click", () => handlers.playCardByType(type));
+    if (handlers.playCardByType) {
+      el.addEventListener("click", () => handlers.playCardByType(type));
+    }
     elements.handCards.appendChild(el);
   });
 }
 
 export function renderApp(state, elements, handlers) {
   if (state.winner !== null) return;
-  const player = getCurrentPlayer(state);
-  const opponent = state.players[state.currentPlayer === 0 ? 1 : 0];
+  const onlinePerspective = state.mode === "online" && state.online?.playerId;
+  const player = onlinePerspective
+    ? state.players.find((p) => p.id === state.online.playerId) ?? getCurrentPlayer(state)
+    : getCurrentPlayer(state);
+  const opponent =
+    state.players.find((p) => p.id !== player.id) ??
+    state.players[state.currentPlayer === 0 ? 1 : 0];
 
   const handCounts = countCards(player.hand);
   const archiveCounts = countCards(player.archive);
   const opponentArchive = countCards(opponent.archive);
+  const opponentHand = countCards(opponent.hand);
 
-  elements.turnIndicator.textContent = `Player ${state.currentPlayer + 1}'s Turn`;
+  const currentName = state.players[state.currentPlayer]?.name ?? `Player ${state.currentPlayer + 1}`;
+  elements.turnIndicator.textContent = `${currentName}'s Turn`;
   elements.turnCounter.textContent = `Turn ${state.turnCount}`;
-  elements.opponentSummary.textContent = `Opponent Archive — Bronze ${
-    opponentArchive.bronze
-  } / Silver ${opponentArchive.silver} / Gold ${opponentArchive.gold}`;
+  elements.opponentSummary.textContent = `Opponent Archive — Bronze ${opponentArchive.bronze} / Silver ${opponentArchive.silver} / Gold ${opponentArchive.gold} · Hand ${opponentHand.bronze}/${opponentHand.silver}/${opponentHand.gold}`;
 
   elements.archiveCounts.textContent = `Bronze ${archiveCounts.bronze} · Silver ${archiveCounts.silver} · Gold ${archiveCounts.gold}`;
   elements.handCounts.textContent = `Bronze ${handCounts.bronze} · Silver ${handCounts.silver} · Gold ${handCounts.gold}`;
@@ -55,8 +65,20 @@ export function renderApp(state, elements, handlers) {
   elements.discardInfo.textContent = `Discard: ${player.discard.length} cards`;
   elements.tradeInfo.textContent = `Trades used: ${state.tradesThisTurn}/${state.ruleset.maxTrades}`;
 
-  renderHand(state, player, elements, handlers);
-  renderCards(elements.activeCards, player.active, handlers.returnCard);
+  const onlineTurnGate = state.mode === "online" ? isMyTurn(state) : true;
+  const showOpponentActive = state.mode === "online" && !onlineTurnGate;
+  const activeOwner = showOpponentActive ? opponent : player;
+  const canInteract = onlineTurnGate;
+
+  renderHand(state, player, elements, {
+    playCard: canInteract ? handlers.playCard : null,
+    playCardByType: canInteract ? handlers.playCardByType : null,
+  });
+  renderCards(
+    elements.activeCards,
+    activeOwner.active,
+    canInteract && !showOpponentActive ? handlers.returnCard : null
+  );
 
   elements.archivePile.innerHTML = "";
   ["bronze", "silver", "gold"].forEach((type) => {
@@ -67,10 +89,12 @@ export function renderApp(state, elements, handlers) {
   });
 
   const inMainPhase = state.phase === "main";
-  elements.tradeBronze.disabled = !inMainPhase || !canTrade(state, player, "bronze");
-  elements.tradeSilver.disabled = !inMainPhase || !canTrade(state, player, "silver");
-  elements.endTurn.disabled = state.phase !== "main";
-  elements.undoPlays.disabled = !inMainPhase || player.active.length === 0;
+  elements.tradeBronze.disabled =
+    !inMainPhase || !onlineTurnGate || !canTrade(state, player, "bronze");
+  elements.tradeSilver.disabled =
+    !inMainPhase || !onlineTurnGate || !canTrade(state, player, "silver");
+  elements.endTurn.disabled = state.phase !== "main" || !onlineTurnGate;
+  elements.undoPlays.disabled = !inMainPhase || !onlineTurnGate || player.active.length === 0;
 }
 
 export function showTurnOverlay(state, elements) {

@@ -53,11 +53,29 @@ export function createHandlers(state, elements, onWinner, options = {}) {
     state.online.roomId = payload.roomId ?? state.online.roomId;
     state.online.playerId = payload.playerId ?? state.online.playerId;
     renderApp(state, elements, handlers);
+    if (state.winner !== null && state.winner !== undefined) {
+      onWinner(state.winner);
+    }
+  }
+
+  function updateDebug(message) {
+    if (!elements.debugInfo) return;
+    const currentName =
+      state.players?.[state.currentPlayer]?.name ?? `Player ${state.currentPlayer + 1}`;
+    elements.debugInfo.textContent = `${message.type} | phase: ${state.phase} | turn: ${currentName} | winner: ${state.winner ?? "none"}`;
   }
 
   function handleServerMessage(message) {
+    updateDebug(message);
     if (message.type === "state_update") {
       applyServerState(message);
+      if (state.mode === "online") {
+        if (state.phase === "confirm") {
+          showConfirmOverlay(state, elements);
+        } else {
+          elements.confirmOverlay.hidden = true;
+        }
+      }
       return;
     }
     if (message.type === "room_created" || message.type === "room_joined") {
@@ -87,6 +105,15 @@ export function createHandlers(state, elements, onWinner, options = {}) {
       elements.hostOverlay.hidden = true;
       elements.guestOverlay.hidden = true;
       setStatus("Game started!");
+      if (state.online.role === "host") elements.readyButton.disabled = true;
+      if (state.online.role === "guest") elements.readyButtonGuest.disabled = true;
+      if (state.mode === "online") {
+        if (state.phase === "confirm") {
+          showConfirmOverlay(state, elements);
+        } else {
+          elements.confirmOverlay.hidden = true;
+        }
+      }
       return;
     }
     if (message.type === "error") {
@@ -215,68 +242,91 @@ export function createHandlers(state, elements, onWinner, options = {}) {
       if (!ok) {
         setStatus("Unable to send action to server.");
       }
-      return;
+      return null;
     }
     return applyAction(state, action);
   }
 
   function trade(type) {
-    sendOrApply({ type: ActionTypes.TRADE, payload: { type } });
-    renderApp(state, elements, handlers);
+    const result = sendOrApply({ type: ActionTypes.TRADE, payload: { type } });
+    if (state.mode !== "online") {
+      renderApp(state, elements, handlers);
+    }
+    return result;
   }
 
   function playCard(index) {
-    sendOrApply({ type: ActionTypes.PLAY_CARD, payload: { index } });
-    renderApp(state, elements, handlers);
+    const result = sendOrApply({ type: ActionTypes.PLAY_CARD, payload: { index } });
+    if (state.mode !== "online") {
+      renderApp(state, elements, handlers);
+    }
+    return result;
   }
 
   function playCardByType(type) {
-    sendOrApply({ type: ActionTypes.PLAY_CARD_BY_TYPE, payload: { type } });
-    renderApp(state, elements, handlers);
+    const result = sendOrApply({ type: ActionTypes.PLAY_CARD_BY_TYPE, payload: { type } });
+    if (state.mode !== "online") {
+      renderApp(state, elements, handlers);
+    }
+    return result;
   }
 
   function returnCard(index) {
-    sendOrApply({ type: ActionTypes.RETURN_CARD, payload: { index } });
-    renderApp(state, elements, handlers);
+    const result = sendOrApply({ type: ActionTypes.RETURN_CARD, payload: { index } });
+    if (state.mode !== "online") {
+      renderApp(state, elements, handlers);
+    }
+    return result;
   }
 
   function returnAllCards() {
-    sendOrApply({ type: ActionTypes.RETURN_ALL });
-    renderApp(state, elements, handlers);
+    const result = sendOrApply({ type: ActionTypes.RETURN_ALL });
+    if (state.mode !== "online") {
+      renderApp(state, elements, handlers);
+    }
+    return result;
   }
 
   function endTurn() {
     if (state.phase !== "main") return;
-    sendOrApply({ type: ActionTypes.END_TURN });
-    renderApp(state, elements, handlers);
-    showConfirmOverlay(state, elements);
+    const result = sendOrApply({ type: ActionTypes.END_TURN });
+    if (state.mode !== "online") {
+      renderApp(state, elements, handlers);
+      showConfirmOverlay(state, elements);
+    }
+    return result;
   }
 
   function finalizeArchive() {
     const result = sendOrApply({ type: ActionTypes.CONFIRM_ARCHIVE });
-    elements.confirmOverlay.hidden = true;
-
     if (state.mode !== "online") {
+      elements.confirmOverlay.hidden = true;
       if (result.event?.winnerIndex !== null && result.event?.winnerIndex !== undefined) {
         onWinner(result.event.winnerIndex);
         return;
       }
-
       showTurnOverlay(state, elements);
       renderApp(state, elements, handlers);
     }
+    return result;
   }
 
   function cancelArchive() {
-    sendOrApply({ type: ActionTypes.CANCEL_ARCHIVE });
-    elements.confirmOverlay.hidden = true;
-    renderApp(state, elements, handlers);
+    const result = sendOrApply({ type: ActionTypes.CANCEL_ARCHIVE });
+    if (state.mode !== "online") {
+      elements.confirmOverlay.hidden = true;
+      renderApp(state, elements, handlers);
+    }
+    return result;
   }
 
   function startTurn() {
-    sendOrApply({ type: ActionTypes.START_TURN });
-    elements.turnOverlay.hidden = true;
-    renderApp(state, elements, handlers);
+    const result = sendOrApply({ type: ActionTypes.START_TURN });
+    if (state.mode !== "online") {
+      elements.turnOverlay.hidden = true;
+      renderApp(state, elements, handlers);
+    }
+    return result;
   }
 
   function resetGame() {

@@ -344,6 +344,11 @@ button:not(:disabled):hover {
   align-items: center;
 }
 
+.debug {
+  font-size: 0.9rem;
+  color: var(--ink-2);
+}
+
 .overlay {
   position: fixed;
   inset: 0;

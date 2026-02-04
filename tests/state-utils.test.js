@@ -32,6 +32,8 @@ describe("state", () => {
       playerId: null,
       connection: "disconnected",
     });
+    expect(state.players[0].name).toBe("Player 1");
+    expect(state.players[1].name).toBe("Player 2");
   });
 });
 

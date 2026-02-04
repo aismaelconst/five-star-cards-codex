@@ -45,6 +45,7 @@ function makeState() {
   return {
     players: [
       {
+        name: "Hoster",
         deck: ["bronze", "silver", "gold"],
         hand: ["bronze", "bronze", "silver"],
         active: [],
@@ -75,12 +76,33 @@ describe("ui/render", () => {
 
     renderApp(state, elements, handlers);
 
-    expect(elements.turnIndicator.textContent).toContain("Player 1");
+    expect(elements.turnIndicator.textContent).toContain("Hoster");
     expect(elements.turnCounter.textContent).toContain("Turn 2");
     expect(elements.deckInfo.textContent).toContain("Deck:");
     expect(elements.tradeInfo.textContent).toContain("Trades used");
+    expect(elements.opponentSummary.textContent).toContain("Hand");
     const card = elements.handCards.querySelector(".card");
     expect(card.dataset.cardType).toBeTruthy();
+  });
+
+  it("disables actions when not your turn online", () => {
+    const state = makeState();
+    const elements = makeElements();
+    const handlers = {
+      playCard: vi.fn(),
+      playCardByType: vi.fn(),
+      returnCard: vi.fn(),
+    };
+    state.mode = "online";
+    state.online = { playerId: "p2" };
+    state.players[0].id = "p1";
+    state.players[1].id = "p2";
+    state.currentPlayer = 0;
+
+    renderApp(state, elements, handlers);
+
+    expect(elements.endTurn.disabled).toBe(true);
+    expect(elements.tradeBronze.disabled).toBe(true);
   });
 
   it("renders hand as piles when large", () => {

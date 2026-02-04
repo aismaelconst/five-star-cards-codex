@@ -7,3 +7,10 @@ export function startGame(state, options = {}) {
   state.players.forEach((player) => drawCards(player, handSize));
   return true;
 }
+
+export function normalizeOnlinePhase(state) {
+  if (state.mode !== "online") return false;
+  if (state.phase !== "between") return false;
+  state.phase = "main";
+  return true;
+}

@@ -24,6 +24,7 @@ const elements = {
   winnerPanel: document.getElementById("winnerPanel"),
   winnerText: document.getElementById("winnerText"),
   restartGame: document.getElementById("restartGame"),
+  debugInfo: document.getElementById("debugInfo"),
   winnerOverlay: document.getElementById("winnerOverlay"),
   winnerModalText: document.getElementById("winnerModalText"),
   restartGameModal: document.getElementById("restartGameModal"),
@@ -60,8 +61,9 @@ const elements = {
 
 function declareWinner(playerIndex) {
   state.winner = playerIndex;
-  elements.winnerText.textContent = `Player ${playerIndex + 1} wins!`;
-  elements.winnerModalText.textContent = `Player ${playerIndex + 1} wins!`;
+  const name = state.players?.[playerIndex]?.name ?? `Player ${playerIndex + 1}`;
+  elements.winnerText.textContent = `${name} wins!`;
+  elements.winnerModalText.textContent = `${name} wins!`;
   elements.winnerOverlay.hidden = false;
   elements.turnOverlay.hidden = true;
 }
