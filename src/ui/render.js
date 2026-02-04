@@ -51,12 +51,12 @@ export function renderApp(state, elements, handlers) {
   const handCounts = countCards(player.hand);
   const archiveCounts = countCards(player.archive);
   const opponentArchive = countCards(opponent.archive);
-  const opponentHand = countCards(opponent.hand);
+  const opponentHandTotal = opponent.hand.length;
 
   const currentName = state.players[state.currentPlayer]?.name ?? `Player ${state.currentPlayer + 1}`;
   elements.turnIndicator.textContent = `${currentName}'s Turn`;
   elements.turnCounter.textContent = `Turn ${state.turnCount}`;
-  elements.opponentSummary.textContent = `Opponent Archive — Bronze ${opponentArchive.bronze} / Silver ${opponentArchive.silver} / Gold ${opponentArchive.gold} · Hand ${opponentHand.bronze}/${opponentHand.silver}/${opponentHand.gold}`;
+  elements.opponentSummary.textContent = `Opponent Archive — Bronze ${opponentArchive.bronze} / Silver ${opponentArchive.silver} / Gold ${opponentArchive.gold} · Hand ${opponentHandTotal}`;
 
   elements.archiveCounts.textContent = `Bronze ${archiveCounts.bronze} · Silver ${archiveCounts.silver} · Gold ${archiveCounts.gold}`;
   elements.handCounts.textContent = `Bronze ${handCounts.bronze} · Silver ${handCounts.silver} · Gold ${handCounts.gold}`;
@@ -66,7 +66,8 @@ export function renderApp(state, elements, handlers) {
   elements.tradeInfo.textContent = `Trades used: ${state.tradesThisTurn}/${state.ruleset.maxTrades}`;
 
   const onlineTurnGate = state.mode === "online" ? isMyTurn(state) : true;
-  const showOpponentActive = state.mode === "online" && !onlineTurnGate;
+  const showOpponentActive =
+    state.mode === "online" && !onlineTurnGate && state.phase === "confirm";
   const activeOwner = showOpponentActive ? opponent : player;
   const canInteract = onlineTurnGate;
 

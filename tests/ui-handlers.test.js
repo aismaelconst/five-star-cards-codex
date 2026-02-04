@@ -285,6 +285,42 @@ describe("ui/handlers", () => {
     global.navigator = originalNavigator;
   });
 
+  it("shows confirm overlay only for the active online player", () => {
+    const sendSpy = vi.fn();
+    let capturedOnMessage;
+    const handlers = createHandlers(state, elements, onWinner, {
+      clientFactory: ({ onMessage }) => {
+        capturedOnMessage = onMessage;
+        return { connect: vi.fn(), send: sendSpy };
+      },
+    });
+
+    state.mode = "online";
+    elements.playerNameInput.value = "Host";
+    handlers.createRoom();
+    state.online.playerId = "p2";
+    state.players[0].id = "p1";
+    state.players[1].id = "p2";
+    elements.confirmOverlay.hidden = false;
+
+    capturedOnMessage({
+      type: "state_update",
+      roomId: "ROOM",
+      playerId: "p2",
+      state: {
+        ...createInitialState({ mode: "online" }),
+        players: [
+          { id: "p1", hand: [], active: [], archive: [], discard: [], deck: [] },
+          { id: "p2", hand: [], active: [], archive: [], discard: [], deck: [] },
+        ],
+        currentPlayer: 0,
+        phase: "confirm",
+      },
+    });
+
+    expect(elements.confirmOverlay.hidden).toBe(true);
+  });
+
   it("starts a turn from between phase", () => {
     const handlers = createHandlers(state, elements, onWinner);
     state.phase = "between";

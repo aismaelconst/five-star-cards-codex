@@ -105,6 +105,30 @@ describe("ui/render", () => {
     expect(elements.tradeBronze.disabled).toBe(true);
   });
 
+  it("shows opponent active cards only during confirm phase", () => {
+    const state = makeState();
+    const elements = makeElements();
+    const handlers = {
+      playCard: vi.fn(),
+      playCardByType: vi.fn(),
+      returnCard: vi.fn(),
+    };
+    state.mode = "online";
+    state.online = { playerId: "p2" };
+    state.players[0].id = "p1";
+    state.players[1].id = "p2";
+    state.currentPlayer = 0;
+    state.players[0].active = ["gold"];
+
+    state.phase = "main";
+    renderApp(state, elements, handlers);
+    expect(elements.activeCards.children.length).toBe(0);
+
+    state.phase = "confirm";
+    renderApp(state, elements, handlers);
+    expect(elements.activeCards.children.length).toBe(1);
+  });
+
   it("renders hand as piles when large", () => {
     const state = makeState();
     const elements = makeElements();

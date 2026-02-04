@@ -43,6 +43,11 @@ body {
   gap: 16px;
 }
 
+.play-header {
+  display: flex;
+  justify-content: flex-end;
+}
+
 h1,
 h2,
 h3 {

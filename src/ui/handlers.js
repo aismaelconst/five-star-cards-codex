@@ -3,6 +3,7 @@ import { renderApp, showConfirmOverlay, showTurnOverlay } from "./render.js";
 import { createInitialState } from "../game/state.js";
 import { createOnlineClient } from "../online/client.js";
 import { startGame } from "../game/lifecycle.js";
+import { isMyTurn } from "../game/multiplayer.js";
 
 export function createHandlers(state, elements, onWinner, options = {}) {
   const socketUrl = options.socketUrl ?? "ws://localhost:8080";
@@ -70,7 +71,7 @@ export function createHandlers(state, elements, onWinner, options = {}) {
     if (message.type === "state_update") {
       applyServerState(message);
       if (state.mode === "online") {
-        if (state.phase === "confirm") {
+        if (state.phase === "confirm" && isMyTurn(state)) {
           showConfirmOverlay(state, elements);
         } else {
           elements.confirmOverlay.hidden = true;
@@ -108,7 +109,7 @@ export function createHandlers(state, elements, onWinner, options = {}) {
       if (state.online.role === "host") elements.readyButton.disabled = true;
       if (state.online.role === "guest") elements.readyButtonGuest.disabled = true;
       if (state.mode === "online") {
-        if (state.phase === "confirm") {
+        if (state.phase === "confirm" && isMyTurn(state)) {
           showConfirmOverlay(state, elements);
         } else {
           elements.confirmOverlay.hidden = true;
@@ -232,7 +233,11 @@ export function createHandlers(state, elements, onWinner, options = {}) {
   }
 
   function sendOrApply(action) {
-    if (state.mode === "online" && onlineClient) {
+    if (state.mode === "online") {
+      if (!onlineClient) {
+        setStatus("Not connected to server.");
+        return null;
+      }
       const ok = onlineClient.send({
         type: "action",
         roomId: state.online.roomId,
