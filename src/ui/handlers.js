@@ -1,7 +1,8 @@
-import { ActionTypes, applyAction, drawCards } from "../game/rules.js";
+import { ActionTypes, applyAction } from "../game/rules.js";
 import { renderApp, showConfirmOverlay, showTurnOverlay } from "./render.js";
 import { createInitialState } from "../game/state.js";
 import { createOnlineClient } from "../online/client.js";
+import { startGame } from "../game/lifecycle.js";
 
 export function createHandlers(state, elements, onWinner, options = {}) {
   const socketUrl = options.socketUrl ?? "ws://localhost:8080";
@@ -178,6 +179,9 @@ export function createHandlers(state, elements, onWinner, options = {}) {
       setStatus("Join a room before readying up.");
       return;
     }
+    if (!onlineClient) {
+      if (!ensureOnlineClient()) return;
+    }
     setStatus("Ready! Waiting for opponent...");
     onlineClient.send({
       type: "ready_up",
@@ -291,7 +295,7 @@ export function createHandlers(state, elements, onWinner, options = {}) {
     elements.winnerOverlay.hidden = true;
     elements.confirmOverlay.hidden = true;
 
-    state.players.forEach((player) => drawCards(player, 5));
+    startGame(state);
     renderApp(state, elements, handlers);
   }
 

@@ -1,6 +1,7 @@
 import { WebSocketServer } from "ws";
 import { createInitialState } from "../src/game/state.js";
 import { applyAction } from "../src/game/rules.js";
+import { initializeOnlineGame } from "../src/game/online.js";
 import {
   getPlayerIndexById,
   isPlayersTurn,
@@ -24,6 +25,7 @@ function createRoom(hostName) {
   rooms.set(roomId, {
     state,
     players: new Map([[hostId, { name: hostName, socket: null, ready: false }]]),
+    started: false,
   });
   return { roomId, hostId };
 }
@@ -154,6 +156,10 @@ wss.on("connection", (ws) => {
       info.ready = true;
       broadcastLobby(message.roomId);
       if (canStart(room)) {
+        if (!room.started) {
+          initializeOnlineGame(room.state);
+          room.started = true;
+        }
         room.players.forEach((value, playerId) => {
           if (!value.socket) return;
           value.socket.send(
