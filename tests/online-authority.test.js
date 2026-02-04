@@ -52,6 +52,9 @@ describe("online server authority", () => {
       }),
     });
 
+    handlers.selectOnlineMode();
+    elements.playerNameInput.value = "Host";
+    handlers.createRoom();
     state.online.roomId = "ROOM";
     state.online.playerId = "P1";
     state.online.role = "host";
