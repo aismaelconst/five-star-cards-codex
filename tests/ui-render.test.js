@@ -79,6 +79,8 @@ describe("ui/render", () => {
     expect(elements.turnCounter.textContent).toContain("Turn 2");
     expect(elements.deckInfo.textContent).toContain("Deck:");
     expect(elements.tradeInfo.textContent).toContain("Trades used");
+    const card = elements.handCards.querySelector(".card");
+    expect(card.dataset.cardType).toBeTruthy();
   });
 
   it("renders hand as piles when large", () => {

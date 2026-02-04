@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="600" height="800" viewBox="0 0 600 800">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#2a2a31"/>
+      <stop offset="0.55" stop-color="#101015"/>
+      <stop offset="1" stop-color="#040407"/>
+    </linearGradient>
+    <filter id="grit" x="-20%" y="-20%" width="140%" height="140%">
+      <feTurbulence type="fractalNoise" baseFrequency="1.05" numOctaves="2" seed="15"/>
+      <feColorMatrix type="saturate" values="0"/>
+      <feComponentTransfer>
+        <feFuncA type="table" tableValues="0 0.65"/>
+      </feComponentTransfer>
+    </filter>
+    <pattern id="fracture" width="120" height="120" patternUnits="userSpaceOnUse">
+      <path d="M10 15 L60 5 L90 30" stroke="#1e1e26" stroke-width="2" opacity="0.6"/>
+      <path d="M20 90 L70 70 L110 100" stroke="#2a2a36" stroke-width="2" opacity="0.5"/>
+    </pattern>
+    <linearGradient id="frame" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#3c3c46"/>
+      <stop offset="1" stop-color="#14141c"/>
+    </linearGradient>
+    <radialGradient id="shine" cx="0.3" cy="0.12" r="0.9">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect x="10" y="10" width="580" height="780" rx="30" fill="url(#bg)"/>
+  <rect x="10" y="10" width="580" height="780" rx="30" filter="url(#grit)" opacity="0.7"/>
+  <rect x="10" y="10" width="580" height="780" rx="30" fill="url(#fracture)" opacity="0.6"/>
+  <rect x="28" y="28" width="544" height="744" rx="24" fill="none" stroke="url(#frame)" stroke-width="6"/>
+  <rect x="45" y="45" width="510" height="710" rx="20" fill="none" stroke="#262630" stroke-width="2" opacity="0.75"/>
+  <g transform="translate(300 360)">
+    <polygon points="0,-150 40,-45 150,-35 60,35 90,145 0,85 -90,145 -60,35 -150,-35 -40,-45" fill="#1a1a21" stroke="#3b3944" stroke-width="6"/>
+    <polygon points="0,-95 35,-20 95,-10 40,25 60,90 0,55 -60,90 -40,25 -95,-10 -35,-20" fill="#08080c" opacity="0.98"/>
+  </g>
+  <rect x="95" y="640" width="410" height="70" rx="16" fill="#0b0b10" opacity="0.75"/>
+  <text x="300" y="690" text-anchor="middle" font-family="'Times New Roman', serif" font-size="48" fill="#e2deea" letter-spacing="6">OBSIDIAN</text>
+  <rect x="10" y="10" width="580" height="780" rx="30" fill="url(#shine)"/>
+</svg>

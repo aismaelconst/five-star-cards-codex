@@ -7,9 +7,8 @@ function renderCards(container, cards, clickHandler) {
     const type = getCardType(card);
     const el = document.createElement("div");
     el.className = `card ${type}`;
-    el.innerHTML = `<div class="label">${type}</div><div class="stars">${
-      type === "gold" ? "★★★" : type === "silver" ? "★★" : "★"
-    }</div>`;
+    el.dataset.cardType = type;
+    el.innerHTML = `<div class="label">${type}</div><div class="stars"></div>`;
     el.addEventListener("click", () => clickHandler(index));
     container.appendChild(el);
   });
@@ -27,9 +26,8 @@ function renderHand(state, player, elements, handlers) {
     if (counts[type] === 0) return;
     const el = document.createElement("div");
     el.className = `card ${type} pile`;
-    el.innerHTML = `<div class="label">${type}</div><div class="stars">${
-      type === "gold" ? "★★★★★" : type === "silver" ? "★★" : "★"
-    }</div><div class="pile-count">x ${counts[type]}</div>`;
+    el.dataset.cardType = type;
+    el.innerHTML = `<div class="pile-count">x ${counts[type]}</div>`;
     el.addEventListener("click", () => handlers.playCardByType(type));
     elements.handCards.appendChild(el);
   });

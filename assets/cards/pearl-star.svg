@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="600" height="800" viewBox="0 0 600 800">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fffaf0"/>
+      <stop offset="0.55" stop-color="#e0d4c6"/>
+      <stop offset="1" stop-color="#a29383"/>
+    </linearGradient>
+    <radialGradient id="pearl" cx="0.35" cy="0.3" r="0.6">
+      <stop offset="0" stop-color="#fffaf7"/>
+      <stop offset="0.5" stop-color="#eadfd3"/>
+      <stop offset="1" stop-color="#c6b9ab"/>
+    </radialGradient>
+    <pattern id="sheen" width="120" height="120" patternUnits="userSpaceOnUse">
+      <path d="M0 30 C40 10, 80 10, 120 30" stroke="#ffffff" stroke-width="6" opacity="0.2" fill="none"/>
+      <path d="M0 80 C40 60, 80 60, 120 80" stroke="#f7efe6" stroke-width="6" opacity="0.2" fill="none"/>
+    </pattern>
+    <linearGradient id="frame" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#a19588"/>
+      <stop offset="1" stop-color="#f4ecdf"/>
+    </linearGradient>
+    <radialGradient id="shine" cx="0.2" cy="0.1" r="0.9">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.8"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect x="10" y="10" width="580" height="780" rx="30" fill="url(#bg)"/>
+  <rect x="10" y="10" width="580" height="780" rx="30" fill="url(#sheen)" opacity="0.55"/>
+  <rect x="28" y="28" width="544" height="744" rx="24" fill="none" stroke="url(#frame)" stroke-width="6"/>
+  <rect x="45" y="45" width="510" height="710" rx="20" fill="none" stroke="#a08f7f" stroke-width="2" opacity="0.7"/>
+  <g transform="translate(300 360)">
+    <polygon points="0,-150 40,-45 150,-35 60,35 90,145 0,85 -90,145 -60,35 -150,-35 -40,-45" fill="#fff6e9" stroke="#9b8d80" stroke-width="6"/>
+    <circle r="78" fill="url(#pearl)" opacity="0.95"/>
+  </g>
+  <rect x="150" y="640" width="300" height="70" rx="16" fill="#6d6157" opacity="0.5"/>
+  <text x="300" y="690" text-anchor="middle" font-family="'Times New Roman', serif" font-size="48" fill="#f9f2e9" letter-spacing="6">PEARL</text>
+  <rect x="10" y="10" width="580" height="780" rx="30" fill="url(#shine)"/>
+</svg>
