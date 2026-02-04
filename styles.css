@@ -403,6 +403,12 @@ button:not(:disabled):hover {
   text-align: left;
 }
 
+.lobby-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
 .field {
   display: flex;
   flex-direction: column;
@@ -423,6 +429,24 @@ button:not(:disabled):hover {
   display: flex;
   gap: 10px;
   flex-wrap: wrap;
+}
+
+.lobby-actions button {
+  flex: 1 1 auto;
+}
+
+.field-inline {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.field-inline input {
+  flex: 1 1 auto;
+}
+
+.back-button {
+  align-self: flex-start;
 }
 
 .overlay[hidden],

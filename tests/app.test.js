@@ -34,13 +34,24 @@ function setupDom() {
     <div id="modeOverlay"></div>
     <button id="offlineMode"></button>
     <button id="onlineMode"></button>
-    <div id="onlineNote"></div>
-    <div id="onlineLobby"></div>
+    <div id="onlineChoiceOverlay"></div>
+    <div id="hostOverlay"></div>
+    <div id="guestOverlay"></div>
     <input id="playerNameInput" />
     <input id="roomCodeInput" />
     <button id="createRoom"></button>
+    <button id="chooseCreate"></button>
+    <button id="chooseJoin"></button>
+    <button id="backToChoiceHost"></button>
+    <button id="backToChoiceGuest"></button>
     <button id="joinRoom"></button>
-    <div id="lobbyStatus"></div>
+    <button id="readyButton"></button>
+    <button id="readyButtonGuest"></button>
+    <input id="guestNameInput" />
+    <input id="guestRoomCodeInput" />
+    <button id="copyRoomCode"></button>
+    <div id="hostStatus"></div>
+    <div id="guestStatus"></div>
   `;
 }
 

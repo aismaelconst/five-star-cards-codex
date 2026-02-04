@@ -45,6 +45,35 @@ describe("online client", () => {
     expect(fakeSocket.close).toHaveBeenCalled();
   });
 
+  it("queues messages before socket opens", () => {
+    const handlers = {};
+    const fakeSocket = {
+      readyState: 0,
+      send: vi.fn(),
+      close: vi.fn(),
+      set onopen(fn) {
+        handlers.open = fn;
+      },
+      set onclose(fn) {},
+      set onerror(fn) {},
+      set onmessage(fn) {},
+    };
+
+    const client = createOnlineClient({
+      url: "ws://test",
+      socketFactory: () => fakeSocket,
+    });
+
+    client.connect();
+    const queued = client.send({ type: "queued" });
+    expect(queued).toBe(true);
+    expect(fakeSocket.send).not.toHaveBeenCalled();
+
+    fakeSocket.readyState = 1;
+    handlers.open();
+    expect(fakeSocket.send).toHaveBeenCalledWith(JSON.stringify({ type: "queued" }));
+  });
+
   it("handles invalid server payload", () => {
     const onMessage = vi.fn();
     const client = createOnlineClient({

@@ -5,12 +5,18 @@ export function createOnlineClient({
   socketFactory = (endpoint) => new WebSocket(endpoint),
 }) {
   let socket = null;
+  const queue = [];
 
   function connect() {
     if (socket) return;
     onStatus?.("connecting");
     socket = socketFactory(url);
-    socket.onopen = () => onStatus?.("connected");
+    socket.onopen = () => {
+      onStatus?.("connected");
+      while (queue.length > 0) {
+        socket.send(queue.shift());
+      }
+    };
     socket.onclose = () => onStatus?.("disconnected");
     socket.onerror = () => onStatus?.("error");
     socket.onmessage = (event) => {
@@ -24,8 +30,13 @@ export function createOnlineClient({
   }
 
   function send(payload) {
-    if (!socket || socket.readyState !== 1) return false;
-    socket.send(JSON.stringify(payload));
+    if (!socket) return false;
+    const data = JSON.stringify(payload);
+    if (socket.readyState !== 1) {
+      queue.push(data);
+      return true;
+    }
+    socket.send(data);
     return true;
   }
 

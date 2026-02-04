@@ -23,7 +23,7 @@ function createRoom(hostName) {
   });
   rooms.set(roomId, {
     state,
-    players: new Map([[hostId, { name: hostName, socket: null }]]),
+    players: new Map([[hostId, { name: hostName, socket: null, ready: false }]]),
   });
   return { roomId, hostId };
 }
@@ -33,7 +33,7 @@ function joinRoom(roomId, playerName) {
   if (!room) return null;
   if (room.players.size >= 2) return null;
   const playerId = generateId();
-  room.players.set(playerId, { name: playerName, socket: null });
+  room.players.set(playerId, { name: playerName, socket: null, ready: false });
   const openIndex = room.state.players.findIndex((p) => p.id.startsWith("pending-"));
   if (openIndex !== -1) {
     room.state.players[openIndex].id = playerId;
@@ -54,6 +54,32 @@ function broadcastState(roomId) {
     };
     value.socket.send(JSON.stringify(payload));
   });
+}
+
+function broadcastLobby(roomId) {
+  const room = rooms.get(roomId);
+  if (!room) return;
+  const lobby = {
+    type: "lobby_update",
+    roomId,
+    players: Array.from(room.players.entries()).map(([id, info]) => ({
+      id,
+      name: info.name,
+      ready: info.ready,
+    })),
+  };
+  room.players.forEach((value) => {
+    if (!value.socket) return;
+    value.socket.send(JSON.stringify(lobby));
+  });
+}
+
+function canStart(room) {
+  if (room.players.size < 2) return false;
+  for (const info of room.players.values()) {
+    if (!info.ready) return false;
+  }
+  return true;
 }
 
 function sendError(ws, message) {
@@ -87,6 +113,7 @@ wss.on("connection", (ws) => {
           state: sanitizeStateForPlayer(room.state, hostId),
         })
       );
+      broadcastLobby(roomId);
       return;
     }
 
@@ -108,7 +135,37 @@ wss.on("connection", (ws) => {
           state: sanitizeStateForPlayer(room.state, result.playerId),
         })
       );
+      broadcastLobby(result.roomId);
       broadcastState(result.roomId);
+      return;
+    }
+
+    if (message.type === "ready_up") {
+      const room = rooms.get(message.roomId);
+      if (!room) {
+        sendError(ws, "Room not found.");
+        return;
+      }
+      const info = room.players.get(message.playerId);
+      if (!info) {
+        sendError(ws, "Invalid player.");
+        return;
+      }
+      info.ready = true;
+      broadcastLobby(message.roomId);
+      if (canStart(room)) {
+        room.players.forEach((value, playerId) => {
+          if (!value.socket) return;
+          value.socket.send(
+            JSON.stringify({
+              type: "game_start",
+              roomId: message.roomId,
+              playerId,
+              state: sanitizeStateForPlayer(room.state, playerId),
+            })
+          );
+        });
+      }
       return;
     }
 
@@ -138,6 +195,9 @@ wss.on("connection", (ws) => {
     const room = rooms.get(currentRoomId);
     if (!room) return;
     room.players.delete(currentPlayerId);
+    if (room.players.size > 0) {
+      broadcastLobby(currentRoomId);
+    }
     if (room.players.size === 0) {
       rooms.delete(currentRoomId);
     }

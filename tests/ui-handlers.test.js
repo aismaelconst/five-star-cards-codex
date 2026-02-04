@@ -17,11 +17,22 @@ function makeElements() {
     confirmSummary: document.createElement("div"),
     confirmCards: document.createElement("div"),
     modeOverlay: document.createElement("div"),
-    onlineNote: document.createElement("div"),
-    onlineLobby: document.createElement("div"),
+    onlineChoiceOverlay: document.createElement("div"),
+    hostOverlay: document.createElement("div"),
+    guestOverlay: document.createElement("div"),
     playerNameInput: Object.assign(document.createElement("input"), { value: "" }),
     roomCodeInput: Object.assign(document.createElement("input"), { value: "" }),
-    lobbyStatus: document.createElement("div"),
+    guestNameInput: Object.assign(document.createElement("input"), { value: "" }),
+    guestRoomCodeInput: Object.assign(document.createElement("input"), { value: "" }),
+    readyButton: document.createElement("button"),
+    readyButtonGuest: document.createElement("button"),
+    chooseCreate: document.createElement("button"),
+    chooseJoin: document.createElement("button"),
+    backToChoiceHost: document.createElement("button"),
+    backToChoiceGuest: document.createElement("button"),
+    hostStatus: document.createElement("div"),
+    guestStatus: document.createElement("div"),
+    copyRoomCode: document.createElement("button"),
   };
 }
 
@@ -148,25 +159,52 @@ describe("ui/handlers", () => {
     expect(state.turnCount).toBe(1);
   });
 
-  it("selects online mode and keeps mode overlay visible", () => {
+  it("selects online mode and shows the online choice overlay", () => {
     const handlers = createHandlers(state, elements, onWinner);
     elements.modeOverlay.hidden = true;
 
     handlers.selectOnlineMode();
 
     expect(state.mode).toBe("online");
-    expect(elements.modeOverlay.hidden).toBe(false);
-    expect(elements.onlineNote.textContent).toContain("Lobby ready");
-    expect(elements.onlineLobby.hidden).toBe(false);
+    expect(elements.modeOverlay.hidden).toBe(true);
+    expect(elements.onlineChoiceOverlay.hidden).toBe(false);
+    expect(elements.readyButton.disabled).toBe(true);
+    expect(elements.readyButtonGuest.disabled).toBe(true);
+  });
+
+  it("toggles host/guest overlays", () => {
+    const handlers = createHandlers(state, elements, onWinner);
+    handlers.chooseCreate();
+    expect(elements.hostOverlay.hidden).toBe(false);
+    expect(elements.guestOverlay.hidden).toBe(true);
+
+    handlers.chooseJoin();
+    expect(elements.guestOverlay.hidden).toBe(false);
+    expect(elements.hostOverlay.hidden).toBe(true);
+  });
+
+  it("returns to choice overlay", () => {
+    const handlers = createHandlers(state, elements, onWinner);
+    elements.onlineChoiceOverlay.hidden = true;
+    elements.hostOverlay.hidden = false;
+
+    handlers.backToChoice();
+
+    expect(elements.onlineChoiceOverlay.hidden).toBe(false);
+    expect(elements.hostOverlay.hidden).toBe(true);
   });
 
   it("creates a room in online mode", () => {
     const sendSpy = vi.fn();
+    let capturedOnMessage;
     const handlers = createHandlers(state, elements, onWinner, {
-      clientFactory: () => ({
-        connect: vi.fn(),
-        send: sendSpy,
-      }),
+      clientFactory: ({ onMessage }) => {
+        capturedOnMessage = onMessage;
+        return {
+          connect: vi.fn(),
+          send: sendSpy,
+        };
+      },
     });
     elements.playerNameInput.value = "Hoster";
 
@@ -176,8 +214,15 @@ describe("ui/handlers", () => {
     expect(state.online.role).toBe("host");
     expect(state.online.status).toBe("waiting");
     expect(elements.roomCodeInput.value).toBe("");
-    expect(elements.lobbyStatus.textContent).toContain("Creating room");
+    expect(elements.hostStatus.textContent).toContain("Creating room");
     expect(sendSpy).toHaveBeenCalledWith({ type: "create_room", playerName: "Hoster" });
+    capturedOnMessage({
+      type: "room_created",
+      roomId: "ROOM42",
+      playerId: "P1",
+      state: createInitialState({ mode: "online" }),
+    });
+    expect(elements.roomCodeInput.value).toBe("ROOM42");
   });
 
   it("joins a room in online mode", () => {
@@ -188,8 +233,8 @@ describe("ui/handlers", () => {
         send: sendSpy,
       }),
     });
-    elements.playerNameInput.value = "Guesty";
-    elements.roomCodeInput.value = "abc123";
+    elements.guestNameInput.value = "Guesty";
+    elements.guestRoomCodeInput.value = "abc123";
 
     handlers.joinRoom();
 
@@ -197,12 +242,47 @@ describe("ui/handlers", () => {
     expect(state.online.role).toBe("guest");
     expect(state.online.status).toBe("joined");
     expect(state.online.roomId).toBe("ABC123");
-    expect(elements.lobbyStatus.textContent).toContain("Joined room");
+    expect(elements.guestStatus.textContent).toContain("Joined room");
     expect(sendSpy).toHaveBeenCalledWith({
       type: "join_room",
       roomId: "ABC123",
       playerName: "Guesty",
     });
+  });
+
+  it("readies up only after joining", () => {
+    const sendSpy = vi.fn();
+    const handlers = createHandlers(state, elements, onWinner, {
+      clientFactory: () => ({
+        connect: vi.fn(),
+        send: sendSpy,
+      }),
+    });
+
+    handlers.readyUp();
+    expect(elements.hostStatus.textContent).toContain("Join a room");
+
+    state.online.roomId = "ROOM01";
+    state.online.playerId = "P1";
+    handlers.readyUp();
+
+    expect(sendSpy).toHaveBeenCalledWith({
+      type: "ready_up",
+      roomId: "ROOM01",
+      playerId: "P1",
+    });
+  });
+
+  it("copies room code when available", async () => {
+    const handlers = createHandlers(state, elements, onWinner);
+    elements.roomCodeInput.value = "ROOMX1";
+    const originalNavigator = global.navigator;
+    global.navigator = { clipboard: { writeText: vi.fn() } };
+
+    await handlers.copyRoomCode();
+
+    expect(global.navigator.clipboard.writeText).toHaveBeenCalledWith("ROOMX1");
+    global.navigator = originalNavigator;
   });
 
   it("starts a turn from between phase", () => {

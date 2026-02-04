@@ -9,21 +9,33 @@ export function createHandlers(state, elements, onWinner, options = {}) {
   let onlineClient = null;
 
   function ensureOnlineClient() {
-    if (!onlineClient) {
-      onlineClient = clientFactory({
-        url: socketUrl,
-        onMessage: handleServerMessage,
-        onStatus: handleConnectionStatus,
-      });
+    try {
+      if (!onlineClient) {
+        onlineClient = clientFactory({
+          url: socketUrl,
+          onMessage: handleServerMessage,
+          onStatus: handleConnectionStatus,
+        });
+      }
+      onlineClient.connect();
+      return true;
+    } catch (error) {
+      setStatus("Unable to connect to server.");
+      return false;
     }
-    onlineClient.connect();
+  }
+
+  function setStatus(text) {
+    if (state.online.role === "guest") {
+      if (elements.guestStatus) elements.guestStatus.textContent = text;
+      return;
+    }
+    if (elements.hostStatus) elements.hostStatus.textContent = text;
   }
 
   function handleConnectionStatus(status) {
     state.online.connection = status;
-    if (elements.lobbyStatus) {
-      elements.lobbyStatus.textContent = `Connection: ${status}`;
-    }
+    setStatus(`Connection: ${status}`);
   }
 
   function applyServerState(payload) {
@@ -51,11 +63,33 @@ export function createHandlers(state, elements, onWinner, options = {}) {
       state.online.roomId = message.roomId;
       state.online.playerId = message.playerId;
       applyServerState(message);
-      elements.lobbyStatus.textContent = `Connected to room ${message.roomId}.`;
+      elements.roomCodeInput.value = message.roomId;
+      elements.guestRoomCodeInput.value = message.roomId;
+      setStatus(`Connected to room ${message.roomId}.`);
+      if (state.online.role === "host") {
+        elements.readyButton.disabled = false;
+      }
+      if (state.online.role === "guest") {
+        elements.readyButtonGuest.disabled = false;
+      }
+      return;
+    }
+    if (message.type === "lobby_update") {
+      const readyCount = message.players.filter((player) => player.ready).length;
+      setStatus(`${readyCount}/${message.players.length} ready`);
+      return;
+    }
+    if (message.type === "game_start") {
+      applyServerState(message);
+      elements.modeOverlay.hidden = true;
+      elements.onlineChoiceOverlay.hidden = true;
+      elements.hostOverlay.hidden = true;
+      elements.guestOverlay.hidden = true;
+      setStatus("Game started!");
       return;
     }
     if (message.type === "error") {
-      elements.lobbyStatus.textContent = message.message;
+      setStatus(message.message);
     }
   }
   function showModePicker() {
@@ -65,44 +99,105 @@ export function createHandlers(state, elements, onWinner, options = {}) {
   function selectOfflineMode() {
     state.mode = "offline";
     elements.modeOverlay.hidden = true;
-    elements.onlineLobby.hidden = true;
+    elements.onlineChoiceOverlay.hidden = true;
+    elements.hostOverlay.hidden = true;
+    elements.guestOverlay.hidden = true;
     resetGame();
   }
 
   function selectOnlineMode() {
     state.mode = "online";
-    elements.modeOverlay.hidden = false;
-    elements.onlineNote.textContent = "Lobby ready. Multiplayer coming soon.";
-    elements.onlineLobby.hidden = false;
+    elements.modeOverlay.hidden = true;
+    elements.onlineChoiceOverlay.hidden = false;
+    elements.hostOverlay.hidden = true;
+    elements.guestOverlay.hidden = true;
+    if (elements.hostStatus) elements.hostStatus.textContent = "";
+    if (elements.guestStatus) elements.guestStatus.textContent = "";
+    elements.readyButton.disabled = true;
+    elements.readyButtonGuest.disabled = true;
+  }
+
+  function chooseCreate() {
+    elements.onlineChoiceOverlay.hidden = true;
+    elements.hostOverlay.hidden = false;
+    elements.guestOverlay.hidden = true;
+    setStatus("Create a room to get a code.");
+    elements.readyButton.disabled = true;
+  }
+
+  function chooseJoin() {
+    elements.onlineChoiceOverlay.hidden = true;
+    elements.guestOverlay.hidden = false;
+    elements.hostOverlay.hidden = true;
+    setStatus("Enter a room code to join.");
+    elements.readyButtonGuest.disabled = true;
+  }
+
+  function backToChoice() {
+    elements.hostOverlay.hidden = true;
+    elements.guestOverlay.hidden = true;
+    elements.onlineChoiceOverlay.hidden = false;
+    if (elements.hostStatus) elements.hostStatus.textContent = "";
+    if (elements.guestStatus) elements.guestStatus.textContent = "";
   }
 
   function createRoom() {
     state.mode = "online";
-    ensureOnlineClient();
+    setStatus("Creating room...");
+    if (!ensureOnlineClient()) return;
     const playerName = elements.playerNameInput.value.trim() || "Host";
     state.online.role = "host";
     state.online.status = "waiting";
     state.online.playerName = playerName;
     elements.roomCodeInput.value = "";
-    elements.lobbyStatus.textContent = "Creating room...";
+    elements.readyButton.disabled = true;
     onlineClient.send({ type: "create_room", playerName });
   }
 
   function joinRoom() {
     state.mode = "online";
-    ensureOnlineClient();
-    const roomId = elements.roomCodeInput.value.trim().toUpperCase();
+    setStatus("Joining room...");
+    if (!ensureOnlineClient()) return;
+    const roomId = elements.guestRoomCodeInput.value.trim().toUpperCase();
     if (!roomId) {
-      elements.lobbyStatus.textContent = "Enter a room code to join.";
+      setStatus("Enter a room code to join.");
       return;
     }
-    const playerName = elements.playerNameInput.value.trim() || "Guest";
+    const playerName = elements.guestNameInput.value.trim() || "Guest";
     state.online.roomId = roomId;
     state.online.role = "guest";
     state.online.status = "joined";
     state.online.playerName = playerName;
-    elements.lobbyStatus.textContent = `Joined room ${roomId}. Waiting to start...`;
+    setStatus(`Joined room ${roomId}. Waiting to start...`);
+    elements.readyButtonGuest.disabled = false;
     onlineClient.send({ type: "join_room", roomId, playerName });
+  }
+
+  function readyUp() {
+    if (!state.online.roomId || !state.online.playerId) {
+      setStatus("Join a room before readying up.");
+      return;
+    }
+    setStatus("Ready! Waiting for opponent...");
+    onlineClient.send({
+      type: "ready_up",
+      roomId: state.online.roomId,
+      playerId: state.online.playerId,
+    });
+  }
+
+  async function copyRoomCode() {
+    const code = elements.roomCodeInput.value.trim();
+    if (!code) {
+      setStatus("Create a room first to get a code.");
+      return;
+    }
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(code);
+      setStatus("Room code copied.");
+      return;
+    }
+    setStatus(`Room code: ${code}`);
   }
 
   function sendOrApply(action) {
@@ -114,7 +209,7 @@ export function createHandlers(state, elements, onWinner, options = {}) {
         action,
       });
       if (!ok) {
-        elements.lobbyStatus.textContent = "Unable to send action to server.";
+        setStatus("Unable to send action to server.");
       }
       return;
     }
@@ -206,6 +301,11 @@ export function createHandlers(state, elements, onWinner, options = {}) {
     selectOnlineMode,
     createRoom,
     joinRoom,
+    backToChoice,
+    copyRoomCode,
+    readyUp,
+    chooseCreate,
+    chooseJoin,
     trade,
     playCard,
     playCardByType,
