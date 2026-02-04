@@ -49,6 +49,8 @@ describe("app bootstrap", () => {
     setupDom();
     await import("../app.js");
 
+    document.getElementById("offlineMode").click();
+
     expect(document.getElementById("turnIndicator").textContent).toContain("Player");
     expect(document.getElementById("turnCounter").textContent).toContain("Turn");
   });
