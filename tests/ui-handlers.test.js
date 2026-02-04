@@ -16,6 +16,8 @@ function makeElements() {
     winnerOverlay: document.createElement("div"),
     confirmSummary: document.createElement("div"),
     confirmCards: document.createElement("div"),
+    modeOverlay: document.createElement("div"),
+    onlineNote: document.createElement("div"),
   };
 }
 
@@ -129,6 +131,28 @@ describe("ui/handlers", () => {
 
     expect(state.currentPlayer).toBe(0);
     expect(state.turnCount).toBe(1);
+  });
+
+  it("selects offline mode and starts a game", () => {
+    const handlers = createHandlers(state, elements, onWinner);
+    elements.modeOverlay.hidden = false;
+
+    handlers.selectOfflineMode();
+
+    expect(state.mode).toBe("offline");
+    expect(elements.modeOverlay.hidden).toBe(true);
+    expect(state.turnCount).toBe(1);
+  });
+
+  it("selects online mode and keeps mode overlay visible", () => {
+    const handlers = createHandlers(state, elements, onWinner);
+    elements.modeOverlay.hidden = true;
+
+    handlers.selectOnlineMode();
+
+    expect(state.mode).toBe("online");
+    expect(elements.modeOverlay.hidden).toBe(false);
+    expect(elements.onlineNote.textContent).toContain("coming soon");
   });
 
   it("starts a turn from between phase", () => {

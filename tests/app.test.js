@@ -31,6 +31,10 @@ function setupDom() {
     <div id="turnOverlay"></div>
     <div id="overlayTitle"></div>
     <button id="startTurn"></button>
+    <div id="modeOverlay"></div>
+    <button id="offlineMode"></button>
+    <button id="onlineMode"></button>
+    <div id="onlineNote"></div>
   `;
 }
 

@@ -23,6 +23,7 @@ describe("state", () => {
     expect(state.winner).toBe(null);
     expect(state.turnCount).toBe(1);
     expect(state.pendingArchive).toBe(null);
+    expect(state.mode).toBe(null);
   });
 });
 

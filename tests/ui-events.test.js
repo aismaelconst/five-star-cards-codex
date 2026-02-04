@@ -10,6 +10,8 @@ function makeButton(id) {
 describe("ui/events", () => {
   it("wires buttons to handlers", () => {
     const elements = {
+      offlineMode: makeButton("offlineMode"),
+      onlineMode: makeButton("onlineMode"),
       tradeBronze: makeButton("tradeBronze"),
       tradeSilver: makeButton("tradeSilver"),
       endTurn: makeButton("endTurn"),
@@ -22,6 +24,8 @@ describe("ui/events", () => {
     };
 
     const handlers = {
+      selectOfflineMode: vi.fn(),
+      selectOnlineMode: vi.fn(),
       trade: vi.fn(),
       endTurn: vi.fn(),
       returnAllCards: vi.fn(),
@@ -33,6 +37,8 @@ describe("ui/events", () => {
 
     wireEvents(elements, handlers);
 
+    elements.offlineMode.click();
+    elements.onlineMode.click();
     elements.tradeBronze.click();
     elements.tradeSilver.click();
     elements.endTurn.click();
@@ -43,6 +49,8 @@ describe("ui/events", () => {
     elements.cancelArchive.click();
     elements.startTurn.click();
 
+    expect(handlers.selectOfflineMode).toHaveBeenCalled();
+    expect(handlers.selectOnlineMode).toHaveBeenCalled();
     expect(handlers.trade).toHaveBeenCalledWith("bronze");
     expect(handlers.trade).toHaveBeenCalledWith("silver");
     expect(handlers.endTurn).toHaveBeenCalled();

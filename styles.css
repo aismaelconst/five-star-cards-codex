@@ -383,6 +383,10 @@ button:not(:disabled):hover {
   background: linear-gradient(160deg, #fff7db 0%, #fff0bf 100%);
 }
 
+.mode-overlay .overlay-card {
+  max-width: 420px;
+}
+
 .overlay[hidden],
 .results[hidden] {
   display: none;

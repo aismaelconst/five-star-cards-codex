@@ -3,6 +3,22 @@ import { renderApp, showConfirmOverlay, showTurnOverlay } from "./render.js";
 import { createInitialState } from "../game/state.js";
 
 export function createHandlers(state, elements, onWinner) {
+  function showModePicker() {
+    elements.modeOverlay.hidden = false;
+  }
+
+  function selectOfflineMode() {
+    state.mode = "offline";
+    elements.modeOverlay.hidden = true;
+    resetGame();
+  }
+
+  function selectOnlineMode() {
+    state.mode = "online";
+    elements.modeOverlay.hidden = false;
+    elements.onlineNote.textContent = "Online mode is coming soon.";
+  }
+
   function trade(type) {
     applyAction(state, { type: ActionTypes.TRADE, payload: { type } });
     renderApp(state, elements, handlers);
@@ -61,7 +77,7 @@ export function createHandlers(state, elements, onWinner) {
   }
 
   function resetGame() {
-    const freshState = createInitialState();
+    const freshState = createInitialState({ mode: state.mode });
     state.players = freshState.players;
     state.currentPlayer = freshState.currentPlayer;
     state.tradesThisTurn = freshState.tradesThisTurn;
@@ -69,6 +85,8 @@ export function createHandlers(state, elements, onWinner) {
     state.winner = freshState.winner;
     state.turnCount = freshState.turnCount;
     state.pendingArchive = freshState.pendingArchive;
+    state.gameId = freshState.gameId;
+    state.ruleset = freshState.ruleset;
     elements.winnerPanel.hidden = true;
     elements.winnerOverlay.hidden = true;
     elements.confirmOverlay.hidden = true;
@@ -78,6 +96,9 @@ export function createHandlers(state, elements, onWinner) {
   }
 
   const handlers = {
+    showModePicker,
+    selectOfflineMode,
+    selectOnlineMode,
     trade,
     playCard,
     playCardByType,

@@ -35,6 +35,10 @@ const elements = {
   turnOverlay: document.getElementById("turnOverlay"),
   overlayTitle: document.getElementById("overlayTitle"),
   startTurn: document.getElementById("startTurn"),
+  modeOverlay: document.getElementById("modeOverlay"),
+  offlineMode: document.getElementById("offlineMode"),
+  onlineMode: document.getElementById("onlineMode"),
+  onlineNote: document.getElementById("onlineNote"),
 };
 
 function declareWinner(playerIndex) {
@@ -48,4 +52,4 @@ function declareWinner(playerIndex) {
 const handlers = createHandlers(state, elements, declareWinner);
 
 wireEvents(elements, handlers);
-handlers.resetGame();
+handlers.showModePicker();

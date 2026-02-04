@@ -17,9 +17,11 @@ export function createInitialState(options = {}) {
   const ruleset = options.ruleset ?? baseRuleset;
   const gameId = options.gameId ?? `game-${Date.now()}`;
   const playerIds = options.playerIds ?? ["player-1", "player-2"];
+  const mode = options.mode ?? null;
   return {
     gameId,
     ruleset,
+    mode,
     players: [
       createPlayerState(ruleset, playerIds[0]),
       createPlayerState(ruleset, playerIds[1]),
