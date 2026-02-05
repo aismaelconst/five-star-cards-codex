@@ -33,6 +33,7 @@ function makeElements() {
     hostStatus: document.createElement("div"),
     guestStatus: document.createElement("div"),
     copyRoomCode: document.createElement("button"),
+    opponentAlert: document.createElement("div"),
   };
 }
 
@@ -283,6 +284,51 @@ describe("ui/handlers", () => {
 
     expect(global.navigator.clipboard.writeText).toHaveBeenCalledWith("ROOMX1");
     global.navigator = originalNavigator;
+  });
+
+  it("shows opponent trade and archive alerts", () => {
+    const sendSpy = vi.fn();
+    let capturedOnMessage;
+    const handlers = createHandlers(state, elements, onWinner, {
+      clientFactory: ({ onMessage }) => {
+        capturedOnMessage = onMessage;
+        return { connect: vi.fn(), send: sendSpy };
+      },
+    });
+
+    state.mode = "online";
+    elements.playerNameInput.value = "Host";
+    handlers.createRoom();
+    state.online.playerId = "p2";
+
+    capturedOnMessage({
+      type: "state_update",
+      roomId: "ROOM",
+      playerId: "p2",
+      lastEvent: {
+        type: "trade",
+        playerId: "p1",
+        from: "bronze",
+        to: "silver",
+        cost: 5,
+      },
+      state: createInitialState({ mode: "online" }),
+    });
+    expect(elements.opponentAlert.textContent).toContain("Opponent traded");
+
+    capturedOnMessage({
+      type: "state_update",
+      roomId: "ROOM",
+      playerId: "p2",
+      lastEvent: {
+        type: "archive",
+        playerId: "p1",
+        counts: { bronze: 2, silver: 1, gold: 0 },
+        drawCount: 4,
+      },
+      state: createInitialState({ mode: "online" }),
+    });
+    expect(elements.opponentAlert.textContent).toContain("Opponent archived");
   });
 
   it("shows confirm overlay only for the active online player", () => {

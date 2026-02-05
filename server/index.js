@@ -8,7 +8,7 @@ import {
   isPlayersTurn,
   sanitizeStateForPlayer,
 } from "../src/game/multiplayer.js";
-import { generateId } from "../src/shared/utils.js";
+import { countCards, generateId } from "../src/shared/utils.js";
 
 const PORT = process.env.PORT ? Number(process.env.PORT) : 8080;
 const wss = new WebSocketServer({ port: PORT });
@@ -56,9 +56,11 @@ function broadcastState(roomId) {
       roomId,
       state: sanitizeStateForPlayer(room.state, playerId),
       playerId,
+      lastEvent: room.lastEvent ?? null,
     };
     value.socket.send(JSON.stringify(payload));
   });
+  room.lastEvent = null;
 }
 
 function broadcastLobby(roomId) {
@@ -196,8 +198,34 @@ wss.on("connection", (ws) => {
         sendError(ws, "Not your turn.");
         return;
       }
+      let lastEvent = null;
+      if (message.action?.type === "TRADE") {
+        const tradeType = message.action.payload?.type;
+        const tradeUp = room.state.ruleset.cardTypes[tradeType]?.tradeUp;
+        if (tradeUp) {
+          lastEvent = {
+            type: "trade",
+            playerId,
+            from: tradeType,
+            to: tradeUp.to,
+            cost: tradeUp.cost,
+          };
+        }
+      }
+      if (message.action?.type === "CONFIRM_ARCHIVE") {
+        const pending = room.state.pendingArchive;
+        if (pending?.playedCards) {
+          lastEvent = {
+            type: "archive",
+            playerId,
+            counts: countCards(pending.playedCards),
+            drawCount: pending.drawCount,
+          };
+        }
+      }
       applyAction(room.state, message.action);
       normalizeOnlinePhase(room.state);
+      room.lastEvent = lastEvent;
       broadcastState(message.roomId);
       console.log(
         `[room ${message.roomId}] action ${message.action?.type} by ${playerId} | phase ${room.state.phase} | winner ${room.state.winner ?? "none"}`

@@ -66,8 +66,28 @@ export function createHandlers(state, elements, onWinner, options = {}) {
     elements.debugInfo.textContent = `${message.type} | phase: ${state.phase} | turn: ${currentName} | winner: ${state.winner ?? "none"}`;
   }
 
+  function handleOpponentEvent(message) {
+    if (!elements.opponentAlert) return;
+    const event = message.lastEvent;
+    if (!event) return;
+    if (event.playerId === state.online.playerId) return;
+    if (event.type === "trade") {
+      elements.opponentAlert.textContent = `Opponent traded ${event.cost} ${event.from} for 1 ${event.to}.`;
+      return;
+    }
+    if (event.type === "archive") {
+      const parts = [];
+      if (event.counts.gold) parts.push(`${event.counts.gold} gold`);
+      if (event.counts.silver) parts.push(`${event.counts.silver} silver`);
+      if (event.counts.bronze) parts.push(`${event.counts.bronze} bronze`);
+      const summary = parts.length ? parts.join(", ") : "no cards";
+      elements.opponentAlert.textContent = `Opponent archived ${summary} (drew ${event.drawCount}).`;
+    }
+  }
+
   function handleServerMessage(message) {
     updateDebug(message);
+    handleOpponentEvent(message);
     if (message.type === "state_update") {
       applyServerState(message);
       if (state.mode === "online") {
