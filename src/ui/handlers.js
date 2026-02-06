@@ -9,6 +9,7 @@ export function createHandlers(state, elements, onWinner, options = {}) {
   const socketUrl = options.socketUrl ?? "ws://localhost:8080";
   const clientFactory = options.clientFactory ?? createOnlineClient;
   let onlineClient = null;
+  let gameOverTimer = null;
 
   function ensureOnlineClient() {
     try {
@@ -54,7 +55,7 @@ export function createHandlers(state, elements, onWinner, options = {}) {
     state.online.roomId = payload.roomId ?? state.online.roomId;
     state.online.playerId = payload.playerId ?? state.online.playerId;
     renderApp(state, elements, handlers);
-    if (state.winner !== null && state.winner !== undefined) {
+    if (state.mode !== "online" && state.winner !== null && state.winner !== undefined) {
       onWinner(state.winner);
     }
   }
@@ -139,6 +140,27 @@ export function createHandlers(state, elements, onWinner, options = {}) {
     }
     if (message.type === "error") {
       setStatus(message.message);
+    }
+    if (message.type === "game_over") {
+      const winnerName = message.winnerName ?? "Opponent";
+      if (elements.winnerModalText) {
+        elements.winnerModalText.textContent = `${winnerName} wins!`;
+      }
+      if (elements.winnerModalMessage) {
+        elements.winnerModalMessage.textContent = "Returning to mode selection...";
+      }
+      if (elements.restartGameModal) {
+        elements.restartGameModal.hidden = true;
+      }
+      elements.winnerOverlay.hidden = false;
+      setStatus(`${winnerName} wins! Returning to mode select.`);
+      if (gameOverTimer) {
+        clearTimeout(gameOverTimer);
+      }
+      gameOverTimer = setTimeout(() => {
+        returnToModeSelect();
+        gameOverTimer = null;
+      }, 1500);
     }
   }
   function showModePicker() {
@@ -355,6 +377,10 @@ export function createHandlers(state, elements, onWinner, options = {}) {
   }
 
   function resetGame() {
+    if (state.mode === "online") {
+      returnToModeSelect();
+      return;
+    }
     const freshState = createInitialState({ mode: state.mode });
     state.players = freshState.players;
     state.currentPlayer = freshState.currentPlayer;
@@ -371,6 +397,42 @@ export function createHandlers(state, elements, onWinner, options = {}) {
     elements.confirmOverlay.hidden = true;
 
     startGame(state);
+    renderApp(state, elements, handlers);
+  }
+
+  function returnToModeSelect() {
+    if (onlineClient) {
+      onlineClient.close();
+      onlineClient = null;
+    }
+    if (gameOverTimer) {
+      clearTimeout(gameOverTimer);
+      gameOverTimer = null;
+    }
+    const freshState = createInitialState();
+    state.players = freshState.players;
+    state.currentPlayer = freshState.currentPlayer;
+    state.tradesThisTurn = freshState.tradesThisTurn;
+    state.phase = freshState.phase;
+    state.winner = freshState.winner;
+    state.turnCount = freshState.turnCount;
+    state.pendingArchive = freshState.pendingArchive;
+    state.gameId = freshState.gameId;
+    state.ruleset = freshState.ruleset;
+    state.online = freshState.online;
+    state.mode = freshState.mode;
+    if (elements.opponentAlert) elements.opponentAlert.textContent = "";
+    elements.winnerPanel.hidden = true;
+    elements.winnerOverlay.hidden = true;
+    elements.confirmOverlay.hidden = true;
+    elements.turnOverlay.hidden = true;
+    elements.onlineChoiceOverlay.hidden = true;
+    elements.hostOverlay.hidden = true;
+    elements.guestOverlay.hidden = true;
+    elements.modeOverlay.hidden = false;
+    if (elements.restartGameModal) {
+      elements.restartGameModal.hidden = false;
+    }
     renderApp(state, elements, handlers);
   }
 

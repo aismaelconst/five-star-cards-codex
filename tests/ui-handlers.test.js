@@ -14,6 +14,9 @@ function makeElements() {
     turnOverlay: document.createElement("div"),
     winnerPanel: document.createElement("div"),
     winnerOverlay: document.createElement("div"),
+    winnerModalText: document.createElement("div"),
+    winnerModalMessage: document.createElement("div"),
+    restartGameModal: document.createElement("button"),
     confirmSummary: document.createElement("div"),
     confirmCards: document.createElement("div"),
     modeOverlay: document.createElement("div"),
@@ -329,6 +332,45 @@ describe("ui/handlers", () => {
       state: createInitialState({ mode: "online" }),
     });
     expect(elements.opponentAlert.textContent).toContain("Opponent archived");
+  });
+
+  it("returns to mode selection on game over in online mode", () => {
+    vi.useFakeTimers();
+    let capturedOnMessage;
+    const closeSpy = vi.fn();
+    const handlers = createHandlers(state, elements, onWinner, {
+      clientFactory: ({ onMessage }) => {
+        capturedOnMessage = onMessage;
+        return {
+          connect: vi.fn(),
+          send: vi.fn(),
+          close: closeSpy,
+        };
+      },
+    });
+
+    elements.playerNameInput.value = "Host";
+    handlers.createRoom();
+    state.mode = "online";
+    elements.modeOverlay.hidden = true;
+
+    capturedOnMessage({
+      type: "game_over",
+      roomId: "ROOM",
+      winnerIndex: 0,
+      winnerName: "Host",
+    });
+
+    expect(elements.winnerOverlay.hidden).toBe(false);
+    expect(elements.winnerModalText.textContent).toContain("Host");
+
+    vi.runAllTimers();
+
+    expect(closeSpy).toHaveBeenCalled();
+    expect(elements.modeOverlay.hidden).toBe(false);
+    expect(state.mode).toBe(null);
+    expect(elements.winnerOverlay.hidden).toBe(true);
+    vi.useRealTimers();
   });
 
   it("shows confirm overlay only for the active online player", () => {

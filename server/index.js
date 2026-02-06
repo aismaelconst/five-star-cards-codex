@@ -81,6 +81,32 @@ function broadcastLobby(roomId) {
   });
 }
 
+function broadcastGameOver(roomId, winnerIndex, winnerName) {
+  const room = rooms.get(roomId);
+  if (!room) return;
+  room.players.forEach((value) => {
+    if (!value.socket) return;
+    value.socket.send(
+      JSON.stringify({
+        type: "game_over",
+        roomId,
+        winnerIndex,
+        winnerName,
+      })
+    );
+  });
+}
+
+function shutdownRoom(roomId) {
+  const room = rooms.get(roomId);
+  if (!room) return;
+  room.players.forEach((value) => {
+    if (!value.socket) return;
+    value.socket.close();
+  });
+  rooms.delete(roomId);
+}
+
 function canStart(room) {
   if (room.players.size < 2) return false;
   for (const info of room.players.values()) {
@@ -227,6 +253,12 @@ wss.on("connection", (ws) => {
       normalizeOnlinePhase(room.state);
       room.lastEvent = lastEvent;
       broadcastState(message.roomId);
+      if (room.state.winner !== null && room.state.winner !== undefined) {
+        const winner = room.state.players[room.state.winner];
+        broadcastGameOver(message.roomId, room.state.winner, winner?.name ?? "Player");
+        shutdownRoom(message.roomId);
+        return;
+      }
       console.log(
         `[room ${message.roomId}] action ${message.action?.type} by ${playerId} | phase ${room.state.phase} | winner ${room.state.winner ?? "none"}`
       );

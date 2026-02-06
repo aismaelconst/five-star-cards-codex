@@ -28,6 +28,7 @@ const elements = {
   debugInfo: document.getElementById("debugInfo"),
   winnerOverlay: document.getElementById("winnerOverlay"),
   winnerModalText: document.getElementById("winnerModalText"),
+  winnerModalMessage: document.getElementById("winnerModalMessage"),
   restartGameModal: document.getElementById("restartGameModal"),
   confirmOverlay: document.getElementById("confirmOverlay"),
   confirmSummary: document.getElementById("confirmSummary"),
@@ -65,6 +66,12 @@ function declareWinner(playerIndex) {
   const name = state.players?.[playerIndex]?.name ?? `Player ${playerIndex + 1}`;
   elements.winnerText.textContent = `${name} wins!`;
   elements.winnerModalText.textContent = `${name} wins!`;
+  if (elements.winnerModalMessage) {
+    elements.winnerModalMessage.textContent = "Great run. Ready for a rematch?";
+  }
+  if (elements.restartGameModal) {
+    elements.restartGameModal.hidden = false;
+  }
   elements.winnerOverlay.hidden = false;
   elements.turnOverlay.hidden = true;
 }
