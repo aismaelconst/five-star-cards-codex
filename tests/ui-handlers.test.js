@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { createHandlers } from "../src/ui/handlers.js";
 import { createInitialState } from "../src/game/state.js";
+import { expandedRuleset } from "../src/game/ruleset.js";
 
 vi.mock("../src/ui/render.js", () => ({
   renderApp: vi.fn(),
@@ -376,7 +377,7 @@ describe("ui/handlers", () => {
 
     handlers.trade("trade_bronze");
     const options = elements.woodSubOptions.querySelectorAll("button");
-    options[1].click();
+    options[0].click();
     handlers.confirmWoodSubstitution();
 
     const sent = sendSpy.mock.calls[sendSpy.mock.calls.length - 1][0];
@@ -384,6 +385,22 @@ describe("ui/handlers", () => {
     expect(sent.action.payload.recipeId).toBe("trade_bronze");
     expect(sent.action.payload.useWood).toBe(true);
     expect(sent.action.payload.substituteType).toBe("bronze");
+  });
+
+  it("hides no-wood option when base cost is not met", () => {
+    const handlers = createHandlers(state, elements, onWinner);
+    state.ruleset = expandedRuleset;
+    state.format = "expanded";
+    const player = state.players[0];
+    player.archive = ["bronze", "bronze", "bronze", "bronze", "wood"];
+    player.deck = ["silver"];
+
+    handlers.trade("trade_bronze");
+
+    const labels = Array.from(elements.woodSubOptions.querySelectorAll("button")).map(
+      (button) => button.dataset.choice
+    );
+    expect(labels).not.toContain("none");
   });
 
   it("sends gem tutor trade payload", () => {

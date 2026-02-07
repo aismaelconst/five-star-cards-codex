@@ -406,11 +406,17 @@ export function createHandlers(state, elements, onWinner, options = {}) {
       rewardType: null,
     };
     const woodOptions = getWoodSubstitutionOptions(state, player, recipeId);
+    const recipe = state.ruleset.tradeRecipes?.[recipeId];
+    const archiveCounts = countCards(player.archive);
+    const canPayBase =
+      recipe &&
+      Object.entries(recipe.cost).every(
+        ([type, amount]) => (archiveCounts[type] ?? 0) >= amount
+      );
     if (woodOptions.length > 0 && elements.woodOverlay) {
-      openWoodOverlay(woodOptions);
+      openWoodOverlay(woodOptions, canPayBase);
       return null;
     }
-    const recipe = state.ruleset.tradeRecipes?.[recipeId];
     if (recipe?.reward === "any" && elements.gemTutorOverlay) {
       openGemTutorOverlay();
       return null;
@@ -436,11 +442,11 @@ export function createHandlers(state, elements, onWinner, options = {}) {
     return result;
   }
 
-  function openWoodOverlay(options) {
+  function openWoodOverlay(options, allowNoWood) {
     if (!elements.woodSubOptions || !elements.woodOverlay) return;
     pendingWoodChoice = null;
     elements.woodSubOptions.innerHTML = "";
-    const allOptions = ["none", ...options];
+    const allOptions = allowNoWood ? ["none", ...options] : options;
     allOptions.forEach((type) => {
       const button = document.createElement("button");
       button.className = "ghost option-button";
