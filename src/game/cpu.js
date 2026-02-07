@@ -221,35 +221,19 @@ function buildTradePayload(state, player, recipeId, difficulty) {
 
 function chooseHardTrade(state, player) {
   const recipes = Object.entries(state.ruleset.tradeRecipes ?? {});
-  const silverRecipe = state.ruleset.tradeRecipes?.trade_silver;
-  if (silverRecipe) {
-    const basePayload = {
-      recipeId: "trade_silver",
-      useWood: false,
-      substituteType: null,
-      rewardType: null,
-    };
-    if (canTradeWithOptions(state, player, "trade_silver", basePayload)) {
-      return basePayload;
-    }
-    const woodOptions = getWoodSubstitutionOptions(state, player, "trade_silver");
-    for (const substituteType of woodOptions) {
-      const payload = {
-        recipeId: "trade_silver",
-        useWood: true,
-        substituteType,
-        rewardType: null,
-      };
-      if (canTradeWithOptions(state, player, "trade_silver", payload)) {
-        return payload;
-      }
-    }
+  if (state.ruleset.tradeRecipes?.trade_silver) {
+    const forcedSilver = buildTradePayload(state, player, "trade_silver", "hard");
+    if (forcedSilver) return forcedSilver;
+  }
+  if (state.ruleset.tradeRecipes?.trade_bronze) {
+    const forcedBronze = buildTradePayload(state, player, "trade_bronze", "hard");
+    if (forcedBronze) return forcedBronze;
   }
   const candidates = [];
   const deckCounts = countCards(player.deck, state.ruleset.displayOrder);
   recipes.forEach(([recipeId, recipe]) => {
     const rewardType =
-      recipe.reward === "any" ? pickBestRewardByValue(deckCounts) : null;
+      recipe.reward === "any" ? pickTutorReward(state, player, "hard") : null;
     const basePayload = {
       recipeId,
       useWood: false,

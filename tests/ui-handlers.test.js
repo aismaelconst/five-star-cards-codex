@@ -226,6 +226,18 @@ describe("ui/handlers", () => {
     expect(state.players[1].name).toBe("CPU");
   });
 
+  it("selects cpu medium and hard difficulties", () => {
+    const handlers = createHandlers(state, elements, onWinner);
+    handlers.selectCpuMode();
+    handlers.selectCoreFormat();
+
+    handlers.selectCpuMedium();
+    expect(state.cpu.difficulty).toBe("medium");
+
+    handlers.selectCpuHard();
+    expect(state.cpu.difficulty).toBe("hard");
+  });
+
   it("toggles host/guest overlays", () => {
     const handlers = createHandlers(state, elements, onWinner);
     handlers.chooseCreate();
@@ -235,6 +247,14 @@ describe("ui/handlers", () => {
     handlers.chooseJoin();
     expect(elements.guestOverlay.hidden).toBe(false);
     expect(elements.hostOverlay.hidden).toBe(true);
+  });
+
+  it("toggles host format buttons", () => {
+    const handlers = createHandlers(state, elements, onWinner);
+    handlers.selectHostFormatExpanded();
+    expect(state.format).toBe("expanded");
+    handlers.selectHostFormatCore();
+    expect(state.format).toBe("core");
   });
 
   it("returns to choice overlay", () => {
@@ -359,6 +379,63 @@ describe("ui/handlers", () => {
 
     expect(global.navigator.clipboard.writeText).toHaveBeenCalledWith("ROOMX1");
     global.navigator = originalNavigator;
+  });
+
+  it("shows error when joining without room code", () => {
+    const sendSpy = vi.fn();
+    const handlers = createHandlers(state, elements, onWinner, {
+      clientFactory: () => ({
+        connect: vi.fn(),
+        send: sendSpy,
+      }),
+    });
+
+    elements.guestRoomCodeInput.value = "";
+    handlers.joinRoom();
+
+    expect(elements.hostStatus.textContent).toContain("Enter a room code");
+  });
+
+  it("shows room code when clipboard is unavailable", async () => {
+    const handlers = createHandlers(state, elements, onWinner);
+    elements.roomCodeInput.value = "ROOMX2";
+    const originalNavigator = global.navigator;
+    global.navigator = {};
+
+    await handlers.copyRoomCode();
+
+    expect(elements.hostStatus.textContent).toContain("Room code: ROOMX2");
+    global.navigator = originalNavigator;
+  });
+
+  it("shows error when copying without a code", async () => {
+    const handlers = createHandlers(state, elements, onWinner);
+    elements.roomCodeInput.value = "";
+    await handlers.copyRoomCode();
+    expect(elements.hostStatus.textContent).toContain("Create a room first");
+  });
+
+  it("blocks actions when not connected online", () => {
+    const handlers = createHandlers(state, elements, onWinner);
+    state.mode = "online";
+    state.online.role = "host";
+    state.players[0].hand = ["bronze"];
+
+    handlers.playCard(0);
+
+    expect(elements.hostStatus.textContent).toContain("Not connected to server");
+  });
+
+  it("uses cpu local player for trades", () => {
+    const cpuState = createInitialState({ mode: "cpu", format: "core", playerNames: ["You", "CPU"] });
+    cpuState.players[0].archive = ["bronze", "bronze", "bronze", "bronze", "bronze"];
+    cpuState.players[0].deck = ["silver"];
+    const localElements = makeElements();
+    const handlers = createHandlers(cpuState, localElements, onWinner);
+
+    handlers.trade("trade_bronze");
+
+    expect(cpuState.tradesThisTurn).toBe(1);
   });
 
   it("shows opponent trade and archive alerts", () => {
@@ -554,6 +631,36 @@ describe("ui/handlers", () => {
     expect(sent.action.payload.substituteType).toBe("bronze");
   });
 
+  it("opens gem tutor after wood substitution for gem trade", () => {
+    const expandedState = createInitialState({ mode: "offline", format: "expanded" });
+    const localElements = makeElements();
+    const handlers = createHandlers(expandedState, localElements, onWinner);
+    const player = expandedState.players[0];
+    player.archive = ["ruby", "emerald", "wood"];
+    player.deck = ["gold"];
+
+    handlers.trade("trade_gem_set");
+    const options = localElements.woodSubOptions.querySelectorAll("button");
+    options[0].click();
+    handlers.confirmWoodSubstitution();
+
+    expect(localElements.gemTutorOverlay.hidden).toBe(false);
+  });
+
+  it("cancels wood substitution overlay", () => {
+    const handlers = createHandlers(state, elements, onWinner);
+    elements.woodOverlay.hidden = false;
+    handlers.cancelWoodSubstitution();
+    expect(elements.woodOverlay.hidden).toBe(true);
+  });
+
+  it("cancels gem tutor overlay", () => {
+    const handlers = createHandlers(state, elements, onWinner);
+    elements.gemTutorOverlay.hidden = false;
+    handlers.cancelGemTutor();
+    expect(elements.gemTutorOverlay.hidden).toBe(true);
+  });
+
   it("hides no-wood option when base cost is not met", () => {
     const handlers = createHandlers(state, elements, onWinner);
     state.ruleset = expandedRuleset;
@@ -653,6 +760,72 @@ describe("ui/handlers", () => {
 
     expect(elements.cpuTurnOverlay.hidden).toBe(true);
     expect(renderApp).toHaveBeenCalled();
+  });
+
+  it("defers cpu winner until summary is closed", () => {
+    const winnerSpy = vi.fn();
+    const cpuState = createInitialState({ mode: "cpu", format: "expanded", playerNames: ["You", "CPU"] });
+    cpuState.cpu = { difficulty: "hard" };
+    cpuState.players[0].hand = ["bronze"];
+    cpuState.players[1].archive = [
+      "gold",
+      "gold",
+      "gold",
+      "gold",
+      "silver",
+      "silver",
+      "silver",
+      "silver",
+      "silver",
+    ];
+    cpuState.players[1].deck = ["gold"];
+    const localElements = makeElements();
+    const handlers = createHandlers(cpuState, localElements, winnerSpy);
+
+    handlers.playCard(0);
+    handlers.endTurn();
+    handlers.confirmArchive();
+
+    expect(localElements.cpuTurnOverlay.hidden).toBe(false);
+    expect(winnerSpy).not.toHaveBeenCalled();
+
+    handlers.closeCpuSummary();
+    expect(winnerSpy).toHaveBeenCalled();
+  });
+
+  it("resets online games by returning to mode select", () => {
+    const handlers = createHandlers(state, elements, onWinner);
+    state.mode = "online";
+    handlers.resetGame();
+    expect(elements.modeOverlay.hidden).toBe(false);
+  });
+
+  it("uses cpu winner flow without summary overlay", () => {
+    const minimalElements = makeElements();
+    minimalElements.cpuTurnOverlay = null;
+    const winnerSpy = vi.fn();
+    const localState = createInitialState({ mode: "cpu", format: "expanded", playerNames: ["You", "CPU"] });
+    localState.cpu = { difficulty: "hard" };
+    localState.players[0].hand = ["bronze"];
+    localState.players[1].archive = [
+      "gold",
+      "gold",
+      "gold",
+      "gold",
+      "silver",
+      "silver",
+      "silver",
+      "silver",
+      "silver",
+    ];
+    localState.players[1].deck = ["gold"];
+    const handlers = createHandlers(localState, minimalElements, winnerSpy);
+
+    handlers.playCard(0);
+    handlers.endTurn();
+    handlers.confirmArchive();
+
+    expect(winnerSpy).toHaveBeenCalled();
   });
 
   it("shows confirm overlay only for the active online player", () => {

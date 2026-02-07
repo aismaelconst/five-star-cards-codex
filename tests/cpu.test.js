@@ -81,7 +81,7 @@ describe("cpu", () => {
     expect(archiveCounts.wood ?? 0).toBe(0);
   });
 
-  it("hard picks gem set over bronze trade", () => {
+  it("hard uses gem set when bronze trade is unavailable", () => {
     const state = createInitialState({
       mode: "cpu",
       format: "expanded",
@@ -90,16 +90,7 @@ describe("cpu", () => {
     state.currentPlayer = 1;
     state.cpu = { difficulty: "hard" };
     const cpu = state.players[1];
-    cpu.archive = [
-      "ruby",
-      "emerald",
-      "sapphire",
-      "bronze",
-      "bronze",
-      "bronze",
-      "bronze",
-      "bronze",
-    ];
+    cpu.archive = ["ruby", "emerald", "sapphire", "bronze", "bronze", "bronze", "bronze"];
     cpu.deck = ["gold"];
 
     executeCpuTurn(state, { difficulty: "hard", cpuIndex: 1 });
@@ -183,5 +174,250 @@ describe("cpu", () => {
     const archiveCounts = countCards(cpu.archive, state.ruleset.displayOrder);
     expect(discardCounts.silver).toBe(5);
     expect(archiveCounts.gold).toBe(1);
+  });
+
+  it("hard always trades bronze to silver when possible", () => {
+    const state = createInitialState({
+      mode: "cpu",
+      format: "core",
+      playerNames: ["You", "CPU"],
+    });
+    state.currentPlayer = 1;
+    state.cpu = { difficulty: "hard" };
+    const cpu = state.players[1];
+    cpu.archive = ["bronze", "bronze", "bronze", "bronze", "bronze"];
+    cpu.deck = ["silver"];
+
+    executeCpuTurn(state, { difficulty: "hard", cpuIndex: 1 });
+
+    const discardCounts = countCards(cpu.discard, state.ruleset.displayOrder);
+    const archiveCounts = countCards(cpu.archive, state.ruleset.displayOrder);
+    expect(discardCounts.bronze).toBe(5);
+    expect(archiveCounts.silver).toBe(1);
+  });
+
+  it("hard uses wood substitution for gem trade when base is missing", () => {
+    const state = createInitialState({
+      mode: "cpu",
+      format: "expanded",
+      playerNames: ["You", "CPU"],
+    });
+    state.currentPlayer = 1;
+    state.cpu = { difficulty: "hard" };
+    const cpu = state.players[1];
+    cpu.archive = ["emerald", "sapphire", "wood"];
+    cpu.deck = ["gold"];
+
+    const summary = executeCpuTurn(state, { difficulty: "hard", cpuIndex: 1 });
+
+    expect(summary.trades[0].useWood).toBe(true);
+    expect(summary.trades[0].recipeId).toBe("trade_gem_set");
+  });
+
+  it("hard scores string reward trades in custom ruleset", () => {
+    const customRuleset = {
+      ...createInitialState().ruleset,
+      tradeRecipes: {
+        trade_custom: {
+          cost: { bronze: 2 },
+          reward: "silver",
+        },
+      },
+    };
+    const state = createInitialState({
+      mode: "cpu",
+      ruleset: customRuleset,
+      playerNames: ["You", "CPU"],
+    });
+    state.currentPlayer = 1;
+    state.cpu = { difficulty: "hard" };
+    const cpu = state.players[1];
+    cpu.archive = ["bronze", "bronze"];
+    cpu.deck = ["silver"];
+
+    executeCpuTurn(state, { difficulty: "hard", cpuIndex: 1 });
+
+    const discardCounts = countCards(cpu.discard, ["bronze", "silver"]);
+    expect(discardCounts.bronze).toBe(2);
+  });
+
+  it("hard tie-breaks by recipe id for equal scores", () => {
+    const customRuleset = {
+      ...createInitialState().ruleset,
+      tradeRecipes: {
+        trade_alpha: {
+          cost: { bronze: 2 },
+          reward: "silver",
+        },
+        trade_beta: {
+          cost: { bronze: 1, wood: 2 },
+          reward: "silver",
+        },
+      },
+      cardTypes: {
+        ...createInitialState().ruleset.cardTypes,
+        wood: { tier: "wood", draw: 0 },
+      },
+      deckCounts: {
+        bronze: 125,
+        silver: 25,
+        gold: 5,
+        wood: 5,
+      },
+      displayOrder: ["bronze", "silver", "gold", "wood"],
+      woodSubstitution: {
+        allow: true,
+        minCost: 3,
+        maxPerTrade: 1,
+      },
+    };
+    const state = createInitialState({
+      mode: "cpu",
+      ruleset: customRuleset,
+      playerNames: ["You", "CPU"],
+    });
+    state.currentPlayer = 1;
+    state.cpu = { difficulty: "hard" };
+    const cpu = state.players[1];
+    cpu.archive = ["bronze", "bronze", "wood", "wood"];
+    cpu.deck = ["silver"];
+
+    const summary = executeCpuTurn(state, { difficulty: "hard", cpuIndex: 1 });
+
+    expect(summary.trades[0].recipeId).toBe("trade_alpha");
+  });
+
+  it("hard tie-breaks to non-wood payload on equal score", () => {
+    const customRuleset = {
+      ...createInitialState().ruleset,
+      tradeRecipes: {
+        trade_wood: {
+          cost: { wood: 1, bronze: 1 },
+          reward: "silver",
+        },
+      },
+      cardTypes: {
+        ...createInitialState().ruleset.cardTypes,
+        wood: { tier: "wood", draw: 0 },
+      },
+      deckCounts: {
+        bronze: 125,
+        silver: 25,
+        gold: 5,
+        wood: 5,
+      },
+      displayOrder: ["bronze", "silver", "gold", "wood"],
+      woodSubstitution: {
+        allow: true,
+        minCost: 3,
+        maxPerTrade: 1,
+      },
+    };
+    const state = createInitialState({
+      mode: "cpu",
+      ruleset: customRuleset,
+      playerNames: ["You", "CPU"],
+    });
+    state.currentPlayer = 1;
+    state.cpu = { difficulty: "hard" };
+    const cpu = state.players[1];
+    cpu.archive = ["bronze", "wood"];
+    cpu.deck = ["silver"];
+
+    const summary = executeCpuTurn(state, { difficulty: "hard", cpuIndex: 1 });
+
+    expect(summary.trades[0].useWood).toBe(false);
+  });
+
+  it("hard tie-breaks by substitute type when scores match", () => {
+    const customRuleset = {
+      ...createInitialState({ format: "expanded" }).ruleset,
+      tradeRecipes: {
+        trade_gem: {
+          cost: { ruby: 1, emerald: 1, wood: 1 },
+          reward: "gold",
+        },
+      },
+    };
+    const state = createInitialState({
+      mode: "cpu",
+      ruleset: customRuleset,
+      playerNames: ["You", "CPU"],
+    });
+    state.currentPlayer = 1;
+    state.cpu = { difficulty: "hard" };
+    const cpu = state.players[1];
+    cpu.archive = ["ruby", "emerald", "wood", "wood"];
+    cpu.deck = ["gold"];
+
+    const summary = executeCpuTurn(state, { difficulty: "hard", cpuIndex: 1 });
+
+    expect(summary.trades[0].useWood).toBe(true);
+    expect(summary.trades[0].substituteType).toBe("emerald");
+  });
+
+  it("hard prefers platinum to complete a set", () => {
+    const state = createInitialState({
+      mode: "cpu",
+      format: "expanded",
+      playerNames: ["You", "CPU"],
+    });
+    state.currentPlayer = 1;
+    state.cpu = { difficulty: "hard" };
+    const cpu = state.players[1];
+    cpu.archive = ["bronze", "silver"];
+    cpu.hand = ["platinum", "bronze"];
+
+    const summary = executeCpuTurn(state, { difficulty: "hard", cpuIndex: 1 });
+
+    expect(summary.plays).toContain("platinum");
+  });
+
+  it("hard plays wood when only wood is available", () => {
+    const state = createInitialState({
+      mode: "cpu",
+      format: "expanded",
+      playerNames: ["You", "CPU"],
+    });
+    state.currentPlayer = 1;
+    state.cpu = { difficulty: "hard" };
+    const cpu = state.players[1];
+    cpu.hand = ["wood"];
+
+    const summary = executeCpuTurn(state, { difficulty: "hard", cpuIndex: 1 });
+
+    expect(summary.plays).toEqual(["wood"]);
+  });
+
+  it("hard tie-breaks play order deterministically", () => {
+    const state = createInitialState({
+      mode: "cpu",
+      format: "expanded",
+      playerNames: ["You", "CPU"],
+    });
+    state.currentPlayer = 1;
+    state.cpu = { difficulty: "hard" };
+    const cpu = state.players[1];
+    cpu.hand = ["ruby", "emerald"];
+
+    const summary = executeCpuTurn(state, { difficulty: "hard", cpuIndex: 1 });
+
+    expect(summary.plays[0]).toBe("emerald");
+    expect(summary.plays[1]).toBe("ruby");
+  });
+
+  it("starts cpu turn from between phase", () => {
+    const state = createInitialState({
+      mode: "cpu",
+      format: "core",
+      playerNames: ["You", "CPU"],
+    });
+    state.currentPlayer = 1;
+    state.phase = "between";
+    state.cpu = { difficulty: "hard" };
+
+    const summary = executeCpuTurn(state, { difficulty: "hard", cpuIndex: 1 });
+
+    expect(summary).toBeTruthy();
   });
 });

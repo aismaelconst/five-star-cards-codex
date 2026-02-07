@@ -643,11 +643,7 @@ export function createHandlers(state, elements, onWinner, options = {}) {
       cpuIndex: 1,
     });
     if (summary && summary.winnerIndex !== null && summary.winnerIndex !== undefined) {
-      if (elements.cpuTurnOverlay) {
-        pendingCpuWinner = summary.winnerIndex;
-      } else {
-        onWinner(summary.winnerIndex);
-      }
+      pendingCpuWinner = summary.winnerIndex;
     }
     if (state.phase === "between") {
       applyAction(state, { type: ActionTypes.START_TURN });
