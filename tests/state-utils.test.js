@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { createInitialState, createPlayerState } from "../src/game/state.js";
 import { createDeck, createCard } from "../src/game/cards.js";
-import { baseRuleset } from "../src/game/ruleset.js";
+import { baseRuleset, expandedRuleset } from "../src/game/ruleset.js";
 import { countCards, generateRoomCode, shuffle } from "../src/shared/utils.js";
 
 describe("state", () => {
@@ -24,6 +24,7 @@ describe("state", () => {
     expect(state.turnCount).toBe(1);
     expect(state.pendingArchive).toBe(null);
     expect(state.mode).toBe(null);
+    expect(state.format).toBe("core");
     expect(state.online).toEqual({
       roomId: null,
       role: null,
@@ -34,6 +35,12 @@ describe("state", () => {
     });
     expect(state.players[0].name).toBe("Player 1");
     expect(state.players[1].name).toBe("Player 2");
+  });
+
+  it("creates an expanded state with larger deck", () => {
+    const state = createInitialState({ format: "expanded" });
+    expect(state.format).toBe("expanded");
+    expect(state.players[0].deck.length).toBe(180);
   });
 });
 
@@ -59,6 +66,17 @@ describe("utils", () => {
     expect(counts.gold).toBe(5);
     expect(counts.silver).toBe(25);
     expect(counts.bronze).toBe(125);
+  });
+
+  it("createDeck builds expanded counts", () => {
+    const deck = createDeck(expandedRuleset);
+    const counts = countCards(deck, expandedRuleset.displayOrder);
+    expect(deck.length).toBe(180);
+    expect(counts.wood).toBe(5);
+    expect(counts.ruby).toBe(5);
+    expect(counts.emerald).toBe(5);
+    expect(counts.sapphire).toBe(5);
+    expect(counts.platinum).toBe(5);
   });
 
   it("countCards tallies correctly", () => {

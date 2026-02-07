@@ -1,6 +1,10 @@
 import { WebSocketServer } from "ws";
+import http from "http";
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
 import { createInitialState } from "../src/game/state.js";
-import { applyAction } from "../src/game/rules.js";
+import { applyAction, canTradeWithOptions } from "../src/game/rules.js";
 import { initializeOnlineGame } from "../src/game/online.js";
 import { normalizeOnlinePhase } from "../src/game/lifecycle.js";
 import {
@@ -11,16 +15,51 @@ import {
 import { countCards, generateId } from "../src/shared/utils.js";
 
 const PORT = process.env.PORT ? Number(process.env.PORT) : 8080;
-const wss = new WebSocketServer({ port: PORT });
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const rootDir = path.resolve(__dirname, "..");
+
+const server = http.createServer((req, res) => {
+  const urlPath = req.url ? req.url.split("?")[0] : "/";
+  const safePath = urlPath === "/" ? "/index.html" : urlPath;
+  const filePath = path.join(rootDir, safePath);
+  if (!filePath.startsWith(rootDir)) {
+    res.writeHead(403);
+    res.end("Forbidden");
+    return;
+  }
+  fs.readFile(filePath, (err, data) => {
+    if (err) {
+      res.writeHead(404);
+      res.end("Not found");
+      return;
+    }
+    const ext = path.extname(filePath);
+    const contentTypes = {
+      ".html": "text/html",
+      ".css": "text/css",
+      ".js": "application/javascript",
+      ".svg": "image/svg+xml",
+      ".png": "image/png",
+      ".jpg": "image/jpeg",
+      ".jpeg": "image/jpeg",
+      ".json": "application/json",
+    };
+    res.setHeader("Content-Type", contentTypes[ext] ?? "application/octet-stream");
+    res.end(data);
+  });
+});
+
+const wss = new WebSocketServer({ server });
 
 const rooms = new Map();
 
-function createRoom(hostName) {
+function createRoom(hostName, format = "core") {
   const roomId = generateId().slice(-6).toUpperCase();
   const hostId = generateId();
   const state = createInitialState({
     mode: "online",
     gameId: roomId,
+    format,
     playerIds: [hostId, `pending-${roomId}`],
     playerNames: [hostName, "Guest"],
   });
@@ -133,7 +172,9 @@ wss.on("connection", (ws) => {
     }
 
     if (message.type === "create_room") {
-      const { roomId, hostId } = createRoom(message.playerName ?? "Host");
+      const format =
+        message.format === "expanded" || message.format === "core" ? message.format : "core";
+      const { roomId, hostId } = createRoom(message.playerName ?? "Host", format);
       currentRoomId = roomId;
       currentPlayerId = hostId;
       const room = rooms.get(roomId);
@@ -226,16 +267,16 @@ wss.on("connection", (ws) => {
       }
       let lastEvent = null;
       if (message.action?.type === "TRADE") {
-        const tradeType = message.action.payload?.type;
-        const tradeUp = room.state.ruleset.cardTypes[tradeType]?.tradeUp;
-        if (tradeUp) {
-          lastEvent = {
-            type: "trade",
-            playerId,
-            from: tradeType,
-            to: tradeUp.to,
-            cost: tradeUp.cost,
-          };
+        const playerIndex = getPlayerIndexById(room.state, playerId);
+        if (playerIndex === -1) {
+          sendError(ws, "Invalid player.");
+          return;
+        }
+        const player = room.state.players[playerIndex];
+        const recipeId = message.action.payload?.recipeId;
+        if (!canTradeWithOptions(room.state, player, recipeId, message.action.payload ?? {})) {
+          sendError(ws, "Invalid trade.");
+          return;
         }
       }
       if (message.action?.type === "CONFIRM_ARCHIVE") {
@@ -249,8 +290,36 @@ wss.on("connection", (ws) => {
           };
         }
       }
-      applyAction(room.state, message.action);
+      const result = applyAction(room.state, message.action);
       normalizeOnlinePhase(room.state);
+      if (message.action?.type === "TRADE" && result?.event?.success) {
+        const recipeId = message.action.payload?.recipeId;
+        const recipe = room.state.ruleset.tradeRecipes?.[recipeId];
+        lastEvent = {
+          type: "trade",
+          playerId,
+          recipeId,
+          useWood: message.action.payload?.useWood ?? false,
+          substituteType: message.action.payload?.substituteType ?? null,
+          rewardType:
+            result.event.detail?.rewardType ?? message.action.payload?.rewardType ?? null,
+          digDiscardedCount: result.event.detail?.digDiscardedCount,
+        };
+        if (recipe) {
+          const costEntry = Object.entries(recipe.cost)[0];
+          if (costEntry) {
+            lastEvent.from = costEntry[0];
+            lastEvent.cost = costEntry[1];
+          }
+          if (
+            typeof recipe.reward === "string" &&
+            recipe.reward !== "any" &&
+            recipe.reward !== "dig_non_bronze_silver"
+          ) {
+            lastEvent.to = recipe.reward;
+          }
+        }
+      }
       room.lastEvent = lastEvent;
       broadcastState(message.roomId);
       if (room.state.winner !== null && room.state.winner !== undefined) {
@@ -280,4 +349,6 @@ wss.on("connection", (ws) => {
   });
 });
 
-console.log(`WebSocket server running on ws://localhost:${PORT}`);
+server.listen(PORT, () => {
+  console.log(`Server running on http://localhost:${PORT}`);
+});

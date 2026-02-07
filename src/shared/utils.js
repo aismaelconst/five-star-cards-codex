@@ -7,12 +7,23 @@ export function shuffle(array) {
   return copy;
 }
 
-export function countCards(cards) {
-  return {
-    bronze: cards.filter((card) => getCardType(card) === "bronze").length,
-    silver: cards.filter((card) => getCardType(card) === "silver").length,
-    gold: cards.filter((card) => getCardType(card) === "gold").length,
-  };
+export function countCards(cards, types = null) {
+  const counts = {};
+  if (Array.isArray(types)) {
+    types.forEach((type) => {
+      counts[type] = 0;
+    });
+  }
+  cards.forEach((card) => {
+    const type = getCardType(card);
+    counts[type] = (counts[type] ?? 0) + 1;
+  });
+  if (!types) {
+    ["bronze", "silver", "gold"].forEach((type) => {
+      if (counts[type] === undefined) counts[type] = 0;
+    });
+  }
+  return counts;
 }
 
 export function getCardType(card) {

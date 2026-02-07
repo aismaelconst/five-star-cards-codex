@@ -12,6 +12,10 @@ describe("ui/events", () => {
     const elements = {
       offlineMode: makeButton("offlineMode"),
       onlineMode: makeButton("onlineMode"),
+      formatCore: makeButton("formatCore"),
+      formatExpanded: makeButton("formatExpanded"),
+      hostFormatCore: makeButton("hostFormatCore"),
+      hostFormatExpanded: makeButton("hostFormatExpanded"),
       createRoom: makeButton("createRoom"),
       chooseCreate: makeButton("chooseCreate"),
       chooseJoin: makeButton("chooseJoin"),
@@ -23,6 +27,8 @@ describe("ui/events", () => {
       copyRoomCode: makeButton("copyRoomCode"),
       tradeBronze: makeButton("tradeBronze"),
       tradeSilver: makeButton("tradeSilver"),
+      tradeGems: makeButton("tradeGems"),
+      tradePlatinum: makeButton("tradePlatinum"),
       endTurn: makeButton("endTurn"),
       undoPlays: makeButton("undoPlays"),
       restartGame: makeButton("restartGame"),
@@ -30,11 +36,19 @@ describe("ui/events", () => {
       confirmArchive: makeButton("confirmArchive"),
       cancelArchive: makeButton("cancelArchive"),
       startTurn: makeButton("startTurn"),
+      woodConfirm: makeButton("woodConfirm"),
+      woodCancel: makeButton("woodCancel"),
+      gemTutorConfirm: makeButton("gemTutorConfirm"),
+      gemTutorCancel: makeButton("gemTutorCancel"),
     };
 
     const handlers = {
       selectOfflineMode: vi.fn(),
       selectOnlineMode: vi.fn(),
+      selectCoreFormat: vi.fn(),
+      selectExpandedFormat: vi.fn(),
+      selectHostFormatCore: vi.fn(),
+      selectHostFormatExpanded: vi.fn(),
       chooseCreate: vi.fn(),
       chooseJoin: vi.fn(),
       backToChoice: vi.fn(),
@@ -49,12 +63,20 @@ describe("ui/events", () => {
       confirmArchive: vi.fn(),
       cancelArchive: vi.fn(),
       startTurn: vi.fn(),
+      confirmWoodSubstitution: vi.fn(),
+      cancelWoodSubstitution: vi.fn(),
+      confirmGemTutor: vi.fn(),
+      cancelGemTutor: vi.fn(),
     };
 
     wireEvents(elements, handlers);
 
     elements.offlineMode.click();
     elements.onlineMode.click();
+    elements.formatCore.click();
+    elements.formatExpanded.click();
+    elements.hostFormatCore.click();
+    elements.hostFormatExpanded.click();
     elements.chooseCreate.click();
     elements.chooseJoin.click();
     elements.backToChoiceHost.click();
@@ -66,6 +88,8 @@ describe("ui/events", () => {
     elements.copyRoomCode.click();
     elements.tradeBronze.click();
     elements.tradeSilver.click();
+    elements.tradeGems.click();
+    elements.tradePlatinum.click();
     elements.endTurn.click();
     elements.undoPlays.click();
     elements.restartGame.click();
@@ -73,9 +97,17 @@ describe("ui/events", () => {
     elements.confirmArchive.click();
     elements.cancelArchive.click();
     elements.startTurn.click();
+    elements.woodConfirm.click();
+    elements.woodCancel.click();
+    elements.gemTutorConfirm.click();
+    elements.gemTutorCancel.click();
 
     expect(handlers.selectOfflineMode).toHaveBeenCalled();
     expect(handlers.selectOnlineMode).toHaveBeenCalled();
+    expect(handlers.selectCoreFormat).toHaveBeenCalled();
+    expect(handlers.selectExpandedFormat).toHaveBeenCalled();
+    expect(handlers.selectHostFormatCore).toHaveBeenCalled();
+    expect(handlers.selectHostFormatExpanded).toHaveBeenCalled();
     expect(handlers.chooseCreate).toHaveBeenCalled();
     expect(handlers.chooseJoin).toHaveBeenCalled();
     expect(handlers.backToChoice).toHaveBeenCalled();
@@ -83,13 +115,19 @@ describe("ui/events", () => {
     expect(handlers.joinRoom).toHaveBeenCalled();
     expect(handlers.readyUp).toHaveBeenCalled();
     expect(handlers.copyRoomCode).toHaveBeenCalled();
-    expect(handlers.trade).toHaveBeenCalledWith("bronze");
-    expect(handlers.trade).toHaveBeenCalledWith("silver");
+    expect(handlers.trade).toHaveBeenCalledWith("trade_bronze");
+    expect(handlers.trade).toHaveBeenCalledWith("trade_silver");
+    expect(handlers.trade).toHaveBeenCalledWith("trade_gem_set");
+    expect(handlers.trade).toHaveBeenCalledWith("trade_platinum");
     expect(handlers.endTurn).toHaveBeenCalled();
     expect(handlers.returnAllCards).toHaveBeenCalled();
     expect(handlers.resetGame).toHaveBeenCalledTimes(2);
     expect(handlers.confirmArchive).toHaveBeenCalled();
     expect(handlers.cancelArchive).toHaveBeenCalled();
     expect(handlers.startTurn).toHaveBeenCalled();
+    expect(handlers.confirmWoodSubstitution).toHaveBeenCalled();
+    expect(handlers.cancelWoodSubstitution).toHaveBeenCalled();
+    expect(handlers.confirmGemTutor).toHaveBeenCalled();
+    expect(handlers.cancelGemTutor).toHaveBeenCalled();
   });
 });

@@ -1,15 +1,32 @@
-import { ActionTypes, applyAction } from "../game/rules.js";
+import {
+  ActionTypes,
+  applyAction,
+  canInitiateTrade,
+  getWoodSubstitutionOptions,
+} from "../game/rules.js";
 import { renderApp, showConfirmOverlay, showTurnOverlay } from "./render.js";
 import { createInitialState } from "../game/state.js";
 import { createOnlineClient } from "../online/client.js";
 import { startGame } from "../game/lifecycle.js";
 import { isMyTurn } from "../game/multiplayer.js";
+import { countCards } from "../shared/utils.js";
 
 export function createHandlers(state, elements, onWinner, options = {}) {
-  const socketUrl = options.socketUrl ?? "ws://localhost:8080";
+  const socketUrl = options.socketUrl ?? resolveSocketUrl();
   const clientFactory = options.clientFactory ?? createOnlineClient;
   let onlineClient = null;
   let gameOverTimer = null;
+  let pendingTrade = null;
+  let pendingWoodChoice = null;
+  let pendingGemChoice = null;
+
+  function resolveSocketUrl() {
+    if (typeof window !== "undefined" && window.location) {
+      const protocol = window.location.protocol === "https:" ? "wss" : "ws";
+      return `${protocol}://${window.location.host}`;
+    }
+    return "ws://localhost:8080";
+  }
 
   function ensureOnlineClient() {
     try {
@@ -52,8 +69,10 @@ export function createHandlers(state, elements, onWinner, options = {}) {
     state.pendingArchive = payload.state.pendingArchive;
     state.gameId = payload.state.gameId;
     state.ruleset = payload.state.ruleset;
+    state.format = payload.state.format;
     state.online.roomId = payload.roomId ?? state.online.roomId;
     state.online.playerId = payload.playerId ?? state.online.playerId;
+    updateFormatButtons();
     renderApp(state, elements, handlers);
     if (state.mode !== "online" && state.winner !== null && state.winner !== undefined) {
       onWinner(state.winner);
@@ -73,14 +92,30 @@ export function createHandlers(state, elements, onWinner, options = {}) {
     if (!event) return;
     if (event.playerId === state.online.playerId) return;
     if (event.type === "trade") {
-      elements.opponentAlert.textContent = `Opponent traded ${event.cost} ${event.from} for 1 ${event.to}.`;
+      const woodNote =
+        event.useWood && event.substituteType
+          ? ` (wood replaced ${event.substituteType})`
+          : "";
+      if (event.recipeId === "trade_gem_set") {
+        const reward = event.rewardType ? ` for 1 ${event.rewardType}` : "";
+        elements.opponentAlert.textContent = `Opponent traded ruby, emerald, sapphire${reward}${woodNote}.`;
+        return;
+      }
+      if (event.recipeId === "trade_platinum") {
+        const discarded =
+          event.digDiscardedCount !== undefined
+            ? ` Discarded ${event.digDiscardedCount} bronze/silver.`
+            : "";
+        elements.opponentAlert.textContent = `Opponent used platinum to dig${woodNote}.${discarded}`;
+        return;
+      }
+      elements.opponentAlert.textContent = `Opponent traded ${event.cost} ${event.from} for 1 ${event.to}${woodNote}.`;
       return;
     }
     if (event.type === "archive") {
-      const parts = [];
-      if (event.counts.gold) parts.push(`${event.counts.gold} gold`);
-      if (event.counts.silver) parts.push(`${event.counts.silver} silver`);
-      if (event.counts.bronze) parts.push(`${event.counts.bronze} bronze`);
+      const parts = Object.entries(event.counts ?? {})
+        .filter(([, value]) => value)
+        .map(([type, value]) => `${value} ${type}`);
       const summary = parts.length ? parts.join(", ") : "no cards";
       elements.opponentAlert.textContent = `Opponent archived ${summary} (drew ${event.drawCount}).`;
     }
@@ -106,7 +141,8 @@ export function createHandlers(state, elements, onWinner, options = {}) {
       applyServerState(message);
       elements.roomCodeInput.value = message.roomId;
       elements.guestRoomCodeInput.value = message.roomId;
-      setStatus(`Connected to room ${message.roomId}.`);
+      const formatLabel = state.format === "expanded" ? "EXPANDED" : "CORE";
+      setStatus(`Connected to room ${message.roomId}. Format: ${formatLabel}.`);
       if (state.online.role === "host") {
         elements.readyButton.disabled = false;
       }
@@ -173,12 +209,21 @@ export function createHandlers(state, elements, onWinner, options = {}) {
     elements.onlineChoiceOverlay.hidden = true;
     elements.hostOverlay.hidden = true;
     elements.guestOverlay.hidden = true;
-    resetGame();
+    if (elements.formatOverlay) {
+      updateFormatButtons();
+      elements.formatOverlay.hidden = false;
+    } else {
+      startOfflineGame("core");
+    }
   }
 
   function selectOnlineMode() {
     state.mode = "online";
+    state.format = state.format ?? "core";
     elements.modeOverlay.hidden = true;
+    if (elements.formatOverlay) {
+      elements.formatOverlay.hidden = true;
+    }
     elements.onlineChoiceOverlay.hidden = false;
     elements.hostOverlay.hidden = true;
     elements.guestOverlay.hidden = true;
@@ -186,6 +231,48 @@ export function createHandlers(state, elements, onWinner, options = {}) {
     if (elements.guestStatus) elements.guestStatus.textContent = "";
     elements.readyButton.disabled = true;
     elements.readyButtonGuest.disabled = true;
+    updateFormatButtons();
+  }
+
+  function updateFormatButtons() {
+    const isCore = state.format !== "expanded";
+    const toggle = (el, active) => {
+      if (!el) return;
+      el.classList.toggle("active", active);
+      el.setAttribute("aria-pressed", active ? "true" : "false");
+    };
+    toggle(elements.formatCore, isCore);
+    toggle(elements.formatExpanded, !isCore);
+    toggle(elements.hostFormatCore, isCore);
+    toggle(elements.hostFormatExpanded, !isCore);
+  }
+
+  function startOfflineGame(format) {
+    state.mode = "offline";
+    state.format = format;
+    updateFormatButtons();
+    if (elements.formatOverlay) {
+      elements.formatOverlay.hidden = true;
+    }
+    resetGame();
+  }
+
+  function selectCoreFormat() {
+    startOfflineGame("core");
+  }
+
+  function selectExpandedFormat() {
+    startOfflineGame("expanded");
+  }
+
+  function selectHostFormatCore() {
+    state.format = "core";
+    updateFormatButtons();
+  }
+
+  function selectHostFormatExpanded() {
+    state.format = "expanded";
+    updateFormatButtons();
   }
 
   function chooseCreate() {
@@ -214,7 +301,7 @@ export function createHandlers(state, elements, onWinner, options = {}) {
 
   function createRoom() {
     state.mode = "online";
-    setStatus("Creating room...");
+    setStatus(`Creating room... Format: ${state.format === "expanded" ? "EXPANDED" : "CORE"}`);
     if (!ensureOnlineClient()) return;
     const playerName = elements.playerNameInput.value.trim() || "Host";
     state.online.role = "host";
@@ -222,7 +309,11 @@ export function createHandlers(state, elements, onWinner, options = {}) {
     state.online.playerName = playerName;
     elements.roomCodeInput.value = "";
     elements.readyButton.disabled = true;
-    onlineClient.send({ type: "create_room", playerName });
+    onlineClient.send({
+      type: "create_room",
+      playerName,
+      format: state.format ?? "core",
+    });
   }
 
   function joinRoom() {
@@ -294,12 +385,151 @@ export function createHandlers(state, elements, onWinner, options = {}) {
     return applyAction(state, action);
   }
 
-  function trade(type) {
-    const result = sendOrApply({ type: ActionTypes.TRADE, payload: { type } });
+  function getLocalPlayer() {
+    if (state.mode === "online" && state.online.playerId) {
+      return (
+        state.players.find((player) => player.id === state.online.playerId) ??
+        state.players[state.currentPlayer]
+      );
+    }
+    return state.players[state.currentPlayer];
+  }
+
+  function trade(recipeId) {
+    if (state.phase !== "main") return null;
+    const player = getLocalPlayer();
+    if (!canInitiateTrade(state, player, recipeId)) return null;
+    pendingTrade = {
+      recipeId,
+      useWood: false,
+      substituteType: null,
+      rewardType: null,
+    };
+    const woodOptions = getWoodSubstitutionOptions(state, player, recipeId);
+    if (woodOptions.length > 0 && elements.woodOverlay) {
+      openWoodOverlay(woodOptions);
+      return null;
+    }
+    const recipe = state.ruleset.tradeRecipes?.[recipeId];
+    if (recipe?.reward === "any" && elements.gemTutorOverlay) {
+      openGemTutorOverlay();
+      return null;
+    }
+    return finalizeTrade();
+  }
+
+  function finalizeTrade() {
+    if (!pendingTrade) return null;
+    const payload = {
+      recipeId: pendingTrade.recipeId,
+      useWood: pendingTrade.useWood,
+      substituteType: pendingTrade.substituteType,
+      rewardType: pendingTrade.rewardType,
+    };
+    const result = sendOrApply({ type: ActionTypes.TRADE, payload });
+    pendingTrade = null;
+    pendingWoodChoice = null;
+    pendingGemChoice = null;
     if (state.mode !== "online") {
       renderApp(state, elements, handlers);
     }
     return result;
+  }
+
+  function openWoodOverlay(options) {
+    if (!elements.woodSubOptions || !elements.woodOverlay) return;
+    pendingWoodChoice = null;
+    elements.woodSubOptions.innerHTML = "";
+    const allOptions = ["none", ...options];
+    allOptions.forEach((type) => {
+      const button = document.createElement("button");
+      button.className = "ghost option-button";
+      button.textContent = type === "none" ? "No wood" : `Replace ${type}`;
+      button.dataset.choice = type;
+      button.addEventListener("click", () => selectWoodChoice(type));
+      elements.woodSubOptions.appendChild(button);
+    });
+    if (elements.woodConfirm) elements.woodConfirm.disabled = true;
+    elements.woodOverlay.hidden = false;
+  }
+
+  function selectWoodChoice(choice) {
+    pendingWoodChoice = choice;
+    if (elements.woodSubOptions) {
+      Array.from(elements.woodSubOptions.children).forEach((child) => {
+        child.classList.toggle("active", child.dataset.choice === choice);
+      });
+    }
+    if (elements.woodConfirm) elements.woodConfirm.disabled = false;
+  }
+
+  function confirmWoodSubstitution() {
+    if (!pendingTrade) return;
+    if (pendingWoodChoice && pendingWoodChoice !== "none") {
+      pendingTrade.useWood = true;
+      pendingTrade.substituteType = pendingWoodChoice;
+    }
+    if (elements.woodOverlay) elements.woodOverlay.hidden = true;
+    pendingWoodChoice = null;
+    const recipe = state.ruleset.tradeRecipes?.[pendingTrade.recipeId];
+    if (recipe?.reward === "any" && elements.gemTutorOverlay) {
+      openGemTutorOverlay();
+      return;
+    }
+    finalizeTrade();
+  }
+
+  function cancelWoodSubstitution() {
+    pendingTrade = null;
+    pendingWoodChoice = null;
+    if (elements.woodOverlay) elements.woodOverlay.hidden = true;
+  }
+
+  function openGemTutorOverlay() {
+    if (!elements.gemTutorOptions || !elements.gemTutorOverlay) return;
+    const player = getLocalPlayer();
+    const displayOrder = state.ruleset.displayOrder ?? ["bronze", "silver", "gold"];
+    const deckCounts = countCards(player.deck, displayOrder);
+    pendingGemChoice = null;
+    elements.gemTutorOptions.innerHTML = "";
+    displayOrder.forEach((type) => {
+      const button = document.createElement("button");
+      button.className = "ghost option-button";
+      button.textContent = type;
+      button.dataset.choice = type;
+      if ((deckCounts[type] ?? 0) === 0) {
+        button.disabled = true;
+      } else {
+        button.addEventListener("click", () => selectGemChoice(type));
+      }
+      elements.gemTutorOptions.appendChild(button);
+    });
+    if (elements.gemTutorConfirm) elements.gemTutorConfirm.disabled = true;
+    elements.gemTutorOverlay.hidden = false;
+  }
+
+  function selectGemChoice(choice) {
+    pendingGemChoice = choice;
+    if (elements.gemTutorOptions) {
+      Array.from(elements.gemTutorOptions.children).forEach((child) => {
+        child.classList.toggle("active", child.dataset.choice === choice);
+      });
+    }
+    if (elements.gemTutorConfirm) elements.gemTutorConfirm.disabled = false;
+  }
+
+  function confirmGemTutor() {
+    if (!pendingTrade || !pendingGemChoice) return;
+    pendingTrade.rewardType = pendingGemChoice;
+    if (elements.gemTutorOverlay) elements.gemTutorOverlay.hidden = true;
+    pendingGemChoice = null;
+    finalizeTrade();
+  }
+
+  function cancelGemTutor() {
+    pendingTrade = null;
+    pendingGemChoice = null;
+    if (elements.gemTutorOverlay) elements.gemTutorOverlay.hidden = true;
   }
 
   function playCard(index) {
@@ -381,7 +611,13 @@ export function createHandlers(state, elements, onWinner, options = {}) {
       returnToModeSelect();
       return;
     }
-    const freshState = createInitialState({ mode: state.mode });
+    pendingTrade = null;
+    pendingWoodChoice = null;
+    pendingGemChoice = null;
+    const freshState = createInitialState({
+      mode: state.mode,
+      format: state.format ?? "core",
+    });
     state.players = freshState.players;
     state.currentPlayer = freshState.currentPlayer;
     state.tradesThisTurn = freshState.tradesThisTurn;
@@ -391,10 +627,13 @@ export function createHandlers(state, elements, onWinner, options = {}) {
     state.pendingArchive = freshState.pendingArchive;
     state.gameId = freshState.gameId;
     state.ruleset = freshState.ruleset;
+    state.format = freshState.format;
     state.online = freshState.online;
     elements.winnerPanel.hidden = true;
     elements.winnerOverlay.hidden = true;
     elements.confirmOverlay.hidden = true;
+    if (elements.woodOverlay) elements.woodOverlay.hidden = true;
+    if (elements.gemTutorOverlay) elements.gemTutorOverlay.hidden = true;
 
     startGame(state);
     renderApp(state, elements, handlers);
@@ -409,6 +648,9 @@ export function createHandlers(state, elements, onWinner, options = {}) {
       clearTimeout(gameOverTimer);
       gameOverTimer = null;
     }
+    pendingTrade = null;
+    pendingWoodChoice = null;
+    pendingGemChoice = null;
     const freshState = createInitialState();
     state.players = freshState.players;
     state.currentPlayer = freshState.currentPlayer;
@@ -426,10 +668,15 @@ export function createHandlers(state, elements, onWinner, options = {}) {
     elements.winnerOverlay.hidden = true;
     elements.confirmOverlay.hidden = true;
     elements.turnOverlay.hidden = true;
+    if (elements.woodOverlay) elements.woodOverlay.hidden = true;
+    if (elements.gemTutorOverlay) elements.gemTutorOverlay.hidden = true;
     elements.onlineChoiceOverlay.hidden = true;
     elements.hostOverlay.hidden = true;
     elements.guestOverlay.hidden = true;
     elements.modeOverlay.hidden = false;
+    if (elements.formatOverlay) {
+      elements.formatOverlay.hidden = true;
+    }
     if (elements.restartGameModal) {
       elements.restartGameModal.hidden = false;
     }
@@ -440,6 +687,10 @@ export function createHandlers(state, elements, onWinner, options = {}) {
     showModePicker,
     selectOfflineMode,
     selectOnlineMode,
+    selectCoreFormat,
+    selectExpandedFormat,
+    selectHostFormatCore,
+    selectHostFormatExpanded,
     createRoom,
     joinRoom,
     backToChoice,
@@ -456,6 +707,10 @@ export function createHandlers(state, elements, onWinner, options = {}) {
     confirmArchive: finalizeArchive,
     cancelArchive,
     resetGame,
+    confirmWoodSubstitution,
+    cancelWoodSubstitution,
+    confirmGemTutor,
+    cancelGemTutor,
     startTurn,
   };
 

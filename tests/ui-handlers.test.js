@@ -20,9 +20,14 @@ function makeElements() {
     confirmSummary: document.createElement("div"),
     confirmCards: document.createElement("div"),
     modeOverlay: document.createElement("div"),
+    formatOverlay: document.createElement("div"),
+    formatCore: document.createElement("button"),
+    formatExpanded: document.createElement("button"),
     onlineChoiceOverlay: document.createElement("div"),
     hostOverlay: document.createElement("div"),
     guestOverlay: document.createElement("div"),
+    hostFormatCore: document.createElement("button"),
+    hostFormatExpanded: document.createElement("button"),
     playerNameInput: Object.assign(document.createElement("input"), { value: "" }),
     roomCodeInput: Object.assign(document.createElement("input"), { value: "" }),
     guestNameInput: Object.assign(document.createElement("input"), { value: "" }),
@@ -37,6 +42,14 @@ function makeElements() {
     guestStatus: document.createElement("div"),
     copyRoomCode: document.createElement("button"),
     opponentAlert: document.createElement("div"),
+    woodOverlay: document.createElement("div"),
+    woodSubOptions: document.createElement("div"),
+    woodConfirm: document.createElement("button"),
+    woodCancel: document.createElement("button"),
+    gemTutorOverlay: document.createElement("div"),
+    gemTutorOptions: document.createElement("div"),
+    gemTutorConfirm: document.createElement("button"),
+    gemTutorCancel: document.createElement("button"),
   };
 }
 
@@ -101,7 +114,7 @@ describe("ui/handlers", () => {
     player.archive = Array.from({ length: 5 }, () => "bronze");
     player.deck = ["silver"];
 
-    handlers.trade("bronze");
+    handlers.trade("trade_bronze");
 
     expect(state.tradesThisTurn).toBe(1);
     expect(player.hand).toContain("silver");
@@ -160,6 +173,9 @@ describe("ui/handlers", () => {
 
     expect(state.mode).toBe("offline");
     expect(elements.modeOverlay.hidden).toBe(true);
+    expect(elements.formatOverlay.hidden).toBe(false);
+
+    handlers.selectCoreFormat();
     expect(state.turnCount).toBe(1);
   });
 
@@ -219,7 +235,11 @@ describe("ui/handlers", () => {
     expect(state.online.status).toBe("waiting");
     expect(elements.roomCodeInput.value).toBe("");
     expect(elements.hostStatus.textContent).toContain("Creating room");
-    expect(sendSpy).toHaveBeenCalledWith({ type: "create_room", playerName: "Hoster" });
+    expect(sendSpy).toHaveBeenCalledWith({
+      type: "create_room",
+      playerName: "Hoster",
+      format: "core",
+    });
     capturedOnMessage({
       type: "room_created",
       roomId: "ROOM42",
@@ -332,6 +352,70 @@ describe("ui/handlers", () => {
       state: createInitialState({ mode: "online" }),
     });
     expect(elements.opponentAlert.textContent).toContain("Opponent archived");
+  });
+
+  it("sends wood substitution trade payload", () => {
+    const sendSpy = vi.fn();
+    const expandedState = createInitialState({ mode: "online", format: "expanded" });
+    expandedState.online.role = "host";
+    expandedState.mode = "online";
+    const player = expandedState.players[0];
+    player.archive = ["bronze", "bronze", "bronze", "bronze", "wood"];
+    player.deck = ["silver"];
+
+    const handlers = createHandlers(expandedState, elements, onWinner, {
+      clientFactory: () => ({
+        connect: vi.fn(),
+        send: sendSpy,
+      }),
+    });
+
+    handlers.createRoom();
+    expandedState.online.roomId = "ROOM";
+    expandedState.online.playerId = expandedState.players[0].id;
+
+    handlers.trade("trade_bronze");
+    const options = elements.woodSubOptions.querySelectorAll("button");
+    options[1].click();
+    handlers.confirmWoodSubstitution();
+
+    const sent = sendSpy.mock.calls[sendSpy.mock.calls.length - 1][0];
+    expect(sent.type).toBe("action");
+    expect(sent.action.payload.recipeId).toBe("trade_bronze");
+    expect(sent.action.payload.useWood).toBe(true);
+    expect(sent.action.payload.substituteType).toBe("bronze");
+  });
+
+  it("sends gem tutor trade payload", () => {
+    const sendSpy = vi.fn();
+    const expandedState = createInitialState({ mode: "online", format: "expanded" });
+    expandedState.online.role = "host";
+    expandedState.mode = "online";
+    const player = expandedState.players[0];
+    player.archive = ["ruby", "emerald", "sapphire"];
+    player.deck = ["gold"];
+
+    const handlers = createHandlers(expandedState, elements, onWinner, {
+      clientFactory: () => ({
+        connect: vi.fn(),
+        send: sendSpy,
+      }),
+    });
+
+    handlers.createRoom();
+    expandedState.online.roomId = "ROOM";
+    expandedState.online.playerId = expandedState.players[0].id;
+
+    handlers.trade("trade_gem_set");
+    const options = Array.from(elements.gemTutorOptions.querySelectorAll("button"));
+    const goldButton = options.find((button) => button.dataset.choice === "gold");
+    goldButton.click();
+    handlers.confirmGemTutor();
+
+    const sent = sendSpy.mock.calls[sendSpy.mock.calls.length - 1][0];
+    expect(sent.type).toBe("action");
+    expect(sent.action.payload.recipeId).toBe("trade_gem_set");
+    expect(sent.action.payload.rewardType).toBe("gold");
   });
 
   it("returns to mode selection on game over in online mode", () => {

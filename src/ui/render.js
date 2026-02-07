@@ -1,5 +1,5 @@
 import { countCards, getCardType } from "../shared/utils.js";
-import { canTrade, getCurrentPlayer } from "../game/rules.js";
+import { canInitiateTrade, getCurrentPlayer } from "../game/rules.js";
 import { isMyTurn } from "../game/multiplayer.js";
 
 function renderCards(container, cards, clickHandler) {
@@ -18,14 +18,15 @@ function renderCards(container, cards, clickHandler) {
 }
 
 function renderHand(state, player, elements, handlers) {
+  const displayOrder = state.ruleset.displayOrder ?? ["bronze", "silver", "gold"];
   if (player.hand.length <= 10) {
     renderCards(elements.handCards, player.hand, handlers.playCard);
     return;
   }
 
   elements.handCards.innerHTML = "";
-  const counts = countCards(player.hand);
-  ["gold", "silver", "bronze"].forEach((type) => {
+  const counts = countCards(player.hand, displayOrder);
+  displayOrder.forEach((type) => {
     if (counts[type] === 0) return;
     const el = document.createElement("div");
     el.className = `card ${type} pile`;
@@ -48,18 +49,35 @@ export function renderApp(state, elements, handlers) {
     state.players.find((p) => p.id !== player.id) ??
     state.players[state.currentPlayer === 0 ? 1 : 0];
 
-  const handCounts = countCards(player.hand);
-  const archiveCounts = countCards(player.archive);
-  const opponentArchive = countCards(opponent.archive);
+  const displayOrder = state.ruleset.displayOrder ?? ["bronze", "silver", "gold"];
+  const primaryTypes = displayOrder.slice(0, 3);
+  const secondaryTypes = displayOrder.slice(3);
+  const handCounts = countCards(player.hand, displayOrder);
+  const archiveCounts = countCards(player.archive, displayOrder);
+  const opponentArchive = countCards(opponent.archive, displayOrder);
   const opponentHandTotal = opponent.hand.length;
+  const opponentArchiveTotal = opponent.archive.length;
 
   const currentName = state.players[state.currentPlayer]?.name ?? `Player ${state.currentPlayer + 1}`;
   elements.turnIndicator.textContent = `${currentName}'s Turn`;
   elements.turnCounter.textContent = `Turn ${state.turnCount}`;
-  elements.opponentSummary.textContent = `Opponent Archive — Bronze ${opponentArchive.bronze} / Silver ${opponentArchive.silver} / Gold ${opponentArchive.gold} · Hand ${opponentHandTotal}`;
+  elements.opponentSummary.textContent = `Opponent Archive — Gold ${opponentArchive.gold ?? 0} · Archive ${opponentArchiveTotal} · Hand ${opponentHandTotal}`;
 
-  elements.archiveCounts.textContent = `Bronze ${archiveCounts.bronze} · Silver ${archiveCounts.silver} · Gold ${archiveCounts.gold}`;
-  elements.handCounts.textContent = `Bronze ${handCounts.bronze} · Silver ${handCounts.silver} · Gold ${handCounts.gold}`;
+  const buildLine = (types, counts) =>
+    types
+      .map((type) => `${type.charAt(0).toUpperCase() + type.slice(1)} ${counts[type] ?? 0}`)
+      .join(" · ");
+  const primaryArchive = buildLine(primaryTypes, archiveCounts);
+  const primaryHand = buildLine(primaryTypes, handCounts);
+  if (secondaryTypes.length > 0) {
+    const secondaryArchive = buildLine(secondaryTypes, archiveCounts);
+    const secondaryHand = buildLine(secondaryTypes, handCounts);
+    elements.archiveCounts.innerHTML = `<div class="count-line">${primaryArchive}</div><div class="count-line">${secondaryArchive}</div>`;
+    elements.handCounts.innerHTML = `<div class="count-line">${primaryHand}</div><div class="count-line">${secondaryHand}</div>`;
+  } else {
+    elements.archiveCounts.textContent = primaryArchive;
+    elements.handCounts.textContent = primaryHand;
+  }
 
   elements.deckInfo.textContent = `Deck: ${player.deck.length} cards`;
   elements.discardInfo.textContent = `Discard: ${player.discard.length} cards`;
@@ -82,7 +100,7 @@ export function renderApp(state, elements, handlers) {
   );
 
   elements.archivePile.innerHTML = "";
-  ["bronze", "silver", "gold"].forEach((type) => {
+  displayOrder.forEach((type) => {
     const badge = document.createElement("div");
     badge.className = `chip ${type}`;
     badge.textContent = `${type} x ${archiveCounts[type]}`;
@@ -91,9 +109,25 @@ export function renderApp(state, elements, handlers) {
 
   const inMainPhase = state.phase === "main";
   elements.tradeBronze.disabled =
-    !inMainPhase || !onlineTurnGate || !canTrade(state, player, "bronze");
+    !inMainPhase || !onlineTurnGate || !canInitiateTrade(state, player, "trade_bronze");
   elements.tradeSilver.disabled =
-    !inMainPhase || !onlineTurnGate || !canTrade(state, player, "silver");
+    !inMainPhase || !onlineTurnGate || !canInitiateTrade(state, player, "trade_silver");
+  if (elements.tradeGems) {
+    elements.tradeGems.hidden = state.format !== "expanded";
+    elements.tradeGems.disabled =
+      state.format !== "expanded" ||
+      !inMainPhase ||
+      !onlineTurnGate ||
+      !canInitiateTrade(state, player, "trade_gem_set");
+  }
+  if (elements.tradePlatinum) {
+    elements.tradePlatinum.hidden = state.format !== "expanded";
+    elements.tradePlatinum.disabled =
+      state.format !== "expanded" ||
+      !inMainPhase ||
+      !onlineTurnGate ||
+      !canInitiateTrade(state, player, "trade_platinum");
+  }
   elements.endTurn.disabled = state.phase !== "main" || !onlineTurnGate;
   elements.undoPlays.disabled = !inMainPhase || !onlineTurnGate || player.active.length === 0;
 }
@@ -106,10 +140,11 @@ export function showTurnOverlay(state, elements) {
 export function showConfirmOverlay(state, elements) {
   const pending = state.pendingArchive;
   if (!pending) return;
-  const counts = countCards(pending.playedCards);
+  const displayOrder = state.ruleset.displayOrder ?? ["bronze", "silver", "gold"];
+  const counts = countCards(pending.playedCards, displayOrder);
   elements.confirmSummary.textContent = `Archive ${pending.playedCards.length} card(s) and draw ${pending.drawCount} card(s).`;
   elements.confirmCards.innerHTML = "";
-  ["bronze", "silver", "gold"].forEach((type) => {
+  displayOrder.forEach((type) => {
     if (counts[type] === 0) return;
     const badge = document.createElement("div");
     badge.className = `chip ${type}`;

@@ -140,6 +140,31 @@ h3 {
   color: #6a4d02;
 }
 
+.chip.wood {
+  background: rgba(122, 91, 58, 0.2);
+  color: #563c24;
+}
+
+.chip.ruby {
+  background: rgba(148, 36, 55, 0.2);
+  color: #7d1f30;
+}
+
+.chip.emerald {
+  background: rgba(30, 110, 72, 0.2);
+  color: #1b5c3c;
+}
+
+.chip.sapphire {
+  background: rgba(31, 78, 147, 0.2);
+  color: #1c4c8c;
+}
+
+.chip.platinum {
+  background: rgba(158, 165, 175, 0.2);
+  color: #515b66;
+}
+
 .play {
   display: flex;
   flex-direction: column;
@@ -177,6 +202,10 @@ h3 {
 .counts {
   font-size: 0.9rem;
   color: var(--ink-2);
+}
+
+.count-line + .count-line {
+  margin-top: 6px;
 }
 
 .pile {
@@ -271,6 +300,31 @@ h3 {
   background-image: url(/assets/cards/gold-star.svg);
 }
 
+.card.wood {
+  border-color: rgba(122, 91, 58, 0.5);
+  background-image: url(/assets/cards/wood-star.svg);
+}
+
+.card.ruby {
+  border-color: rgba(148, 36, 55, 0.6);
+  background-image: url(/assets/cards/ruby-star.svg);
+}
+
+.card.emerald {
+  border-color: rgba(30, 110, 72, 0.6);
+  background-image: url(/assets/cards/emerald-star.svg);
+}
+
+.card.sapphire {
+  border-color: rgba(31, 78, 147, 0.6);
+  background-image: url(/assets/cards/sapphire-star.svg);
+}
+
+.card.platinum {
+  border-color: rgba(158, 165, 175, 0.6);
+  background-image: url(/assets/cards/platinum-star.svg);
+}
+
 .actions-panel {
   display: flex;
   flex-direction: column;
@@ -289,6 +343,29 @@ h3 {
 .trade-buttons {
   display: grid;
   gap: 10px;
+}
+
+.toggle-group {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.toggle-group .active {
+  border: 1px solid rgba(31, 27, 22, 0.25);
+  background: #fff2d6;
+  color: var(--ink-1);
+}
+
+.option-button {
+  width: 100%;
+  text-transform: capitalize;
+}
+
+.option-button.active {
+  border: 1px solid rgba(31, 27, 22, 0.25);
+  background: #fff2d6;
+  color: var(--ink-1);
 }
 
 button {

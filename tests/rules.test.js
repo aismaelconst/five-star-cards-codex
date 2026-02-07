@@ -1,10 +1,11 @@
 import { describe, it, expect } from "vitest";
-import { baseRuleset } from "../src/game/ruleset.js";
+import { baseRuleset, expandedRuleset } from "../src/game/ruleset.js";
 import { createCard } from "../src/game/cards.js";
 import {
   ActionTypes,
   applyAction,
   canTrade,
+  canTradeWithOptions,
   finalizeArchive,
   performTrade,
   playCard,
@@ -39,6 +40,36 @@ function makeState() {
       },
     ],
     ruleset: baseRuleset,
+    format: "core",
+    currentPlayer: 0,
+    tradesThisTurn: 0,
+    phase: "main",
+    winner: null,
+    turnCount: 1,
+    pendingArchive: null,
+  };
+}
+
+function makeExpandedState() {
+  return {
+    players: [
+      {
+        deck: [],
+        hand: [],
+        active: [],
+        archive: [],
+        discard: [],
+      },
+      {
+        deck: [],
+        hand: [],
+        active: [],
+        archive: [],
+        discard: [],
+      },
+    ],
+    ruleset: expandedRuleset,
+    format: "expanded",
     currentPlayer: 0,
     tradesThisTurn: 0,
     phase: "main",
@@ -97,8 +128,8 @@ describe("rules", () => {
     const player = current(state);
     player.archive = Array.from({ length: 5 }, () => createCard("bronze", baseRuleset));
 
-    expect(canTrade(state, player, "bronze")).toBe(true);
-    expect(performTrade(state, player, "bronze")).toBe(true);
+    expect(canTrade(state, player, "trade_bronze")).toBe(true);
+    expect(performTrade(state, player, "trade_bronze").success).toBe(true);
     expect(state.tradesThisTurn).toBe(1);
     expect(player.discard.length).toBe(5);
     expect(player.hand.some((card) => card.type === "silver")).toBe(true);
@@ -111,9 +142,115 @@ describe("rules", () => {
     player.deck = Array.from({ length: 6 }, () => createCard("silver", baseRuleset));
 
     for (let i = 0; i < baseRuleset.maxTrades; i += 1) {
-      expect(performTrade(state, player, "bronze")).toBe(true);
+      expect(performTrade(state, player, "trade_bronze").success).toBe(true);
     }
-    expect(canTrade(state, player, "bronze")).toBe(false);
+    expect(canTrade(state, player, "trade_bronze")).toBe(false);
+  });
+
+  it("allows wood substitution for bronze trade", () => {
+    const state = makeExpandedState();
+    const player = current(state);
+    player.archive = [
+      createCard("bronze", expandedRuleset),
+      createCard("bronze", expandedRuleset),
+      createCard("bronze", expandedRuleset),
+      createCard("bronze", expandedRuleset),
+      createCard("wood", expandedRuleset),
+    ];
+    player.deck = [createCard("silver", expandedRuleset)];
+
+    expect(
+      canTradeWithOptions(state, player, "trade_bronze", {
+        useWood: true,
+        substituteType: "bronze",
+      })
+    ).toBe(true);
+    const result = performTrade(state, player, "trade_bronze", {
+      useWood: true,
+      substituteType: "bronze",
+    });
+    expect(result.success).toBe(true);
+    expect(player.hand.some((card) => card.type === "silver")).toBe(true);
+  });
+
+  it("allows wood substitution for gem trade with tutor", () => {
+    const state = makeExpandedState();
+    const player = current(state);
+    player.archive = [
+      createCard("ruby", expandedRuleset),
+      createCard("sapphire", expandedRuleset),
+      createCard("wood", expandedRuleset),
+    ];
+    player.deck = [createCard("gold", expandedRuleset)];
+
+    const result = performTrade(state, player, "trade_gem_set", {
+      useWood: true,
+      substituteType: "emerald",
+      rewardType: "gold",
+    });
+    expect(result.success).toBe(true);
+    expect(player.hand.some((card) => card.type === "gold")).toBe(true);
+  });
+
+  it("allows wood substitution for platinum trade and digs", () => {
+    const state = makeExpandedState();
+    const player = current(state);
+    player.archive = [
+      createCard("platinum", expandedRuleset),
+      createCard("bronze", expandedRuleset),
+      createCard("wood", expandedRuleset),
+    ];
+    player.deck = [
+      createCard("gold", expandedRuleset),
+      createCard("silver", expandedRuleset),
+      createCard("bronze", expandedRuleset),
+    ];
+
+    const result = performTrade(state, player, "trade_platinum", {
+      useWood: true,
+      substituteType: "silver",
+    });
+    expect(result.success).toBe(true);
+    expect(player.hand.some((card) => card.type === "gold")).toBe(true);
+    expect(result.detail.digDiscardedCount).toBe(2);
+  });
+
+  it("does not allow wood substitution without wood", () => {
+    const state = makeExpandedState();
+    const player = current(state);
+    player.archive = [
+      createCard("bronze", expandedRuleset),
+      createCard("bronze", expandedRuleset),
+      createCard("bronze", expandedRuleset),
+      createCard("bronze", expandedRuleset),
+    ];
+    player.deck = [createCard("silver", expandedRuleset)];
+
+    expect(
+      canTradeWithOptions(state, player, "trade_bronze", {
+        useWood: true,
+        substituteType: "bronze",
+      })
+    ).toBe(false);
+  });
+
+  it("platinum dig can yield no reward when only bronze/silver", () => {
+    const state = makeExpandedState();
+    const player = current(state);
+    player.archive = [
+      createCard("platinum", expandedRuleset),
+      createCard("bronze", expandedRuleset),
+      createCard("silver", expandedRuleset),
+    ];
+    player.deck = [
+      createCard("silver", expandedRuleset),
+      createCard("bronze", expandedRuleset),
+    ];
+
+    const result = performTrade(state, player, "trade_platinum");
+    expect(result.success).toBe(true);
+    expect(player.hand.length).toBe(0);
+    expect(result.detail.digDiscardedCount).toBe(2);
   });
 
   it("prepareArchive creates pending archive and draw count", () => {

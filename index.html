@@ -39,6 +39,8 @@
               <div class="trade-buttons">
                 <button id="tradeBronze">Trade 5 Bronze → 1 Silver</button>
                 <button id="tradeSilver">Trade 5 Silver → 1 Gold</button>
+                <button id="tradeGems">Trade Gems → Tutor</button>
+                <button id="tradePlatinum">Trade Platinum → Dig</button>
               </div>
               <div class="trade-info" id="tradeInfo"></div>
             </div>
@@ -121,6 +123,17 @@
       </div>
     </div>
 
+    <div class="overlay mode-overlay" id="formatOverlay" hidden>
+      <div class="overlay-card">
+        <h2>Choose Format</h2>
+        <p>Pick the card pool for this game.</p>
+        <div class="confirm-actions">
+          <button class="primary" id="formatCore">CORE</button>
+          <button class="ghost" id="formatExpanded">EXPANDED (Alpha)</button>
+        </div>
+      </div>
+    </div>
+
     <div class="overlay mode-overlay" id="onlineChoiceOverlay" hidden>
       <div class="overlay-card">
         <h2>Online Lobby</h2>
@@ -139,6 +152,13 @@
         <label class="field">
           <span>Your Name</span>
           <input id="playerNameInput" type="text" placeholder="Host name" />
+        </label>
+        <label class="field">
+          <span>Format</span>
+          <div class="toggle-group">
+            <button class="ghost" id="hostFormatCore" type="button">CORE</button>
+            <button class="ghost" id="hostFormatExpanded" type="button">EXPANDED</button>
+          </div>
         </label>
         <label class="field">
           <span>Room Code</span>
@@ -183,6 +203,30 @@
         <div class="confirm-actions">
           <button class="ghost" id="cancelArchive">Go Back</button>
           <button class="primary" id="confirmArchive">Archive & End Turn</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="overlay confirm-overlay" id="woodOverlay" hidden>
+      <div class="overlay-card">
+        <h2>Wood Substitution</h2>
+        <p>Choose whether to replace one required card with wood.</p>
+        <div class="confirm-cards" id="woodSubOptions"></div>
+        <div class="confirm-actions">
+          <button class="ghost" id="woodCancel">Cancel</button>
+          <button class="primary" id="woodConfirm">Confirm</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="overlay confirm-overlay" id="gemTutorOverlay" hidden>
+      <div class="overlay-card">
+        <h2>Gem Tutor</h2>
+        <p>Select any card type from your deck.</p>
+        <div class="confirm-cards" id="gemTutorOptions"></div>
+        <div class="confirm-actions">
+          <button class="ghost" id="gemTutorCancel">Cancel</button>
+          <button class="primary" id="gemTutorConfirm">Confirm</button>
         </div>
       </div>
     </div>

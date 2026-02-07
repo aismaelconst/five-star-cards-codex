@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
 import { renderApp, showConfirmOverlay, showTurnOverlay } from "../src/ui/render.js";
-import { baseRuleset } from "../src/game/ruleset.js";
+import { baseRuleset, expandedRuleset } from "../src/game/ruleset.js";
 
 function makeElements() {
   const ids = [
@@ -55,6 +55,7 @@ function makeState() {
       { deck: [], hand: [], active: [], archive: [], discard: [] },
     ],
     ruleset: baseRuleset,
+    format: "core",
     currentPlayer: 0,
     tradesThisTurn: 0,
     phase: "main",
@@ -80,9 +81,49 @@ describe("ui/render", () => {
     expect(elements.turnCounter.textContent).toContain("Turn 2");
     expect(elements.deckInfo.textContent).toContain("Deck:");
     expect(elements.tradeInfo.textContent).toContain("Trades used");
-    expect(elements.opponentSummary.textContent).toContain("Hand");
+    expect(elements.opponentSummary.textContent).toContain("Gold");
     const card = elements.handCards.querySelector(".card");
     expect(card.dataset.cardType).toBeTruthy();
+  });
+
+  it("renders expanded counts with secondary line", () => {
+    const state = makeState();
+    const elements = makeElements();
+    const handlers = {
+      playCard: vi.fn(),
+      playCardByType: vi.fn(),
+      returnCard: vi.fn(),
+    };
+    state.ruleset = expandedRuleset;
+    state.format = "expanded";
+    state.players[0].hand = ["wood", "ruby", "bronze"];
+    state.players[0].archive = ["platinum", "gold"];
+
+    renderApp(state, elements, handlers);
+
+    expect(elements.handCounts.innerHTML).toContain("Wood");
+    expect(elements.archiveCounts.innerHTML).toContain("Platinum");
+  });
+
+  it("renders expanded hand piles by type", () => {
+    const state = makeState();
+    const elements = makeElements();
+    const handlers = {
+      playCard: vi.fn(),
+      playCardByType: vi.fn(),
+      returnCard: vi.fn(),
+    };
+    state.ruleset = expandedRuleset;
+    state.format = "expanded";
+    state.players[0].hand = [
+      ...Array.from({ length: 10 }, () => "bronze"),
+      "ruby",
+    ];
+
+    renderApp(state, elements, handlers);
+
+    const rubyPile = elements.handCards.querySelector(".card.ruby.pile");
+    expect(rubyPile).not.toBeNull();
   });
 
   it("disables actions when not your turn online", () => {
