@@ -541,6 +541,28 @@ button:not(:disabled):hover {
   display: none;
 }
 
+.action-toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 12;
+  max-width: 320px;
+  padding: 14px 18px;
+  border-radius: 16px;
+  background: rgba(255, 248, 235, 0.96);
+  color: var(--ink);
+  box-shadow: var(--shadow);
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 200ms ease, transform 200ms ease;
+  pointer-events: none;
+}
+
+.action-toast.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
 @keyframes floatIn {
   from {
     opacity: 0;

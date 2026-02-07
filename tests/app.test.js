@@ -71,6 +71,8 @@ function setupDom() {
     <div id="gemTutorOptions"></div>
     <button id="gemTutorConfirm"></button>
     <button id="gemTutorCancel"></button>
+    <div id="actionToast"></div>
+    <div id="actionToastText"></div>
   `;
 }
 

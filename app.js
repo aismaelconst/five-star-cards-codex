@@ -75,6 +75,8 @@ const elements = {
   gemTutorOptions: document.getElementById("gemTutorOptions"),
   gemTutorConfirm: document.getElementById("gemTutorConfirm"),
   gemTutorCancel: document.getElementById("gemTutorCancel"),
+  actionToast: document.getElementById("actionToast"),
+  actionToastText: document.getElementById("actionToastText"),
 };
 
 function declareWinner(playerIndex) {

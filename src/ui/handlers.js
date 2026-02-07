@@ -16,6 +16,7 @@ export function createHandlers(state, elements, onWinner, options = {}) {
   const clientFactory = options.clientFactory ?? createOnlineClient;
   let onlineClient = null;
   let gameOverTimer = null;
+  let toastTimer = null;
   let pendingTrade = null;
   let pendingWoodChoice = null;
   let pendingGemChoice = null;
@@ -86,6 +87,41 @@ export function createHandlers(state, elements, onWinner, options = {}) {
     elements.debugInfo.textContent = `${message.type} | phase: ${state.phase} | turn: ${currentName} | winner: ${state.winner ?? "none"}`;
   }
 
+  function hideActionToast() {
+    if (!elements.actionToast) return;
+    elements.actionToast.classList.remove("visible");
+    elements.actionToast.hidden = true;
+    if (toastTimer) {
+      clearTimeout(toastTimer);
+      toastTimer = null;
+    }
+  }
+
+  function showActionToast(message) {
+    if (!elements.actionToast || !elements.actionToastText) return;
+    if (toastTimer) {
+      clearTimeout(toastTimer);
+    }
+    elements.actionToastText.textContent = message;
+    elements.actionToast.hidden = false;
+    elements.actionToast.classList.add("visible");
+    toastTimer = setTimeout(() => {
+      hideActionToast();
+    }, 2000);
+  }
+
+  function formatPlatinumMessage(prefix, event) {
+    const woodNote =
+      event.useWood && event.substituteType
+        ? ` (wood replaced ${event.substituteType})`
+        : "";
+    const discardedCount =
+      typeof event.digDiscardedCount === "number" ? event.digDiscardedCount : 0;
+    const discarded = ` Discarded ${discardedCount} bronze/silver.`;
+    const reward = event.rewardType ? ` Found ${event.rewardType}.` : " Deck exhausted.";
+    return `${prefix}${woodNote}.${discarded}${reward}`;
+  }
+
   function handleOpponentEvent(message) {
     if (!elements.opponentAlert) return;
     const event = message.lastEvent;
@@ -102,11 +138,10 @@ export function createHandlers(state, elements, onWinner, options = {}) {
         return;
       }
       if (event.recipeId === "trade_platinum") {
-        const discarded =
-          event.digDiscardedCount !== undefined
-            ? ` Discarded ${event.digDiscardedCount} bronze/silver.`
-            : "";
-        elements.opponentAlert.textContent = `Opponent used platinum to dig${woodNote}.${discarded}`;
+        elements.opponentAlert.textContent = formatPlatinumMessage(
+          "Opponent used platinum to dig",
+          event
+        );
         return;
       }
       elements.opponentAlert.textContent = `Opponent traded ${event.cost} ${event.from} for 1 ${event.to}${woodNote}.`;
@@ -121,8 +156,17 @@ export function createHandlers(state, elements, onWinner, options = {}) {
     }
   }
 
+  function handleSelfPlatinumToast(message) {
+    const event = message.lastEvent;
+    if (!event || event.type !== "trade" || event.recipeId !== "trade_platinum") return;
+    const selfId = message.playerId ?? state.online.playerId;
+    if (!selfId || event.playerId !== selfId) return;
+    showActionToast(formatPlatinumMessage("Platinum dig", event));
+  }
+
   function handleServerMessage(message) {
     updateDebug(message);
+    handleSelfPlatinumToast(message);
     handleOpponentEvent(message);
     if (message.type === "state_update") {
       applyServerState(message);
@@ -436,6 +480,20 @@ export function createHandlers(state, elements, onWinner, options = {}) {
     pendingTrade = null;
     pendingWoodChoice = null;
     pendingGemChoice = null;
+    if (
+      state.mode !== "online" &&
+      payload.recipeId === "trade_platinum" &&
+      result?.event?.success
+    ) {
+      showActionToast(
+        formatPlatinumMessage("Platinum dig", {
+          useWood: payload.useWood,
+          substituteType: payload.substituteType,
+          rewardType: result.event.detail?.rewardType,
+          digDiscardedCount: result.event.detail?.digDiscardedCount,
+        })
+      );
+    }
     if (state.mode !== "online") {
       renderApp(state, elements, handlers);
     }
@@ -645,6 +703,7 @@ export function createHandlers(state, elements, onWinner, options = {}) {
     elements.confirmOverlay.hidden = true;
     if (elements.woodOverlay) elements.woodOverlay.hidden = true;
     if (elements.gemTutorOverlay) elements.gemTutorOverlay.hidden = true;
+    hideActionToast();
 
     startGame(state);
     renderApp(state, elements, handlers);
@@ -681,6 +740,7 @@ export function createHandlers(state, elements, onWinner, options = {}) {
     elements.turnOverlay.hidden = true;
     if (elements.woodOverlay) elements.woodOverlay.hidden = true;
     if (elements.gemTutorOverlay) elements.gemTutorOverlay.hidden = true;
+    hideActionToast();
     elements.onlineChoiceOverlay.hidden = true;
     elements.hostOverlay.hidden = true;
     elements.guestOverlay.hidden = true;

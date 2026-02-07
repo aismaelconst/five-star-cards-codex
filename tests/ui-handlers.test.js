@@ -10,6 +10,8 @@ vi.mock("../src/ui/render.js", () => ({
 }));
 
 function makeElements() {
+  const actionToast = document.createElement("div");
+  actionToast.hidden = true;
   return {
     confirmOverlay: document.createElement("div"),
     turnOverlay: document.createElement("div"),
@@ -52,6 +54,8 @@ function makeElements() {
     gemTutorOptions: document.createElement("div"),
     gemTutorConfirm: document.createElement("button"),
     gemTutorCancel: document.createElement("button"),
+    actionToast,
+    actionToastText: document.createElement("div"),
   };
 }
 
@@ -354,6 +358,122 @@ describe("ui/handlers", () => {
       state: createInitialState({ mode: "online" }),
     });
     expect(elements.opponentAlert.textContent).toContain("Opponent archived");
+  });
+
+  it("shows opponent platinum trade details", () => {
+    const sendSpy = vi.fn();
+    let capturedOnMessage;
+    const handlers = createHandlers(state, elements, onWinner, {
+      clientFactory: ({ onMessage }) => {
+        capturedOnMessage = onMessage;
+        return { connect: vi.fn(), send: sendSpy };
+      },
+    });
+
+    state.mode = "online";
+    elements.playerNameInput.value = "Host";
+    handlers.createRoom();
+    state.online.playerId = "p2";
+
+    capturedOnMessage({
+      type: "state_update",
+      roomId: "ROOM",
+      playerId: "p2",
+      lastEvent: {
+        type: "trade",
+        recipeId: "trade_platinum",
+        playerId: "p1",
+        useWood: true,
+        substituteType: "bronze",
+        digDiscardedCount: 3,
+        rewardType: "ruby",
+      },
+      state: createInitialState({ mode: "online" }),
+    });
+
+    expect(elements.opponentAlert.textContent).toContain("Discarded 3 bronze/silver");
+    expect(elements.opponentAlert.textContent).toContain("Found ruby");
+    expect(elements.opponentAlert.textContent).toContain("wood replaced bronze");
+
+    capturedOnMessage({
+      type: "state_update",
+      roomId: "ROOM",
+      playerId: "p2",
+      lastEvent: {
+        type: "trade",
+        recipeId: "trade_platinum",
+        playerId: "p1",
+        useWood: false,
+        substituteType: null,
+        digDiscardedCount: 2,
+        rewardType: null,
+      },
+      state: createInitialState({ mode: "online" }),
+    });
+
+    expect(elements.opponentAlert.textContent).toContain("Deck exhausted");
+  });
+
+  it("shows toast for self platinum trade and auto hides", () => {
+    vi.useFakeTimers();
+    const sendSpy = vi.fn();
+    let capturedOnMessage;
+    const handlers = createHandlers(state, elements, onWinner, {
+      clientFactory: ({ onMessage }) => {
+        capturedOnMessage = onMessage;
+        return { connect: vi.fn(), send: sendSpy };
+      },
+    });
+
+    state.mode = "online";
+    elements.playerNameInput.value = "Host";
+    handlers.createRoom();
+    state.online.playerId = "p1";
+
+    capturedOnMessage({
+      type: "state_update",
+      roomId: "ROOM",
+      playerId: "p1",
+      lastEvent: {
+        type: "trade",
+        recipeId: "trade_platinum",
+        playerId: "p1",
+        useWood: false,
+        substituteType: null,
+        digDiscardedCount: 2,
+        rewardType: "gold",
+      },
+      state: createInitialState({ mode: "online" }),
+    });
+
+    expect(elements.actionToast.hidden).toBe(false);
+    expect(elements.actionToast.classList.contains("visible")).toBe(true);
+    expect(elements.actionToastText.textContent).toContain("Discarded 2 bronze/silver");
+    expect(elements.actionToastText.textContent).toContain("Found gold");
+
+    vi.advanceTimersByTime(2000);
+    expect(elements.actionToast.hidden).toBe(true);
+    expect(elements.actionToast.classList.contains("visible")).toBe(false);
+    vi.useRealTimers();
+  });
+
+  it("shows toast for offline platinum trade", () => {
+    vi.useFakeTimers();
+    state = createInitialState({ mode: "offline", format: "expanded" });
+    elements = makeElements();
+    const handlers = createHandlers(state, elements, onWinner);
+    const player = state.players[0];
+    player.archive = ["platinum", "bronze", "silver"];
+    player.deck = ["gold"];
+
+    handlers.trade("trade_platinum");
+
+    expect(elements.actionToast.hidden).toBe(false);
+    expect(elements.actionToastText.textContent).toContain("Found gold");
+
+    vi.advanceTimersByTime(2000);
+    expect(elements.actionToast.hidden).toBe(true);
+    vi.useRealTimers();
   });
 
   it("sends wood substitution trade payload", () => {
