@@ -221,8 +221,40 @@ describe("ui/render", () => {
 
     const pile = elements.handCards.querySelector(".card.pile");
     expect(pile).not.toBeNull();
+    expect(pile.dataset.tooltip).toContain("End of turn");
     pile.click();
     expect(handlers.playCardByType).toHaveBeenCalled();
+  });
+
+  it("adds tooltips to hand cards", () => {
+    const state = makeState();
+    const elements = makeElements();
+    const handlers = {
+      playCard: vi.fn(),
+      playCardByType: vi.fn(),
+      returnCard: vi.fn(),
+    };
+
+    renderApp(state, elements, handlers);
+
+    const card = elements.handCards.querySelector(".card");
+    expect(card.dataset.tooltip).toContain("End of turn");
+  });
+
+  it("does not add tooltips for unknown cards", () => {
+    const state = makeState();
+    const elements = makeElements();
+    const handlers = {
+      playCard: vi.fn(),
+      playCardByType: vi.fn(),
+      returnCard: vi.fn(),
+    };
+    state.players[0].hand = [{ type: "unknown" }];
+
+    renderApp(state, elements, handlers);
+
+    const card = elements.handCards.querySelector(".card");
+    expect(card.dataset.tooltip).toBeUndefined();
   });
 
   it("shows confirm overlay with summary", () => {

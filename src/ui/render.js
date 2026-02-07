@@ -1,14 +1,23 @@
 import { countCards, getCardType } from "../shared/utils.js";
 import { canInitiateTrade, getCurrentPlayer } from "../game/rules.js";
 import { isMyTurn } from "../game/multiplayer.js";
+import { getCardTooltip } from "./card-tooltips.js";
 
-function renderCards(container, cards, clickHandler) {
+function applyCardTooltip(el, type, ruleset) {
+  const tooltip = getCardTooltip(type, ruleset);
+  if (!tooltip) return;
+  el.dataset.tooltip = tooltip;
+  el.title = tooltip;
+}
+
+function renderCards(container, cards, clickHandler, ruleset) {
   container.innerHTML = "";
   cards.forEach((card, index) => {
     const type = getCardType(card);
     const el = document.createElement("div");
     el.className = `card ${type}`;
     el.dataset.cardType = type;
+    applyCardTooltip(el, type, ruleset);
     el.innerHTML = ``;
     if (clickHandler) {
       el.addEventListener("click", () => clickHandler(index));
@@ -20,7 +29,7 @@ function renderCards(container, cards, clickHandler) {
 function renderHand(state, player, elements, handlers) {
   const displayOrder = state.ruleset.displayOrder ?? ["bronze", "silver", "gold"];
   if (player.hand.length <= 10) {
-    renderCards(elements.handCards, player.hand, handlers.playCard);
+    renderCards(elements.handCards, player.hand, handlers.playCard, state.ruleset);
     return;
   }
 
@@ -31,6 +40,7 @@ function renderHand(state, player, elements, handlers) {
     const el = document.createElement("div");
     el.className = `card ${type} pile`;
     el.dataset.cardType = type;
+    applyCardTooltip(el, type, state.ruleset);
     el.innerHTML = `<div class="pile-count">x ${counts[type]}</div>`;
     if (handlers.playCardByType) {
       el.addEventListener("click", () => handlers.playCardByType(type));
@@ -113,7 +123,8 @@ export function renderApp(state, elements, handlers) {
   renderCards(
     elements.activeCards,
     activeOwner.active,
-    canInteract && !showOpponentActive ? handlers.returnCard : null
+    canInteract && !showOpponentActive ? handlers.returnCard : null,
+    state.ruleset
   );
 
   elements.archivePile.innerHTML = "";
