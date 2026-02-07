@@ -15,6 +15,9 @@ function makeElements() {
   return {
     confirmOverlay: document.createElement("div"),
     turnOverlay: document.createElement("div"),
+    cpuTurnOverlay: Object.assign(document.createElement("div"), { hidden: true }),
+    cpuTurnSummary: document.createElement("div"),
+    cpuTurnConfirm: document.createElement("button"),
     winnerPanel: document.createElement("div"),
     winnerOverlay: document.createElement("div"),
     winnerModalText: document.createElement("div"),
@@ -23,14 +26,19 @@ function makeElements() {
     confirmSummary: document.createElement("div"),
     confirmCards: document.createElement("div"),
     modeOverlay: document.createElement("div"),
+    cpuOverlay: document.createElement("div"),
     formatOverlay: document.createElement("div"),
     formatCore: document.createElement("button"),
     formatExpanded: document.createElement("button"),
+    cpuEasy: document.createElement("button"),
+    cpuMedium: document.createElement("button"),
+    cpuHard: document.createElement("button"),
     onlineChoiceOverlay: document.createElement("div"),
     hostOverlay: document.createElement("div"),
     guestOverlay: document.createElement("div"),
     hostFormatCore: document.createElement("button"),
     hostFormatExpanded: document.createElement("button"),
+    cpuMode: document.createElement("button"),
     playerNameInput: Object.assign(document.createElement("input"), { value: "" }),
     roomCodeInput: Object.assign(document.createElement("input"), { value: "" }),
     guestNameInput: Object.assign(document.createElement("input"), { value: "" }),
@@ -198,6 +206,24 @@ describe("ui/handlers", () => {
     expect(elements.readyButtonGuest.disabled).toBe(true);
   });
 
+  it("selects cpu mode and starts a cpu game", () => {
+    const handlers = createHandlers(state, elements, onWinner);
+    elements.modeOverlay.hidden = false;
+
+    handlers.selectCpuMode();
+
+    expect(state.mode).toBe("cpu");
+    expect(elements.modeOverlay.hidden).toBe(true);
+    expect(elements.formatOverlay.hidden).toBe(false);
+
+    handlers.selectCoreFormat();
+    expect(elements.cpuOverlay.hidden).toBe(false);
+
+    handlers.selectCpuEasy();
+    expect(state.cpu.difficulty).toBe("easy");
+    expect(state.players[1].name).toBe("CPU");
+  });
+
   it("toggles host/guest overlays", () => {
     const handlers = createHandlers(state, elements, onWinner);
     handlers.chooseCreate();
@@ -218,6 +244,24 @@ describe("ui/handlers", () => {
 
     expect(elements.onlineChoiceOverlay.hidden).toBe(false);
     expect(elements.hostOverlay.hidden).toBe(true);
+  });
+
+  it("runs cpu turn after human confirms archive", () => {
+    state = createInitialState({ mode: "cpu", format: "core", playerNames: ["You", "CPU"] });
+    state.cpu = { difficulty: "easy" };
+    elements = makeElements();
+    const handlers = createHandlers(state, elements, onWinner);
+    const player = state.players[0];
+    player.hand = ["bronze"];
+
+    handlers.playCard(0);
+    handlers.endTurn();
+    handlers.confirmArchive();
+
+    expect(state.currentPlayer).toBe(0);
+    expect(state.turnCount).toBe(3);
+    expect(elements.cpuTurnOverlay.hidden).toBe(false);
+    expect(elements.cpuTurnSummary.textContent).toContain("Archived");
   });
 
   it("creates a room in online mode", () => {

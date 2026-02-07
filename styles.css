@@ -452,6 +452,24 @@ button:not(:disabled):hover {
   gap: 12px;
 }
 
+.cpu-summary {
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: var(--ink-2);
+}
+
+.cpu-summary .summary-title {
+  font-weight: 600;
+  color: var(--ink);
+  margin-top: 6px;
+}
+
+.cpu-summary .summary-line {
+  font-size: 0.95rem;
+}
+
 .confirm-summary {
   color: var(--ink-2);
   font-size: 0.95rem;

@@ -11,9 +11,13 @@ describe("ui/events", () => {
   it("wires buttons to handlers", () => {
     const elements = {
       offlineMode: makeButton("offlineMode"),
+      cpuMode: makeButton("cpuMode"),
       onlineMode: makeButton("onlineMode"),
       formatCore: makeButton("formatCore"),
       formatExpanded: makeButton("formatExpanded"),
+      cpuEasy: makeButton("cpuEasy"),
+      cpuMedium: makeButton("cpuMedium"),
+      cpuHard: makeButton("cpuHard"),
       hostFormatCore: makeButton("hostFormatCore"),
       hostFormatExpanded: makeButton("hostFormatExpanded"),
       createRoom: makeButton("createRoom"),
@@ -36,6 +40,7 @@ describe("ui/events", () => {
       confirmArchive: makeButton("confirmArchive"),
       cancelArchive: makeButton("cancelArchive"),
       startTurn: makeButton("startTurn"),
+      cpuTurnConfirm: makeButton("cpuTurnConfirm"),
       woodConfirm: makeButton("woodConfirm"),
       woodCancel: makeButton("woodCancel"),
       gemTutorConfirm: makeButton("gemTutorConfirm"),
@@ -44,9 +49,13 @@ describe("ui/events", () => {
 
     const handlers = {
       selectOfflineMode: vi.fn(),
+      selectCpuMode: vi.fn(),
       selectOnlineMode: vi.fn(),
       selectCoreFormat: vi.fn(),
       selectExpandedFormat: vi.fn(),
+      selectCpuEasy: vi.fn(),
+      selectCpuMedium: vi.fn(),
+      selectCpuHard: vi.fn(),
       selectHostFormatCore: vi.fn(),
       selectHostFormatExpanded: vi.fn(),
       chooseCreate: vi.fn(),
@@ -63,6 +72,7 @@ describe("ui/events", () => {
       confirmArchive: vi.fn(),
       cancelArchive: vi.fn(),
       startTurn: vi.fn(),
+      closeCpuSummary: vi.fn(),
       confirmWoodSubstitution: vi.fn(),
       cancelWoodSubstitution: vi.fn(),
       confirmGemTutor: vi.fn(),
@@ -72,9 +82,13 @@ describe("ui/events", () => {
     wireEvents(elements, handlers);
 
     elements.offlineMode.click();
+    elements.cpuMode.click();
     elements.onlineMode.click();
     elements.formatCore.click();
     elements.formatExpanded.click();
+    elements.cpuEasy.click();
+    elements.cpuMedium.click();
+    elements.cpuHard.click();
     elements.hostFormatCore.click();
     elements.hostFormatExpanded.click();
     elements.chooseCreate.click();
@@ -97,15 +111,20 @@ describe("ui/events", () => {
     elements.confirmArchive.click();
     elements.cancelArchive.click();
     elements.startTurn.click();
+    elements.cpuTurnConfirm.click();
     elements.woodConfirm.click();
     elements.woodCancel.click();
     elements.gemTutorConfirm.click();
     elements.gemTutorCancel.click();
 
     expect(handlers.selectOfflineMode).toHaveBeenCalled();
+    expect(handlers.selectCpuMode).toHaveBeenCalled();
     expect(handlers.selectOnlineMode).toHaveBeenCalled();
     expect(handlers.selectCoreFormat).toHaveBeenCalled();
     expect(handlers.selectExpandedFormat).toHaveBeenCalled();
+    expect(handlers.selectCpuEasy).toHaveBeenCalled();
+    expect(handlers.selectCpuMedium).toHaveBeenCalled();
+    expect(handlers.selectCpuHard).toHaveBeenCalled();
     expect(handlers.selectHostFormatCore).toHaveBeenCalled();
     expect(handlers.selectHostFormatExpanded).toHaveBeenCalled();
     expect(handlers.chooseCreate).toHaveBeenCalled();
@@ -125,6 +144,7 @@ describe("ui/events", () => {
     expect(handlers.confirmArchive).toHaveBeenCalled();
     expect(handlers.cancelArchive).toHaveBeenCalled();
     expect(handlers.startTurn).toHaveBeenCalled();
+    expect(handlers.closeCpuSummary).toHaveBeenCalled();
     expect(handlers.confirmWoodSubstitution).toHaveBeenCalled();
     expect(handlers.cancelWoodSubstitution).toHaveBeenCalled();
     expect(handlers.confirmGemTutor).toHaveBeenCalled();

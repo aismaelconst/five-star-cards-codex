@@ -27,6 +27,9 @@ export function createInitialState(options = {}) {
     ruleset,
     format,
     mode,
+    cpu: {
+      difficulty: null,
+    },
     online: {
       roomId: null,
       role: null,

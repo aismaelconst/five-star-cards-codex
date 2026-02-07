@@ -126,6 +126,25 @@ describe("ui/render", () => {
     expect(rubyPile).not.toBeNull();
   });
 
+  it("renders cpu opponent archive breakdown", () => {
+    const state = makeState();
+    const elements = makeElements();
+    const handlers = {
+      playCard: vi.fn(),
+      playCardByType: vi.fn(),
+      returnCard: vi.fn(),
+    };
+    state.mode = "cpu";
+    state.ruleset = expandedRuleset;
+    state.format = "expanded";
+    state.players[1].archive = ["bronze", "gold", "wood", "platinum"];
+
+    renderApp(state, elements, handlers);
+
+    expect(elements.opponentSummary.innerHTML).toContain("Bronze");
+    expect(elements.opponentSummary.innerHTML).toContain("Wood");
+  });
+
   it("disables actions when not your turn online", () => {
     const state = makeState();
     const elements = makeElements();
@@ -139,6 +158,23 @@ describe("ui/render", () => {
     state.players[0].id = "p1";
     state.players[1].id = "p2";
     state.currentPlayer = 0;
+
+    renderApp(state, elements, handlers);
+
+    expect(elements.endTurn.disabled).toBe(true);
+    expect(elements.tradeBronze.disabled).toBe(true);
+  });
+
+  it("disables actions when cpu is taking its turn", () => {
+    const state = makeState();
+    const elements = makeElements();
+    const handlers = {
+      playCard: vi.fn(),
+      playCardByType: vi.fn(),
+      returnCard: vi.fn(),
+    };
+    state.mode = "cpu";
+    state.currentPlayer = 1;
 
     renderApp(state, elements, handlers);
 

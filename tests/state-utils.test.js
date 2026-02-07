@@ -25,6 +25,7 @@ describe("state", () => {
     expect(state.pendingArchive).toBe(null);
     expect(state.mode).toBe(null);
     expect(state.format).toBe("core");
+    expect(state.cpu).toEqual({ difficulty: null });
     expect(state.online).toEqual({
       roomId: null,
       role: null,

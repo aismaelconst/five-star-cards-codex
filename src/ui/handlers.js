@@ -10,6 +10,7 @@ import { createOnlineClient } from "../online/client.js";
 import { startGame } from "../game/lifecycle.js";
 import { isMyTurn } from "../game/multiplayer.js";
 import { countCards } from "../shared/utils.js";
+import { executeCpuTurn } from "../game/cpu.js";
 
 export function createHandlers(state, elements, onWinner, options = {}) {
   const socketUrl = options.socketUrl ?? resolveSocketUrl();
@@ -17,6 +18,7 @@ export function createHandlers(state, elements, onWinner, options = {}) {
   let onlineClient = null;
   let gameOverTimer = null;
   let toastTimer = null;
+  let pendingCpuWinner = null;
   let pendingTrade = null;
   let pendingWoodChoice = null;
   let pendingGemChoice = null;
@@ -120,6 +122,102 @@ export function createHandlers(state, elements, onWinner, options = {}) {
     const discarded = ` Discarded ${discardedCount} bronze/silver.`;
     const reward = event.rewardType ? ` Found ${event.rewardType}.` : " Deck exhausted.";
     return `${prefix}${woodNote}.${discarded}${reward}`;
+  }
+
+  function formatCountLine(counts, displayOrder) {
+    const parts = displayOrder
+      .map((type) => {
+        const value = counts[type] ?? 0;
+        return value > 0 ? `${value} ${type}` : null;
+      })
+      .filter(Boolean);
+    return parts.length ? parts.join(", ") : "no cards";
+  }
+
+  function formatCpuTrade(state, trade) {
+    const recipe = state.ruleset.tradeRecipes?.[trade.recipeId];
+    const woodNote =
+      trade.useWood && trade.substituteType
+        ? ` (wood replaced ${trade.substituteType})`
+        : "";
+    if (trade.recipeId === "trade_platinum") {
+      const discarded = typeof trade.digDiscardedCount === "number" ? trade.digDiscardedCount : 0;
+      const reward = trade.rewardType ? `found ${trade.rewardType}` : "deck exhausted";
+      return `Platinum dig${woodNote}: discarded ${discarded} bronze/silver, ${reward}.`;
+    }
+    if (trade.recipeId === "trade_gem_set") {
+      const reward = trade.rewardType ? `selected ${trade.rewardType}` : "no reward";
+      return `Gem tutor${woodNote}: ${reward}.`;
+    }
+    if (!recipe) return "Trade executed.";
+    const costLine = Object.entries(recipe.cost)
+      .map(([type, amount]) => `${amount} ${type}`)
+      .join(", ");
+    const reward = trade.rewardType ?? recipe.reward ?? "reward";
+    return `Trade${woodNote}: ${costLine} → ${reward}.`;
+  }
+
+  function showCpuSummary(summary) {
+    if (!elements.cpuTurnOverlay || !elements.cpuTurnSummary) return;
+    const displayOrder = state.ruleset.displayOrder ?? ["bronze", "silver", "gold"];
+    elements.cpuTurnSummary.innerHTML = "";
+    if (summary.trades.length > 0) {
+      const title = document.createElement("div");
+      title.className = "summary-title";
+      title.textContent = "Trades";
+      elements.cpuTurnSummary.appendChild(title);
+      summary.trades.forEach((trade) => {
+        const line = document.createElement("div");
+        line.className = "summary-line";
+        line.textContent = formatCpuTrade(state, trade);
+        elements.cpuTurnSummary.appendChild(line);
+      });
+    }
+    if (summary.plays.length > 0) {
+      const title = document.createElement("div");
+      title.className = "summary-title";
+      title.textContent = "Plays";
+      elements.cpuTurnSummary.appendChild(title);
+      const counts = countCards(summary.plays, displayOrder);
+      const line = document.createElement("div");
+      line.className = "summary-line";
+      line.textContent = `Played ${formatCountLine(counts, displayOrder)}.`;
+      elements.cpuTurnSummary.appendChild(line);
+    }
+    if (summary.archive) {
+      const title = document.createElement("div");
+      title.className = "summary-title";
+      title.textContent = "Archive";
+      elements.cpuTurnSummary.appendChild(title);
+      const line = document.createElement("div");
+      line.className = "summary-line";
+      line.textContent = `Archived ${formatCountLine(
+        summary.archive.counts,
+        displayOrder
+      )}. Drew ${summary.archive.drawCount} card(s).`;
+      elements.cpuTurnSummary.appendChild(line);
+    }
+    if (
+      summary.trades.length === 0 &&
+      summary.plays.length === 0 &&
+      !summary.archive
+    ) {
+      const line = document.createElement("div");
+      line.className = "summary-line";
+      line.textContent = "CPU took no actions.";
+      elements.cpuTurnSummary.appendChild(line);
+    }
+    elements.cpuTurnOverlay.hidden = false;
+  }
+
+  function closeCpuSummary() {
+    if (!elements.cpuTurnOverlay) return;
+    elements.cpuTurnOverlay.hidden = true;
+    if (pendingCpuWinner !== null && pendingCpuWinner !== undefined) {
+      const winner = pendingCpuWinner;
+      pendingCpuWinner = null;
+      onWinner(winner);
+    }
   }
 
   function handleOpponentEvent(message) {
@@ -253,11 +351,28 @@ export function createHandlers(state, elements, onWinner, options = {}) {
     elements.onlineChoiceOverlay.hidden = true;
     elements.hostOverlay.hidden = true;
     elements.guestOverlay.hidden = true;
+    if (elements.cpuOverlay) {
+      elements.cpuOverlay.hidden = true;
+    }
     if (elements.formatOverlay) {
       updateFormatButtons();
       elements.formatOverlay.hidden = false;
     } else {
       startOfflineGame("core");
+    }
+  }
+
+  function selectCpuMode() {
+    state.mode = "cpu";
+    elements.modeOverlay.hidden = true;
+    elements.onlineChoiceOverlay.hidden = true;
+    elements.hostOverlay.hidden = true;
+    elements.guestOverlay.hidden = true;
+    if (elements.formatOverlay) {
+      updateFormatButtons();
+      elements.formatOverlay.hidden = false;
+    } else {
+      startCpuGame("core", state.cpu?.difficulty ?? "easy");
     }
   }
 
@@ -267,6 +382,9 @@ export function createHandlers(state, elements, onWinner, options = {}) {
     elements.modeOverlay.hidden = true;
     if (elements.formatOverlay) {
       elements.formatOverlay.hidden = true;
+    }
+    if (elements.cpuOverlay) {
+      elements.cpuOverlay.hidden = true;
     }
     elements.onlineChoiceOverlay.hidden = false;
     elements.hostOverlay.hidden = true;
@@ -301,12 +419,79 @@ export function createHandlers(state, elements, onWinner, options = {}) {
     resetGame();
   }
 
+  function startCpuGame(format, difficulty) {
+    state.mode = "cpu";
+    state.format = format;
+    state.cpu = { difficulty };
+    updateFormatButtons();
+    if (elements.formatOverlay) {
+      elements.formatOverlay.hidden = true;
+    }
+    if (elements.cpuOverlay) {
+      elements.cpuOverlay.hidden = true;
+    }
+    const freshState = createInitialState({
+      mode: "cpu",
+      format,
+      playerNames: ["You", "CPU"],
+    });
+    state.players = freshState.players;
+    state.currentPlayer = freshState.currentPlayer;
+    state.tradesThisTurn = freshState.tradesThisTurn;
+    state.phase = freshState.phase;
+    state.winner = freshState.winner;
+    state.turnCount = freshState.turnCount;
+    state.pendingArchive = freshState.pendingArchive;
+    state.gameId = freshState.gameId;
+    state.ruleset = freshState.ruleset;
+    state.format = freshState.format;
+    state.online = freshState.online;
+    state.cpu = { difficulty };
+    startGame(state);
+    renderApp(state, elements, handlers);
+    maybeRunCpuTurn();
+  }
+
   function selectCoreFormat() {
+    if (state.mode === "cpu") {
+      state.format = "core";
+      updateFormatButtons();
+      if (elements.formatOverlay) {
+        elements.formatOverlay.hidden = true;
+      }
+      if (elements.cpuOverlay) {
+        elements.cpuOverlay.hidden = false;
+      }
+      return;
+    }
     startOfflineGame("core");
   }
 
   function selectExpandedFormat() {
+    if (state.mode === "cpu") {
+      state.format = "expanded";
+      updateFormatButtons();
+      if (elements.formatOverlay) {
+        elements.formatOverlay.hidden = true;
+      }
+      if (elements.cpuOverlay) {
+        elements.cpuOverlay.hidden = false;
+      }
+      return;
+    }
     startOfflineGame("expanded");
+  }
+
+  function selectCpuEasy() {
+    startCpuGame(state.format ?? "core", "easy");
+  }
+
+  function selectCpuMedium() {
+    startCpuGame(state.format ?? "core", "medium");
+  }
+
+  function selectCpuHard() {
+    startCpuGame(state.format ?? "core", "hard");
   }
 
   function selectHostFormatCore() {
@@ -430,6 +615,9 @@ export function createHandlers(state, elements, onWinner, options = {}) {
   }
 
   function getLocalPlayer() {
+    if (state.mode === "cpu") {
+      return state.players[0];
+    }
     if (state.mode === "online" && state.online.playerId) {
       return (
         state.players.find((player) => player.id === state.online.playerId) ??
@@ -437,6 +625,42 @@ export function createHandlers(state, elements, onWinner, options = {}) {
       );
     }
     return state.players[state.currentPlayer];
+  }
+
+  function isCpuTurn() {
+    return state.mode === "cpu" && state.currentPlayer === 1;
+  }
+
+  function maybeRunCpuTurn() {
+    if (!isCpuTurn()) return;
+    if (state.phase === "between") {
+      applyAction(state, { type: ActionTypes.START_TURN });
+    }
+    if (state.phase !== "main") return;
+    const summary = executeCpuTurn(state, {
+      difficulty: state.cpu?.difficulty ?? "easy",
+      cpuIndex: 1,
+    });
+    if (summary && summary.winnerIndex !== null && summary.winnerIndex !== undefined) {
+      if (elements.cpuTurnOverlay) {
+        pendingCpuWinner = summary.winnerIndex;
+      } else {
+        onWinner(summary.winnerIndex);
+      }
+    }
+    if (state.phase === "between") {
+      applyAction(state, { type: ActionTypes.START_TURN });
+    }
+    renderApp(state, elements, handlers);
+    if (summary && elements.cpuTurnOverlay) {
+      showCpuSummary(summary);
+      return;
+    }
+    if (pendingCpuWinner !== null && pendingCpuWinner !== undefined) {
+      const winner = pendingCpuWinner;
+      pendingCpuWinner = null;
+      onWinner(winner);
+    }
   }
 
   function trade(recipeId) {
@@ -480,6 +704,7 @@ export function createHandlers(state, elements, onWinner, options = {}) {
     pendingTrade = null;
     pendingWoodChoice = null;
     pendingGemChoice = null;
+    pendingCpuWinner = null;
     if (
       state.mode !== "online" &&
       payload.recipeId === "trade_platinum" &&
@@ -591,6 +816,7 @@ export function createHandlers(state, elements, onWinner, options = {}) {
     if (!pendingTrade || !pendingGemChoice) return;
     pendingTrade.rewardType = pendingGemChoice;
     if (elements.gemTutorOverlay) elements.gemTutorOverlay.hidden = true;
+    if (elements.cpuTurnOverlay) elements.cpuTurnOverlay.hidden = true;
     pendingGemChoice = null;
     finalizeTrade();
   }
@@ -651,6 +877,11 @@ export function createHandlers(state, elements, onWinner, options = {}) {
         onWinner(result.event.winnerIndex);
         return;
       }
+      if (state.mode === "cpu") {
+        renderApp(state, elements, handlers);
+        maybeRunCpuTurn();
+        return result;
+      }
       showTurnOverlay(state, elements);
       renderApp(state, elements, handlers);
     }
@@ -683,9 +914,11 @@ export function createHandlers(state, elements, onWinner, options = {}) {
     pendingTrade = null;
     pendingWoodChoice = null;
     pendingGemChoice = null;
+    const cpuDifficulty = state.cpu?.difficulty ?? null;
     const freshState = createInitialState({
       mode: state.mode,
       format: state.format ?? "core",
+      playerNames: state.mode === "cpu" ? ["You", "CPU"] : undefined,
     });
     state.players = freshState.players;
     state.currentPlayer = freshState.currentPlayer;
@@ -698,6 +931,7 @@ export function createHandlers(state, elements, onWinner, options = {}) {
     state.ruleset = freshState.ruleset;
     state.format = freshState.format;
     state.online = freshState.online;
+    state.cpu = state.mode === "cpu" ? { difficulty: cpuDifficulty ?? "easy" } : freshState.cpu;
     elements.winnerPanel.hidden = true;
     elements.winnerOverlay.hidden = true;
     elements.confirmOverlay.hidden = true;
@@ -707,6 +941,7 @@ export function createHandlers(state, elements, onWinner, options = {}) {
 
     startGame(state);
     renderApp(state, elements, handlers);
+    maybeRunCpuTurn();
   }
 
   function returnToModeSelect() {
@@ -733,6 +968,8 @@ export function createHandlers(state, elements, onWinner, options = {}) {
     state.ruleset = freshState.ruleset;
     state.online = freshState.online;
     state.mode = freshState.mode;
+    state.cpu = freshState.cpu;
+    pendingCpuWinner = null;
     if (elements.opponentAlert) elements.opponentAlert.textContent = "";
     elements.winnerPanel.hidden = true;
     elements.winnerOverlay.hidden = true;
@@ -740,6 +977,7 @@ export function createHandlers(state, elements, onWinner, options = {}) {
     elements.turnOverlay.hidden = true;
     if (elements.woodOverlay) elements.woodOverlay.hidden = true;
     if (elements.gemTutorOverlay) elements.gemTutorOverlay.hidden = true;
+    if (elements.cpuTurnOverlay) elements.cpuTurnOverlay.hidden = true;
     hideActionToast();
     elements.onlineChoiceOverlay.hidden = true;
     elements.hostOverlay.hidden = true;
@@ -747,6 +985,9 @@ export function createHandlers(state, elements, onWinner, options = {}) {
     elements.modeOverlay.hidden = false;
     if (elements.formatOverlay) {
       elements.formatOverlay.hidden = true;
+    }
+    if (elements.cpuOverlay) {
+      elements.cpuOverlay.hidden = true;
     }
     if (elements.restartGameModal) {
       elements.restartGameModal.hidden = false;
@@ -757,9 +998,13 @@ export function createHandlers(state, elements, onWinner, options = {}) {
   const handlers = {
     showModePicker,
     selectOfflineMode,
+    selectCpuMode,
     selectOnlineMode,
     selectCoreFormat,
     selectExpandedFormat,
+    selectCpuEasy,
+    selectCpuMedium,
+    selectCpuHard,
     selectHostFormatCore,
     selectHostFormatExpanded,
     createRoom,
@@ -783,6 +1028,7 @@ export function createHandlers(state, elements, onWinner, options = {}) {
     confirmGemTutor,
     cancelGemTutor,
     startTurn,
+    closeCpuSummary,
   };
 
   return handlers;

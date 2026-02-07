@@ -112,12 +112,23 @@
       </div>
     </div>
 
+    <div class="overlay" id="cpuTurnOverlay" hidden>
+      <div class="overlay-card">
+        <h2>CPU Turn Summary</h2>
+        <div class="cpu-summary" id="cpuTurnSummary"></div>
+        <div class="confirm-actions">
+          <button class="primary" id="cpuTurnConfirm">Continue</button>
+        </div>
+      </div>
+    </div>
+
     <div class="overlay mode-overlay" id="modeOverlay">
       <div class="overlay-card">
         <h2>Choose Game Mode</h2>
         <p>Pick how you want to play this session.</p>
         <div class="confirm-actions">
           <button class="primary" id="offlineMode">Offline (Same Device)</button>
+          <button class="ghost" id="cpuMode">CPU (Play vs AI)</button>
           <button class="ghost" id="onlineMode">Online (Lobby)</button>
         </div>
       </div>
@@ -130,6 +141,18 @@
         <div class="confirm-actions">
           <button class="primary" id="formatCore">CORE</button>
           <button class="ghost" id="formatExpanded">EXPANDED (Alpha)</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="overlay mode-overlay" id="cpuOverlay" hidden>
+      <div class="overlay-card">
+        <h2>Choose CPU Difficulty</h2>
+        <p>Pick how challenging the opponent should be.</p>
+        <div class="confirm-actions">
+          <button class="primary" id="cpuEasy">Easy</button>
+          <button class="ghost" id="cpuMedium">Medium</button>
+          <button class="ghost" id="cpuHard">Hard</button>
         </div>
       </div>
     </div>

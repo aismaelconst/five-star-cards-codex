@@ -1,11 +1,23 @@
 export function wireEvents(elements, handlers) {
   elements.offlineMode.addEventListener("click", handlers.selectOfflineMode);
+  if (elements.cpuMode) {
+    elements.cpuMode.addEventListener("click", handlers.selectCpuMode);
+  }
   elements.onlineMode.addEventListener("click", handlers.selectOnlineMode);
   if (elements.formatCore) {
     elements.formatCore.addEventListener("click", handlers.selectCoreFormat);
   }
   if (elements.formatExpanded) {
     elements.formatExpanded.addEventListener("click", handlers.selectExpandedFormat);
+  }
+  if (elements.cpuEasy) {
+    elements.cpuEasy.addEventListener("click", handlers.selectCpuEasy);
+  }
+  if (elements.cpuMedium) {
+    elements.cpuMedium.addEventListener("click", handlers.selectCpuMedium);
+  }
+  if (elements.cpuHard) {
+    elements.cpuHard.addEventListener("click", handlers.selectCpuHard);
   }
   if (elements.hostFormatCore) {
     elements.hostFormatCore.addEventListener("click", handlers.selectHostFormatCore);
@@ -37,6 +49,9 @@ export function wireEvents(elements, handlers) {
   elements.confirmArchive.addEventListener("click", handlers.confirmArchive);
   elements.cancelArchive.addEventListener("click", handlers.cancelArchive);
   elements.startTurn.addEventListener("click", handlers.startTurn);
+  if (elements.cpuTurnConfirm) {
+    elements.cpuTurnConfirm.addEventListener("click", handlers.closeCpuSummary);
+  }
   if (elements.woodConfirm) {
     elements.woodConfirm.addEventListener("click", handlers.confirmWoodSubstitution);
   }
