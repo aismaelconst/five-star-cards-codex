@@ -447,6 +447,11 @@ export function createHandlers(state, elements, onWinner, options = {}) {
     pendingWoodChoice = null;
     elements.woodSubOptions.innerHTML = "";
     const allOptions = allowNoWood ? ["none", ...options] : options;
+    if (elements.woodMessage) {
+      elements.woodMessage.textContent = allowNoWood
+        ? "Choose whether to replace one required card with wood."
+        : "Wood required for this trade.";
+    }
     allOptions.forEach((type) => {
       const button = document.createElement("button");
       button.className = "ghost option-button";

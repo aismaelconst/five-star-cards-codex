@@ -63,6 +63,7 @@ function setupDom() {
     <div id="hostStatus"></div>
     <div id="guestStatus"></div>
     <div id="woodOverlay"></div>
+    <div id="woodMessage"></div>
     <div id="woodSubOptions"></div>
     <button id="woodConfirm"></button>
     <button id="woodCancel"></button>

@@ -215,6 +215,24 @@ describe("rules", () => {
     expect(result.detail.digDiscardedCount).toBe(2);
   });
 
+  it("does not allow substituting platinum with wood", () => {
+    const state = makeExpandedState();
+    const player = current(state);
+    player.archive = [
+      createCard("bronze", expandedRuleset),
+      createCard("silver", expandedRuleset),
+      createCard("wood", expandedRuleset),
+    ];
+    player.deck = [createCard("gold", expandedRuleset)];
+
+    expect(
+      canTradeWithOptions(state, player, "trade_platinum", {
+        useWood: true,
+        substituteType: "platinum",
+      })
+    ).toBe(false);
+  });
+
   it("does not allow wood substitution without wood", () => {
     const state = makeExpandedState();
     const player = current(state);

@@ -44,6 +44,7 @@ function makeElements() {
     copyRoomCode: document.createElement("button"),
     opponentAlert: document.createElement("div"),
     woodOverlay: document.createElement("div"),
+    woodMessage: document.createElement("div"),
     woodSubOptions: document.createElement("div"),
     woodConfirm: document.createElement("button"),
     woodCancel: document.createElement("button"),
@@ -401,6 +402,7 @@ describe("ui/handlers", () => {
       (button) => button.dataset.choice
     );
     expect(labels).not.toContain("none");
+    expect(elements.woodMessage.textContent).toContain("Wood required");
   });
 
   it("sends gem tutor trade payload", () => {

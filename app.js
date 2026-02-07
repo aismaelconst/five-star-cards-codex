@@ -67,6 +67,7 @@ const elements = {
   hostStatus: document.getElementById("hostStatus"),
   guestStatus: document.getElementById("guestStatus"),
   woodOverlay: document.getElementById("woodOverlay"),
+  woodMessage: document.getElementById("woodMessage"),
   woodSubOptions: document.getElementById("woodSubOptions"),
   woodConfirm: document.getElementById("woodConfirm"),
   woodCancel: document.getElementById("woodCancel"),

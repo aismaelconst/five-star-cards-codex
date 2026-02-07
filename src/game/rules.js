@@ -43,6 +43,7 @@ export function getWoodSubstitutionOptions(state, player, recipeId) {
   if ((counts.wood ?? 0) < 1) return [];
   const options = [];
   Object.entries(recipe.cost).forEach(([type]) => {
+    if (recipeId === "trade_platinum" && type === "platinum") return;
     const adjusted = buildCostWithWood(recipe.cost, type);
     if (canPayCost(counts, adjusted)) {
       options.push(type);
@@ -102,6 +103,7 @@ export function canTradeWithOptions(state, player, recipeId, options = {}) {
     if (sumCost(recipe.cost) < rules.minCost) return false;
     if ((counts.wood ?? 0) < 1) return false;
     if (!options.substituteType || !recipe.cost[options.substituteType]) return false;
+    if (recipeId === "trade_platinum" && options.substituteType === "platinum") return false;
     cost = buildCostWithWood(recipe.cost, options.substituteType);
   }
   if (!canPayCost(counts, cost)) return false;
