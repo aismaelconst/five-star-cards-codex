@@ -3,6 +3,8 @@ import { createHandlers } from "../src/ui/handlers.js";
 import { createInitialState } from "../src/game/state.js";
 import { expandedRuleset } from "../src/game/ruleset.js";
 
+import { renderApp } from "../src/ui/render.js";
+
 vi.mock("../src/ui/render.js", () => ({
   renderApp: vi.fn(),
   showConfirmOverlay: vi.fn(),
@@ -638,6 +640,19 @@ describe("ui/handlers", () => {
     expect(state.mode).toBe(null);
     expect(elements.winnerOverlay.hidden).toBe(true);
     vi.useRealTimers();
+  });
+
+  it("re-renders after closing cpu summary", () => {
+    state = createInitialState({ mode: "cpu", format: "core", playerNames: ["You", "CPU"] });
+    state.cpu = { difficulty: "easy" };
+    elements = makeElements();
+    const handlers = createHandlers(state, elements, onWinner);
+    elements.cpuTurnOverlay.hidden = false;
+
+    handlers.closeCpuSummary();
+
+    expect(elements.cpuTurnOverlay.hidden).toBe(true);
+    expect(renderApp).toHaveBeenCalled();
   });
 
   it("shows confirm overlay only for the active online player", () => {

@@ -213,6 +213,7 @@ export function createHandlers(state, elements, onWinner, options = {}) {
   function closeCpuSummary() {
     if (!elements.cpuTurnOverlay) return;
     elements.cpuTurnOverlay.hidden = true;
+    renderApp(state, elements, handlers);
     if (pendingCpuWinner !== null && pendingCpuWinner !== undefined) {
       const winner = pendingCpuWinner;
       pendingCpuWinner = null;
