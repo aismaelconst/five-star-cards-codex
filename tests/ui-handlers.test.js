@@ -32,6 +32,7 @@ function makeElements() {
     formatOverlay: document.createElement("div"),
     formatCore: document.createElement("button"),
     formatExpanded: document.createElement("button"),
+    formatUltra: document.createElement("button"),
     cpuEasy: document.createElement("button"),
     cpuMedium: document.createElement("button"),
     cpuHard: document.createElement("button"),
@@ -40,6 +41,7 @@ function makeElements() {
     guestOverlay: document.createElement("div"),
     hostFormatCore: document.createElement("button"),
     hostFormatExpanded: document.createElement("button"),
+    hostFormatUltra: document.createElement("button"),
     cpuMode: document.createElement("button"),
     playerNameInput: Object.assign(document.createElement("input"), { value: "" }),
     roomCodeInput: Object.assign(document.createElement("input"), { value: "" }),
@@ -64,6 +66,16 @@ function makeElements() {
     gemTutorOptions: document.createElement("div"),
     gemTutorConfirm: document.createElement("button"),
     gemTutorCancel: document.createElement("button"),
+    choiceCostOverlay: Object.assign(document.createElement("div"), { hidden: true }),
+    choiceCostMessage: document.createElement("div"),
+    choiceCostOptions: document.createElement("div"),
+    choiceCostConfirm: document.createElement("button"),
+    choiceCostCancel: document.createElement("button"),
+    copperTutorOverlay: Object.assign(document.createElement("div"), { hidden: true }),
+    copperTutorMessage: document.createElement("div"),
+    copperTutorOptions: document.createElement("div"),
+    copperTutorConfirm: document.createElement("button"),
+    copperTutorCancel: document.createElement("button"),
     actionToast,
     actionToastText: document.createElement("div"),
   };
@@ -137,6 +149,42 @@ describe("ui/handlers", () => {
     expect(player.discard.length).toBe(5);
   });
 
+  it("opens choice cost overlay for brass trade", () => {
+    state = createInitialState({ mode: "offline", format: "ultra" });
+    elements = makeElements();
+    const handlers = createHandlers(state, elements, onWinner);
+    const player = state.players[0];
+    elements.choiceCostOverlay.hidden = true;
+    player.archive = ["brass", "bronze"];
+    player.deck = ["bronze", "silver", "gold"];
+
+    handlers.trade("trade_brass_draw");
+
+    expect(elements.choiceCostOverlay.hidden).toBe(false);
+    const buttons = elements.choiceCostOptions.querySelectorAll("button");
+    expect(buttons.length).toBeGreaterThan(0);
+  });
+
+  it("prompts copper tutor choices on archive confirmation", () => {
+    state = createInitialState({ mode: "offline", format: "ultra" });
+    elements = makeElements();
+    const handlers = createHandlers(state, elements, onWinner);
+    const player = state.players[0];
+    elements.copperTutorOverlay.hidden = true;
+    player.active = ["copper"];
+    player.deck = ["tin", "zinc"];
+
+    handlers.endTurn();
+    handlers.confirmArchive();
+
+    expect(elements.copperTutorOverlay.hidden).toBe(false);
+    const options = elements.copperTutorOptions.querySelectorAll("button");
+    options[0].click();
+    handlers.confirmCopperTutor();
+
+    expect(state.phase).toBe("between");
+  });
+
   it("prepares archive on endTurn", () => {
     const handlers = createHandlers(state, elements, onWinner);
     const player = state.players[0];
@@ -193,6 +241,16 @@ describe("ui/handlers", () => {
 
     handlers.selectCoreFormat();
     expect(state.turnCount).toBe(1);
+  });
+
+  it("selects ultra format in offline mode", () => {
+    const handlers = createHandlers(state, elements, onWinner);
+    handlers.selectOfflineMode();
+
+    handlers.selectUltraFormat();
+
+    expect(state.format).toBe("ultra");
+    expect(state.players[0].deck.length + state.players[0].hand.length).toBe(200);
   });
 
   it("selects online mode and shows the online choice overlay", () => {
@@ -255,6 +313,8 @@ describe("ui/handlers", () => {
     expect(state.format).toBe("expanded");
     handlers.selectHostFormatCore();
     expect(state.format).toBe("core");
+    handlers.selectHostFormatUltra();
+    expect(state.format).toBe("ultra");
   });
 
   it("returns to choice overlay", () => {

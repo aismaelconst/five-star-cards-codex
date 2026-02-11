@@ -2,6 +2,7 @@ import {
   ActionTypes,
   applyAction,
   canInitiateTrade,
+  getChoiceCostOptions,
   getWoodSubstitutionOptions,
 } from "../game/rules.js";
 import { renderApp, showConfirmOverlay, showTurnOverlay } from "./render.js";
@@ -22,6 +23,8 @@ export function createHandlers(state, elements, onWinner, options = {}) {
   let pendingTrade = null;
   let pendingWoodChoice = null;
   let pendingGemChoice = null;
+  let pendingChoiceSelection = null;
+  let pendingCopperFlow = null;
 
   function resolveSocketUrl() {
     if (typeof window !== "undefined" && window.location) {
@@ -124,6 +127,12 @@ export function createHandlers(state, elements, onWinner, options = {}) {
     return `${prefix}${woodNote}.${discarded}${reward}`;
   }
 
+  function formatLabel(format) {
+    if (format === "expanded") return "EXPANDED";
+    if (format === "ultra") return "ULTRA";
+    return "CORE";
+  }
+
   function formatCountLine(counts, displayOrder) {
     const parts = displayOrder
       .map((type) => {
@@ -150,11 +159,21 @@ export function createHandlers(state, elements, onWinner, options = {}) {
       return `Gem tutor${woodNote}: ${reward}.`;
     }
     if (!recipe) return "Trade executed.";
-    const costLine = Object.entries(recipe.cost)
+    let costLine = Object.entries(recipe.cost)
       .map(([type, amount]) => `${amount} ${type}`)
       .join(", ");
-    const reward = trade.rewardType ?? recipe.reward ?? "reward";
-    return `Trade${woodNote}: ${costLine} → ${reward}.`;
+    if (recipe.choiceCost && trade.choiceType) {
+      costLine = `${costLine}, ${recipe.choiceCost.count} ${trade.choiceType}`;
+    }
+    let rewardLine = trade.rewardType ?? recipe.reward ?? "reward";
+    if (recipe.reward?.type === "cards") {
+      rewardLine = `${recipe.reward.count} ${recipe.reward.card}`;
+    } else if (recipe.reward?.type === "draw") {
+      rewardLine = `draw ${recipe.reward.count}`;
+    } else if (typeof recipe.reward === "string") {
+      rewardLine = `1 ${recipe.reward}`;
+    }
+    return `Trade${woodNote}: ${costLine} → ${rewardLine}.`;
   }
 
   function showCpuSummary(summary) {
@@ -243,6 +262,25 @@ export function createHandlers(state, elements, onWinner, options = {}) {
         );
         return;
       }
+      const recipe = state.ruleset.tradeRecipes?.[event.recipeId];
+      if (recipe) {
+        let costLine = Object.entries(recipe.cost)
+          .map(([type, amount]) => `${amount} ${type}`)
+          .join(", ");
+        if (recipe.choiceCost && event.choiceType) {
+          costLine = `${costLine}, ${recipe.choiceCost.count} ${event.choiceType}`;
+        }
+        let rewardLine = event.rewardType ?? recipe.reward ?? "reward";
+        if (recipe.reward?.type === "cards") {
+          rewardLine = `${recipe.reward.count} ${recipe.reward.card}`;
+        } else if (recipe.reward?.type === "draw") {
+          rewardLine = `draw ${recipe.reward.count}`;
+        } else if (typeof recipe.reward === "string") {
+          rewardLine = `1 ${recipe.reward}`;
+        }
+        elements.opponentAlert.textContent = `Opponent traded ${costLine} for ${rewardLine}${woodNote}.`;
+        return;
+      }
       elements.opponentAlert.textContent = `Opponent traded ${event.cost} ${event.from} for 1 ${event.to}${woodNote}.`;
       return;
     }
@@ -284,8 +322,7 @@ export function createHandlers(state, elements, onWinner, options = {}) {
       applyServerState(message);
       elements.roomCodeInput.value = message.roomId;
       elements.guestRoomCodeInput.value = message.roomId;
-      const formatLabel = state.format === "expanded" ? "EXPANDED" : "CORE";
-      setStatus(`Connected to room ${message.roomId}. Format: ${formatLabel}.`);
+      setStatus(`Connected to room ${message.roomId}. Format: ${formatLabel(state.format)}.`);
       if (state.online.role === "host") {
         elements.readyButton.disabled = false;
       }
@@ -398,16 +435,20 @@ export function createHandlers(state, elements, onWinner, options = {}) {
   }
 
   function updateFormatButtons() {
-    const isCore = state.format !== "expanded";
+    const isCore = state.format !== "expanded" && state.format !== "ultra";
+    const isExpanded = state.format === "expanded";
+    const isUltra = state.format === "ultra";
     const toggle = (el, active) => {
       if (!el) return;
       el.classList.toggle("active", active);
       el.setAttribute("aria-pressed", active ? "true" : "false");
     };
     toggle(elements.formatCore, isCore);
-    toggle(elements.formatExpanded, !isCore);
+    toggle(elements.formatExpanded, isExpanded);
+    toggle(elements.formatUltra, isUltra);
     toggle(elements.hostFormatCore, isCore);
-    toggle(elements.hostFormatExpanded, !isCore);
+    toggle(elements.hostFormatExpanded, isExpanded);
+    toggle(elements.hostFormatUltra, isUltra);
   }
 
   function startOfflineGame(format) {
@@ -483,6 +524,21 @@ export function createHandlers(state, elements, onWinner, options = {}) {
     startOfflineGame("expanded");
   }
 
+  function selectUltraFormat() {
+    if (state.mode === "cpu") {
+      state.format = "ultra";
+      updateFormatButtons();
+      if (elements.formatOverlay) {
+        elements.formatOverlay.hidden = true;
+      }
+      if (elements.cpuOverlay) {
+        elements.cpuOverlay.hidden = false;
+      }
+      return;
+    }
+    startOfflineGame("ultra");
+  }
+
   function selectCpuEasy() {
     startCpuGame(state.format ?? "core", "easy");
   }
@@ -502,6 +558,11 @@ export function createHandlers(state, elements, onWinner, options = {}) {
 
   function selectHostFormatExpanded() {
     state.format = "expanded";
+    updateFormatButtons();
+  }
+
+  function selectHostFormatUltra() {
+    state.format = "ultra";
     updateFormatButtons();
   }
 
@@ -531,7 +592,7 @@ export function createHandlers(state, elements, onWinner, options = {}) {
 
   function createRoom() {
     state.mode = "online";
-    setStatus(`Creating room... Format: ${state.format === "expanded" ? "EXPANDED" : "CORE"}`);
+    setStatus(`Creating room... Format: ${formatLabel(state.format)}`);
     if (!ensureOnlineClient()) return;
     const playerName = elements.playerNameInput.value.trim() || "Host";
     state.online.role = "host";
@@ -669,6 +730,7 @@ export function createHandlers(state, elements, onWinner, options = {}) {
       useWood: false,
       substituteType: null,
       rewardType: null,
+      choiceType: null,
     };
     const woodOptions = getWoodSubstitutionOptions(state, player, recipeId);
     const recipe = state.ruleset.tradeRecipes?.[recipeId];
@@ -680,6 +742,10 @@ export function createHandlers(state, elements, onWinner, options = {}) {
       );
     if (woodOptions.length > 0 && elements.woodOverlay) {
       openWoodOverlay(woodOptions, canPayBase);
+      return null;
+    }
+    if (recipe?.choiceCost) {
+      openChoiceCostOverlay();
       return null;
     }
     if (recipe?.reward === "any" && elements.gemTutorOverlay) {
@@ -696,11 +762,17 @@ export function createHandlers(state, elements, onWinner, options = {}) {
       useWood: pendingTrade.useWood,
       substituteType: pendingTrade.substituteType,
       rewardType: pendingTrade.rewardType,
+      choiceType: pendingTrade.choiceType,
     };
     const result = sendOrApply({ type: ActionTypes.TRADE, payload });
     pendingTrade = null;
     pendingWoodChoice = null;
     pendingGemChoice = null;
+    pendingChoiceSelection = null;
+    pendingCopperFlow = null;
+    pendingChoiceSelection = null;
+    pendingCopperFlow = null;
+    pendingChoiceSelection = null;
     pendingCpuWinner = null;
     if (
       state.mode !== "online" &&
@@ -763,6 +835,10 @@ export function createHandlers(state, elements, onWinner, options = {}) {
     if (elements.woodOverlay) elements.woodOverlay.hidden = true;
     pendingWoodChoice = null;
     const recipe = state.ruleset.tradeRecipes?.[pendingTrade.recipeId];
+    if (recipe?.choiceCost) {
+      openChoiceCostOverlay();
+      return;
+    }
     if (recipe?.reward === "any" && elements.gemTutorOverlay) {
       openGemTutorOverlay();
       return;
@@ -773,6 +849,7 @@ export function createHandlers(state, elements, onWinner, options = {}) {
   function cancelWoodSubstitution() {
     pendingTrade = null;
     pendingWoodChoice = null;
+    pendingChoiceSelection = null;
     if (elements.woodOverlay) elements.woodOverlay.hidden = true;
   }
 
@@ -821,7 +898,62 @@ export function createHandlers(state, elements, onWinner, options = {}) {
   function cancelGemTutor() {
     pendingTrade = null;
     pendingGemChoice = null;
+    pendingChoiceSelection = null;
     if (elements.gemTutorOverlay) elements.gemTutorOverlay.hidden = true;
+  }
+
+  function openChoiceCostOverlay() {
+    if (!pendingTrade || !elements.choiceCostOptions || !elements.choiceCostOverlay) return;
+    const player = getLocalPlayer();
+    const options = getChoiceCostOptions(state, player, pendingTrade.recipeId, {
+      useWood: pendingTrade.useWood,
+      substituteType: pendingTrade.substituteType,
+    });
+    pendingChoiceSelection = null;
+    elements.choiceCostOptions.innerHTML = "";
+    options.forEach((type) => {
+      const button = document.createElement("button");
+      button.className = "ghost option-button";
+      button.textContent = type;
+      button.dataset.choice = type;
+      button.addEventListener("click", () => selectChoiceCost(type));
+      elements.choiceCostOptions.appendChild(button);
+    });
+    if (elements.choiceCostConfirm) elements.choiceCostConfirm.disabled = true;
+    if (elements.choiceCostMessage) {
+      elements.choiceCostMessage.textContent =
+        "Choose the additional non-gem, non-wood cost card.";
+    }
+    elements.choiceCostOverlay.hidden = false;
+  }
+
+  function selectChoiceCost(choice) {
+    pendingChoiceSelection = choice;
+    if (elements.choiceCostOptions) {
+      Array.from(elements.choiceCostOptions.children).forEach((child) => {
+        child.classList.toggle("active", child.dataset.choice === choice);
+      });
+    }
+    if (elements.choiceCostConfirm) elements.choiceCostConfirm.disabled = false;
+  }
+
+  function confirmChoiceCost() {
+    if (!pendingTrade || !pendingChoiceSelection) return;
+    pendingTrade.choiceType = pendingChoiceSelection;
+    if (elements.choiceCostOverlay) elements.choiceCostOverlay.hidden = true;
+    pendingChoiceSelection = null;
+    const recipe = state.ruleset.tradeRecipes?.[pendingTrade.recipeId];
+    if (recipe?.reward === "any" && elements.gemTutorOverlay) {
+      openGemTutorOverlay();
+      return;
+    }
+    finalizeTrade();
+  }
+
+  function cancelChoiceCost() {
+    pendingTrade = null;
+    pendingChoiceSelection = null;
+    if (elements.choiceCostOverlay) elements.choiceCostOverlay.hidden = true;
   }
 
   function playCard(index) {
@@ -866,8 +998,128 @@ export function createHandlers(state, elements, onWinner, options = {}) {
     return result;
   }
 
-  function finalizeArchive() {
-    const result = sendOrApply({ type: ActionTypes.CONFIRM_ARCHIVE });
+  function startCopperTutorFlow() {
+    if (!state.pendingArchive) return false;
+    const player = getLocalPlayer();
+    const playedCounts = countCards(state.pendingArchive.playedCards);
+    const copperCount = playedCounts.copper ?? 0;
+    if (copperCount === 0) return false;
+    const deckCounts = countCards(player.deck);
+    const availableTin = deckCounts.tin ?? 0;
+    const availableZinc = deckCounts.zinc ?? 0;
+    if (availableTin + availableZinc === 0) return false;
+    pendingCopperFlow = {
+      remaining: copperCount,
+      remainingTin: availableTin,
+      remainingZinc: availableZinc,
+      choices: [],
+      selection: null,
+    };
+    if (elements.confirmOverlay) elements.confirmOverlay.hidden = true;
+    advanceCopperTutor();
+    return true;
+  }
+
+  function advanceCopperTutor() {
+    if (!pendingCopperFlow) return;
+    while (pendingCopperFlow.remaining > 0) {
+      const hasTin = pendingCopperFlow.remainingTin > 0;
+      const hasZinc = pendingCopperFlow.remainingZinc > 0;
+      if (!hasTin && !hasZinc) {
+        pendingCopperFlow.remaining -= 1;
+        continue;
+      }
+      if (hasTin && hasZinc) {
+        if (!elements.copperTutorOverlay || !elements.copperTutorOptions) {
+          pendingCopperFlow.choices.push("tin");
+          pendingCopperFlow.remainingTin -= 1;
+          pendingCopperFlow.remaining -= 1;
+          continue;
+        }
+        openCopperTutorOverlay();
+        return;
+      }
+      if (hasTin) {
+        pendingCopperFlow.remainingTin -= 1;
+      } else {
+        pendingCopperFlow.remainingZinc -= 1;
+      }
+      pendingCopperFlow.remaining -= 1;
+    }
+    const choices = pendingCopperFlow.choices;
+    pendingCopperFlow = null;
+    finalizeArchive({ copperChoices: choices });
+  }
+
+  function openCopperTutorOverlay() {
+    if (!elements.copperTutorOverlay || !elements.copperTutorOptions) return;
+    pendingCopperFlow.selection = null;
+    elements.copperTutorOptions.innerHTML = "";
+    const hasTin = pendingCopperFlow.remainingTin > 0;
+    const hasZinc = pendingCopperFlow.remainingZinc > 0;
+    const options = [];
+    if (hasTin) options.push("tin");
+    if (hasZinc) options.push("zinc");
+    options.forEach((type) => {
+      const button = document.createElement("button");
+      button.className = "ghost option-button";
+      button.textContent = type;
+      button.dataset.choice = type;
+      button.addEventListener("click", () => selectCopperTutor(type));
+      elements.copperTutorOptions.appendChild(button);
+    });
+    if (elements.copperTutorConfirm) elements.copperTutorConfirm.disabled = true;
+    if (elements.copperTutorMessage) {
+      const total =
+        pendingCopperFlow.remaining +
+        pendingCopperFlow.choices.length;
+      const step = pendingCopperFlow.choices.length + 1;
+      elements.copperTutorMessage.textContent = `Choose tin or zinc (${step}/${total}).`;
+    }
+    elements.copperTutorOverlay.hidden = false;
+  }
+
+  function selectCopperTutor(choice) {
+    if (!pendingCopperFlow) return;
+    pendingCopperFlow.selection = choice;
+    if (elements.copperTutorOptions) {
+      Array.from(elements.copperTutorOptions.children).forEach((child) => {
+        child.classList.toggle("active", child.dataset.choice === choice);
+      });
+    }
+    if (elements.copperTutorConfirm) elements.copperTutorConfirm.disabled = false;
+  }
+
+  function confirmCopperTutor() {
+    if (!pendingCopperFlow || !pendingCopperFlow.selection) return;
+    const choice = pendingCopperFlow.selection;
+    pendingCopperFlow.choices.push(choice);
+    if (choice === "tin") {
+      pendingCopperFlow.remainingTin -= 1;
+    } else {
+      pendingCopperFlow.remainingZinc -= 1;
+    }
+    pendingCopperFlow.remaining -= 1;
+    pendingCopperFlow.selection = null;
+    if (elements.copperTutorOverlay) elements.copperTutorOverlay.hidden = true;
+    advanceCopperTutor();
+  }
+
+  function cancelCopperTutor() {
+    pendingCopperFlow = null;
+    if (elements.copperTutorOverlay) elements.copperTutorOverlay.hidden = true;
+    if (elements.confirmOverlay && state.phase === "confirm") {
+      elements.confirmOverlay.hidden = false;
+    }
+  }
+
+  function finalizeArchive(payload = {}) {
+    if (!pendingCopperFlow && payload.copperChoices === undefined) {
+      if (startCopperTutorFlow()) {
+        return null;
+      }
+    }
+    const result = sendOrApply({ type: ActionTypes.CONFIRM_ARCHIVE, payload });
     if (state.mode !== "online") {
       elements.confirmOverlay.hidden = true;
       if (result.event?.winnerIndex !== null && result.event?.winnerIndex !== undefined) {
@@ -911,6 +1163,8 @@ export function createHandlers(state, elements, onWinner, options = {}) {
     pendingTrade = null;
     pendingWoodChoice = null;
     pendingGemChoice = null;
+    pendingChoiceSelection = null;
+    pendingCopperFlow = null;
     const cpuDifficulty = state.cpu?.difficulty ?? null;
     const freshState = createInitialState({
       mode: state.mode,
@@ -934,6 +1188,9 @@ export function createHandlers(state, elements, onWinner, options = {}) {
     elements.confirmOverlay.hidden = true;
     if (elements.woodOverlay) elements.woodOverlay.hidden = true;
     if (elements.gemTutorOverlay) elements.gemTutorOverlay.hidden = true;
+    if (elements.choiceCostOverlay) elements.choiceCostOverlay.hidden = true;
+    if (elements.copperTutorOverlay) elements.copperTutorOverlay.hidden = true;
+    if (elements.copperTutorOverlay) elements.copperTutorOverlay.hidden = true;
     hideActionToast();
 
     startGame(state);
@@ -974,6 +1231,8 @@ export function createHandlers(state, elements, onWinner, options = {}) {
     elements.turnOverlay.hidden = true;
     if (elements.woodOverlay) elements.woodOverlay.hidden = true;
     if (elements.gemTutorOverlay) elements.gemTutorOverlay.hidden = true;
+    if (elements.choiceCostOverlay) elements.choiceCostOverlay.hidden = true;
+    if (elements.copperTutorOverlay) elements.copperTutorOverlay.hidden = true;
     if (elements.cpuTurnOverlay) elements.cpuTurnOverlay.hidden = true;
     hideActionToast();
     elements.onlineChoiceOverlay.hidden = true;
@@ -999,11 +1258,13 @@ export function createHandlers(state, elements, onWinner, options = {}) {
     selectOnlineMode,
     selectCoreFormat,
     selectExpandedFormat,
+    selectUltraFormat,
     selectCpuEasy,
     selectCpuMedium,
     selectCpuHard,
     selectHostFormatCore,
     selectHostFormatExpanded,
+    selectHostFormatUltra,
     createRoom,
     joinRoom,
     backToChoice,
@@ -1024,6 +1285,10 @@ export function createHandlers(state, elements, onWinner, options = {}) {
     cancelWoodSubstitution,
     confirmGemTutor,
     cancelGemTutor,
+    confirmChoiceCost,
+    cancelChoiceCost,
+    confirmCopperTutor,
+    cancelCopperTutor,
     startTurn,
     closeCpuSummary,
   };

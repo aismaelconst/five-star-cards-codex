@@ -1,7 +1,11 @@
 import { describe, it, expect } from "vitest";
 import { createInitialState, createPlayerState } from "../src/game/state.js";
 import { createDeck, createCard } from "../src/game/cards.js";
-import { baseRuleset, expandedRuleset } from "../src/game/ruleset.js";
+import {
+  baseRuleset,
+  expandedRuleset,
+  ultraExpandedRuleset,
+} from "../src/game/ruleset.js";
 import { countCards, generateRoomCode, shuffle } from "../src/shared/utils.js";
 
 describe("state", () => {
@@ -43,6 +47,12 @@ describe("state", () => {
     expect(state.format).toBe("expanded");
     expect(state.players[0].deck.length).toBe(180);
   });
+
+  it("creates an ultra expanded state with copper expansion", () => {
+    const state = createInitialState({ format: "ultra" });
+    expect(state.format).toBe("ultra");
+    expect(state.players[0].deck.length).toBe(200);
+  });
 });
 
 describe("utils", () => {
@@ -78,6 +88,16 @@ describe("utils", () => {
     expect(counts.emerald).toBe(5);
     expect(counts.sapphire).toBe(5);
     expect(counts.platinum).toBe(5);
+  });
+
+  it("createDeck builds ultra expanded counts", () => {
+    const deck = createDeck(ultraExpandedRuleset);
+    const counts = countCards(deck, ultraExpandedRuleset.displayOrder);
+    expect(deck.length).toBe(200);
+    expect(counts.copper).toBe(5);
+    expect(counts.tin).toBe(5);
+    expect(counts.zinc).toBe(5);
+    expect(counts.brass).toBe(5);
   });
 
   it("countCards tallies correctly", () => {

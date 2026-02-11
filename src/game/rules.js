@@ -33,6 +33,116 @@ function buildCostWithWood(cost, substituteType) {
   return adjusted;
 }
 
+const GEM_TYPES = new Set(["ruby", "emerald", "sapphire"]);
+
+function getChoicePoolTypes(ruleset, pool, exclude = []) {
+  const displayOrder = ruleset.displayOrder ?? Object.keys(ruleset.cardTypes ?? {});
+  let types = displayOrder;
+  if (pool === "non_gem_non_wood") {
+    types = displayOrder.filter((type) => type !== "wood" && !GEM_TYPES.has(type));
+  }
+  if (exclude.length > 0) {
+    types = types.filter((type) => !exclude.includes(type));
+  }
+  return types;
+}
+
+function getChoiceCostOptionsForCost(ruleset, recipe, counts, baseCost) {
+  if (!recipe.choiceCost) return [];
+  const pool = getChoicePoolTypes(ruleset, recipe.choiceCost.pool, recipe.choiceCost.exclude);
+  return pool.filter((type) => {
+    const combined = { ...baseCost };
+    combined[type] = (combined[type] ?? 0) + recipe.choiceCost.count;
+    return canPayCost(counts, combined);
+  });
+}
+
+export function getChoiceCostOptions(state, player, recipeId, options = {}) {
+  const recipe = getTradeRecipe(state, recipeId);
+  if (!recipe?.choiceCost) return [];
+  const counts = countCards(player.archive);
+  let baseCost = recipe.cost;
+  if (options.useWood) {
+    const rules = state.ruleset.woodSubstitution;
+    if (!rules?.allow) return [];
+    if (sumCost(recipe.cost) < rules.minCost) return [];
+    if ((counts.wood ?? 0) < 1) return [];
+    if (!options.substituteType || !recipe.cost[options.substituteType]) return [];
+    if (recipeId === "trade_platinum" && options.substituteType === "platinum") return [];
+    baseCost = buildCostWithWood(recipe.cost, options.substituteType);
+  }
+  return getChoiceCostOptionsForCost(state.ruleset, recipe, counts, baseCost);
+}
+
+function getTradeCost(state, player, recipeId, options = {}) {
+  const recipe = getTradeRecipe(state, recipeId);
+  if (!recipe) return null;
+  const counts = countCards(player.archive);
+  let cost = recipe.cost;
+  if (options.useWood) {
+    const rules = state.ruleset.woodSubstitution;
+    if (!rules?.allow) return null;
+    if (sumCost(recipe.cost) < rules.minCost) return null;
+    if ((counts.wood ?? 0) < 1) return null;
+    if (!options.substituteType || !recipe.cost[options.substituteType]) return null;
+    if (recipeId === "trade_platinum" && options.substituteType === "platinum") return null;
+    cost = buildCostWithWood(recipe.cost, options.substituteType);
+  }
+  if (recipe.choiceCost) {
+    if (!options.choiceType) return null;
+    const choiceOptions = getChoiceCostOptions(state, player, recipeId, options);
+    if (!choiceOptions.includes(options.choiceType)) return null;
+    cost = {
+      ...cost,
+      [options.choiceType]: (cost[options.choiceType] ?? 0) + recipe.choiceCost.count,
+    };
+  }
+  if (!canPayCost(counts, cost)) return null;
+  return cost;
+}
+
+function canConfirmCopperChoices(state, player, pending, options = {}) {
+  if (!pending?.playedCards) return true;
+  const copperCount = countCards(pending.playedCards).copper ?? 0;
+  if (copperCount === 0) return true;
+  const choices = Array.isArray(options.copperChoices) ? options.copperChoices : [];
+  let choiceIndex = 0;
+  const deckCounts = countCards(player.deck, state.ruleset.displayOrder);
+  let remainingTin = deckCounts.tin ?? 0;
+  let remainingZinc = deckCounts.zinc ?? 0;
+  for (let i = 0; i < copperCount; i += 1) {
+    const hasTin = remainingTin > 0;
+    const hasZinc = remainingZinc > 0;
+    if (!hasTin && !hasZinc) {
+      continue;
+    }
+    if (hasTin && hasZinc) {
+      const choice = choices[choiceIndex];
+      if (choice !== "tin" && choice !== "zinc") return false;
+      choiceIndex += 1;
+      if (choice === "tin") {
+        remainingTin -= 1;
+      } else {
+        remainingZinc -= 1;
+      }
+      continue;
+    }
+    if (hasTin) {
+      remainingTin -= 1;
+    } else {
+      remainingZinc -= 1;
+    }
+  }
+  return choiceIndex === choices.length;
+}
+
+export function canConfirmArchiveWithOptions(state, playerIndex, options = {}) {
+  const pending = state.pendingArchive;
+  if (!pending || pending.playerIndex !== playerIndex) return false;
+  const player = state.players[playerIndex];
+  return canConfirmCopperChoices(state, player, pending, options);
+}
+
 export function getWoodSubstitutionOptions(state, player, recipeId) {
   const recipe = getTradeRecipe(state, recipeId);
   if (!recipe) return [];
@@ -58,9 +168,33 @@ export function canInitiateTrade(state, player, recipeId) {
   if (state.phase !== "main") return false;
   if (state.tradesThisTurn >= state.ruleset.maxTrades) return false;
   const counts = countCards(player.archive);
-  const canPay =
-    canPayCost(counts, recipe.cost) ||
-    getWoodSubstitutionOptions(state, player, recipeId).length > 0;
+  let canPay = false;
+  if (canPayCost(counts, recipe.cost)) {
+    if (!recipe.choiceCost) {
+      canPay = true;
+    } else if (
+      getChoiceCostOptionsForCost(state.ruleset, recipe, counts, recipe.cost).length > 0
+    ) {
+      canPay = true;
+    }
+  }
+  if (!canPay) {
+    const woodOptions = getWoodSubstitutionOptions(state, player, recipeId);
+    for (const substituteType of woodOptions) {
+      const adjusted = buildCostWithWood(recipe.cost, substituteType);
+      if (!canPayCost(counts, adjusted)) continue;
+      if (!recipe.choiceCost) {
+        canPay = true;
+        break;
+      }
+      if (
+        getChoiceCostOptionsForCost(state.ruleset, recipe, counts, adjusted).length > 0
+      ) {
+        canPay = true;
+        break;
+      }
+    }
+  }
   if (!canPay) return false;
   if (recipe.reward === "any") {
     return player.deck.length > 0;
@@ -69,7 +203,16 @@ export function canInitiateTrade(state, player, recipeId) {
     return true;
   }
   const deckCounts = countCards(player.deck);
-  return (deckCounts[recipe.reward] ?? 0) > 0;
+  if (typeof recipe.reward === "string") {
+    return (deckCounts[recipe.reward] ?? 0) > 0;
+  }
+  if (recipe.reward?.type === "cards") {
+    return (deckCounts[recipe.reward.card] ?? 0) >= recipe.reward.count;
+  }
+  if (recipe.reward?.type === "draw") {
+    return true;
+  }
+  return false;
 }
 
 export function getCurrentPlayer(state) {
@@ -95,18 +238,8 @@ export function canTradeWithOptions(state, player, recipeId, options = {}) {
   if (!recipe) return false;
   if (state.phase !== "main") return false;
   if (state.tradesThisTurn >= state.ruleset.maxTrades) return false;
-  const rules = state.ruleset.woodSubstitution;
-  const counts = countCards(player.archive);
-  let cost = recipe.cost;
-  if (options.useWood) {
-    if (!rules?.allow) return false;
-    if (sumCost(recipe.cost) < rules.minCost) return false;
-    if ((counts.wood ?? 0) < 1) return false;
-    if (!options.substituteType || !recipe.cost[options.substituteType]) return false;
-    if (recipeId === "trade_platinum" && options.substituteType === "platinum") return false;
-    cost = buildCostWithWood(recipe.cost, options.substituteType);
-  }
-  if (!canPayCost(counts, cost)) return false;
+  const cost = getTradeCost(state, player, recipeId, options);
+  if (!cost) return false;
   if (recipe.reward === "any") {
     if (!options.rewardType) return false;
     const deckCounts = countCards(player.deck);
@@ -116,7 +249,16 @@ export function canTradeWithOptions(state, player, recipeId, options = {}) {
     return true;
   }
   const deckCounts = countCards(player.deck);
-  return (deckCounts[recipe.reward] ?? 0) > 0;
+  if (typeof recipe.reward === "string") {
+    return (deckCounts[recipe.reward] ?? 0) > 0;
+  }
+  if (recipe.reward?.type === "cards") {
+    return (deckCounts[recipe.reward.card] ?? 0) >= recipe.reward.count;
+  }
+  if (recipe.reward?.type === "draw") {
+    return true;
+  }
+  return false;
 }
 
 function removeCardsFromArchive(player, type, count) {
@@ -136,15 +278,32 @@ export function performTrade(state, player, recipeId, options = {}) {
     return { success: false };
   }
   const recipe = getTradeRecipe(state, recipeId);
-  let cost = recipe.cost;
-  if (options.useWood && options.substituteType) {
-    cost = buildCostWithWood(recipe.cost, options.substituteType);
+  const cost = getTradeCost(state, player, recipeId, options);
+  if (!cost) {
+    return { success: false };
   }
   Object.entries(cost).forEach(([type, amount]) => {
     if (amount > 0) {
       removeCardsFromArchive(player, type, amount);
     }
   });
+
+  const tutorCards = (type, count) => {
+    let moved = 0;
+    for (let i = 0; i < count; i += 1) {
+      const rewardIndex = player.deck.findIndex(
+        (card) => getCardType(card) === type
+      );
+      if (rewardIndex === -1) break;
+      const [reward] = player.deck.splice(rewardIndex, 1);
+      player.hand.push(reward);
+      moved += 1;
+    }
+    if (moved > 0) {
+      player.deck = shuffle(player.deck);
+    }
+    return moved;
+  };
 
   let detail = {};
   if (recipe.reward === "any") {
@@ -175,7 +334,7 @@ export function performTrade(state, player, recipeId, options = {}) {
       detail.rewardType = getCardType(reward);
     }
     detail.digDiscardedCount = discarded;
-  } else {
+  } else if (typeof recipe.reward === "string") {
     const rewardIndex = player.deck.findIndex(
       (card) => getCardType(card) === recipe.reward
     );
@@ -185,6 +344,15 @@ export function performTrade(state, player, recipeId, options = {}) {
       player.deck = shuffle(player.deck);
       detail.rewardType = recipe.reward;
     }
+  } else if (recipe.reward?.type === "cards") {
+    const moved = tutorCards(recipe.reward.card, recipe.reward.count);
+    if (moved > 0) {
+      detail.rewardType = recipe.reward.card;
+      detail.rewardCount = moved;
+    }
+  } else if (recipe.reward?.type === "draw") {
+    const drawn = drawCards(player, recipe.reward.count);
+    detail.drawCount = drawn.length;
   }
   state.tradesThisTurn += 1;
   return { success: true, detail };
@@ -235,13 +403,51 @@ export function prepareArchive(state) {
   return state.pendingArchive;
 }
 
-export function finalizeArchive(state) {
+export function finalizeArchive(state, options = {}) {
   const pending = state.pendingArchive;
   if (!pending) return { winnerIndex: null };
   const player = state.players[pending.playerIndex];
 
   player.archive.push(...pending.playedCards);
   player.active = [];
+
+  const tutorFromDeck = (type) => {
+    const rewardIndex = player.deck.findIndex((card) => getCardType(card) === type);
+    if (rewardIndex === -1) return false;
+    const [reward] = player.deck.splice(rewardIndex, 1);
+    player.hand.push(reward);
+    player.deck = shuffle(player.deck);
+    return true;
+  };
+
+  const playedCounts = countCards(pending.playedCards);
+  const copperCount = playedCounts.copper ?? 0;
+  const tinCount = playedCounts.tin ?? 0;
+  const zincCount = playedCounts.zinc ?? 0;
+  const copperChoices = Array.isArray(options.copperChoices) ? options.copperChoices : [];
+  let choiceIndex = 0;
+  for (let i = 0; i < copperCount; i += 1) {
+    const deckCounts = countCards(player.deck, state.ruleset.displayOrder);
+    const hasTin = (deckCounts.tin ?? 0) > 0;
+    const hasZinc = (deckCounts.zinc ?? 0) > 0;
+    if (!hasTin && !hasZinc) continue;
+    let choice = null;
+    if (hasTin && hasZinc) {
+      const requested = copperChoices[choiceIndex];
+      choice = requested === "tin" || requested === "zinc" ? requested : "tin";
+      choiceIndex += requested === "tin" || requested === "zinc" ? 1 : 0;
+    } else {
+      choice = hasTin ? "tin" : "zinc";
+    }
+    tutorFromDeck(choice);
+  }
+  for (let i = 0; i < tinCount; i += 1) {
+    tutorFromDeck("copper");
+  }
+  for (let i = 0; i < zincCount; i += 1) {
+    tutorFromDeck("copper");
+  }
+
   drawCards(player, pending.drawCount);
 
   state.pendingArchive = null;
@@ -293,7 +499,7 @@ export function applyAction(state, action) {
       prepareArchive(state);
       return { event: null };
     case ActionTypes.CONFIRM_ARCHIVE:
-      return { event: finalizeArchive(state) };
+      return { event: finalizeArchive(state, action.payload ?? {}) };
     case ActionTypes.CANCEL_ARCHIVE:
       cancelArchive(state);
       return { event: null };

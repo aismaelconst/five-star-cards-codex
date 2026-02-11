@@ -19,8 +19,21 @@ function formatTradeBullet(recipe, type) {
   if (recipe.reward === "dig_non_bronze_silver") {
     return "• Trade: Platinum + Bronze + Silver → dig until non bronze/silver; discard bronze/silver; add first non bronze/silver";
   }
-  const cost = formatCost(recipe.cost, false);
-  return `• Trade: ${cost} → 1 ${recipe.reward}`;
+  let cost = formatCost(recipe.cost, false);
+  if (recipe.choiceCost) {
+    const poolLabel =
+      recipe.choiceCost.pool === "non_gem_non_wood" ? "non-gem/non-wood" : "choice";
+    cost = `${cost} + ${recipe.choiceCost.count} ${poolLabel}`;
+  }
+  let reward = recipe.reward;
+  if (recipe.reward?.type === "cards") {
+    reward = `${recipe.reward.count} ${recipe.reward.card}`;
+  } else if (recipe.reward?.type === "draw") {
+    reward = `draw ${recipe.reward.count}`;
+  } else if (typeof recipe.reward === "string") {
+    reward = `1 ${recipe.reward}`;
+  }
+  return `• Trade: ${cost} → ${reward}`;
 }
 
 export function getCardTooltip(type, ruleset) {
@@ -34,6 +47,13 @@ export function getCardTooltip(type, ruleset) {
     lines.push(`• End of turn: Draw ${def.draw}`);
   } else {
     lines.push("• End of turn: No draw");
+  }
+
+  if (type === "copper") {
+    lines.push("• End of turn: Tutor 1 tin or zinc (before draws).");
+  }
+  if (type === "tin" || type === "zinc") {
+    lines.push("• End of turn: Tutor 1 copper (before draws).");
   }
 
   const recipes = ruleset?.tradeRecipes ?? {};

@@ -108,3 +108,63 @@ export const expandedRuleset = {
     platinum: 5,
   },
 };
+
+export const ultraExpandedRuleset = {
+  ...expandedRuleset,
+  displayOrder: [
+    "bronze",
+    "silver",
+    "gold",
+    "wood",
+    "ruby",
+    "emerald",
+    "sapphire",
+    "platinum",
+    "copper",
+    "tin",
+    "zinc",
+    "brass",
+  ],
+  tradeRecipes: {
+    ...expandedRuleset.tradeRecipes,
+    trade_copper_tin: {
+      cost: { copper: 1, tin: 1 },
+      reward: { type: "cards", card: "bronze", count: 3 },
+    },
+    trade_copper_zinc: {
+      cost: { copper: 1, zinc: 1 },
+      reward: "brass",
+    },
+    trade_brass_draw: {
+      cost: { brass: 1 },
+      choiceCost: { count: 1, pool: "non_gem_non_wood" },
+      reward: { type: "draw", count: 3 },
+    },
+  },
+  cardTypes: {
+    ...expandedRuleset.cardTypes,
+    copper: {
+      tier: "copper",
+      draw: 0,
+    },
+    tin: {
+      tier: "tin",
+      draw: 0,
+    },
+    zinc: {
+      tier: "zinc",
+      draw: 0,
+    },
+    brass: {
+      tier: "brass",
+      draw: 0,
+    },
+  },
+  deckCounts: {
+    ...expandedRuleset.deckCounts,
+    copper: 5,
+    tin: 5,
+    zinc: 5,
+    brass: 5,
+  },
+};

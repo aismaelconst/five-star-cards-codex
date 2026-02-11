@@ -10,6 +10,9 @@ export function wireEvents(elements, handlers) {
   if (elements.formatExpanded) {
     elements.formatExpanded.addEventListener("click", handlers.selectExpandedFormat);
   }
+  if (elements.formatUltra) {
+    elements.formatUltra.addEventListener("click", handlers.selectUltraFormat);
+  }
   if (elements.cpuEasy) {
     elements.cpuEasy.addEventListener("click", handlers.selectCpuEasy);
   }
@@ -24,6 +27,9 @@ export function wireEvents(elements, handlers) {
   }
   if (elements.hostFormatExpanded) {
     elements.hostFormatExpanded.addEventListener("click", handlers.selectHostFormatExpanded);
+  }
+  if (elements.hostFormatUltra) {
+    elements.hostFormatUltra.addEventListener("click", handlers.selectHostFormatUltra);
   }
   elements.chooseCreate.addEventListener("click", handlers.chooseCreate);
   elements.chooseJoin.addEventListener("click", handlers.chooseJoin);
@@ -41,6 +47,15 @@ export function wireEvents(elements, handlers) {
   }
   if (elements.tradePlatinum) {
     elements.tradePlatinum.addEventListener("click", () => handlers.trade("trade_platinum"));
+  }
+  if (elements.tradeCopperTin) {
+    elements.tradeCopperTin.addEventListener("click", () => handlers.trade("trade_copper_tin"));
+  }
+  if (elements.tradeCopperZinc) {
+    elements.tradeCopperZinc.addEventListener("click", () => handlers.trade("trade_copper_zinc"));
+  }
+  if (elements.tradeBrass) {
+    elements.tradeBrass.addEventListener("click", () => handlers.trade("trade_brass_draw"));
   }
   elements.endTurn.addEventListener("click", handlers.endTurn);
   elements.undoPlays.addEventListener("click", handlers.returnAllCards);
@@ -63,5 +78,17 @@ export function wireEvents(elements, handlers) {
   }
   if (elements.gemTutorCancel) {
     elements.gemTutorCancel.addEventListener("click", handlers.cancelGemTutor);
+  }
+  if (elements.choiceCostConfirm) {
+    elements.choiceCostConfirm.addEventListener("click", handlers.confirmChoiceCost);
+  }
+  if (elements.choiceCostCancel) {
+    elements.choiceCostCancel.addEventListener("click", handlers.cancelChoiceCost);
+  }
+  if (elements.copperTutorConfirm) {
+    elements.copperTutorConfirm.addEventListener("click", handlers.confirmCopperTutor);
+  }
+  if (elements.copperTutorCancel) {
+    elements.copperTutorCancel.addEventListener("click", handlers.cancelCopperTutor);
   }
 }

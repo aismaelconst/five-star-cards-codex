@@ -18,6 +18,9 @@ function setupDom() {
     <button id="tradeSilver"></button>
     <button id="tradeGems"></button>
     <button id="tradePlatinum"></button>
+    <button id="tradeCopperTin"></button>
+    <button id="tradeCopperZinc"></button>
+    <button id="tradeBrass"></button>
     <button id="endTurn"></button>
     <button id="undoPlays"></button>
     <div id="winnerPanel"></div>
@@ -46,6 +49,7 @@ function setupDom() {
     <div id="formatOverlay"></div>
     <button id="formatCore"></button>
     <button id="formatExpanded"></button>
+    <button id="formatUltra"></button>
     <div id="cpuOverlay"></div>
     <button id="cpuEasy"></button>
     <button id="cpuMedium"></button>
@@ -55,6 +59,7 @@ function setupDom() {
     <div id="guestOverlay"></div>
     <button id="hostFormatCore"></button>
     <button id="hostFormatExpanded"></button>
+    <button id="hostFormatUltra"></button>
     <input id="playerNameInput" />
     <input id="roomCodeInput" />
     <button id="createRoom"></button>
@@ -79,6 +84,16 @@ function setupDom() {
     <div id="gemTutorOptions"></div>
     <button id="gemTutorConfirm"></button>
     <button id="gemTutorCancel"></button>
+    <div id="choiceCostOverlay"></div>
+    <div id="choiceCostMessage"></div>
+    <div id="choiceCostOptions"></div>
+    <button id="choiceCostConfirm"></button>
+    <button id="choiceCostCancel"></button>
+    <div id="copperTutorOverlay"></div>
+    <div id="copperTutorMessage"></div>
+    <div id="copperTutorOptions"></div>
+    <button id="copperTutorConfirm"></button>
+    <button id="copperTutorCancel"></button>
     <div id="actionToast"></div>
     <div id="actionToastText"></div>
   `;

@@ -1,6 +1,6 @@
 import { shuffle } from "../shared/utils.js";
 import { createDeck } from "./cards.js";
-import { baseRuleset, expandedRuleset } from "./ruleset.js";
+import { baseRuleset, expandedRuleset, ultraExpandedRuleset } from "./ruleset.js";
 
 export function createPlayerState(ruleset, playerId, name) {
   return {
@@ -17,7 +17,12 @@ export function createPlayerState(ruleset, playerId, name) {
 export function createInitialState(options = {}) {
   const format = options.format ?? "core";
   const ruleset =
-    options.ruleset ?? (format === "expanded" ? expandedRuleset : baseRuleset);
+    options.ruleset ??
+    (format === "expanded"
+      ? expandedRuleset
+      : format === "ultra"
+        ? ultraExpandedRuleset
+        : baseRuleset);
   const gameId = options.gameId ?? `game-${Date.now()}`;
   const playerIds = options.playerIds ?? ["player-1", "player-2"];
   const playerNames = options.playerNames ?? ["Player 1", "Player 2"];

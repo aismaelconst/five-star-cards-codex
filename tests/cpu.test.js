@@ -81,6 +81,24 @@ describe("cpu", () => {
     expect(archiveCounts.wood ?? 0).toBe(0);
   });
 
+  it("cpu uses brass draw trade in ultra format", () => {
+    const state = createInitialState({
+      mode: "cpu",
+      format: "ultra",
+      playerNames: ["You", "CPU"],
+    });
+    state.currentPlayer = 1;
+    state.cpu = { difficulty: "easy" };
+    const cpu = state.players[1];
+    cpu.archive = ["brass", "bronze"];
+    cpu.deck = ["bronze", "silver", "gold", "bronze"];
+
+    const summary = executeCpuTurn(state, { difficulty: "easy", cpuIndex: 1 });
+
+    expect(summary.trades[0].recipeId).toBe("trade_brass_draw");
+    expect(summary.trades[0].choiceType).toBe("bronze");
+  });
+
   it("hard uses gem set when bronze trade is unavailable", () => {
     const state = createInitialState({
       mode: "cpu",

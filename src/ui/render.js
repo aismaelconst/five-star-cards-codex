@@ -140,21 +140,47 @@ export function renderApp(state, elements, handlers) {
     !inMainPhase || !turnGate || !canInitiateTrade(state, player, "trade_bronze");
   elements.tradeSilver.disabled =
     !inMainPhase || !turnGate || !canInitiateTrade(state, player, "trade_silver");
+  const isExpanded = state.format === "expanded" || state.format === "ultra";
+  const isUltra = state.format === "ultra";
   if (elements.tradeGems) {
-    elements.tradeGems.hidden = state.format !== "expanded";
+    elements.tradeGems.hidden = !isExpanded;
     elements.tradeGems.disabled =
-      state.format !== "expanded" ||
+      !isExpanded ||
       !inMainPhase ||
       !turnGate ||
       !canInitiateTrade(state, player, "trade_gem_set");
   }
   if (elements.tradePlatinum) {
-    elements.tradePlatinum.hidden = state.format !== "expanded";
+    elements.tradePlatinum.hidden = !isExpanded;
     elements.tradePlatinum.disabled =
-      state.format !== "expanded" ||
+      !isExpanded ||
       !inMainPhase ||
       !turnGate ||
       !canInitiateTrade(state, player, "trade_platinum");
+  }
+  if (elements.tradeCopperTin) {
+    elements.tradeCopperTin.hidden = !isUltra;
+    elements.tradeCopperTin.disabled =
+      !isUltra ||
+      !inMainPhase ||
+      !turnGate ||
+      !canInitiateTrade(state, player, "trade_copper_tin");
+  }
+  if (elements.tradeCopperZinc) {
+    elements.tradeCopperZinc.hidden = !isUltra;
+    elements.tradeCopperZinc.disabled =
+      !isUltra ||
+      !inMainPhase ||
+      !turnGate ||
+      !canInitiateTrade(state, player, "trade_copper_zinc");
+  }
+  if (elements.tradeBrass) {
+    elements.tradeBrass.hidden = !isUltra;
+    elements.tradeBrass.disabled =
+      !isUltra ||
+      !inMainPhase ||
+      !turnGate ||
+      !canInitiateTrade(state, player, "trade_brass_draw");
   }
   elements.endTurn.disabled = state.phase !== "main" || !turnGate;
   elements.undoPlays.disabled = !inMainPhase || !turnGate || player.active.length === 0;

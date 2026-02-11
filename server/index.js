@@ -4,7 +4,11 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import { createInitialState } from "../src/game/state.js";
-import { applyAction, canTradeWithOptions } from "../src/game/rules.js";
+import {
+  applyAction,
+  canConfirmArchiveWithOptions,
+  canTradeWithOptions,
+} from "../src/game/rules.js";
 import { initializeOnlineGame } from "../src/game/online.js";
 import { normalizeOnlinePhase } from "../src/game/lifecycle.js";
 import {
@@ -173,7 +177,11 @@ wss.on("connection", (ws) => {
 
     if (message.type === "create_room") {
       const format =
-        message.format === "expanded" || message.format === "core" ? message.format : "core";
+        message.format === "expanded" ||
+        message.format === "ultra" ||
+        message.format === "core"
+          ? message.format
+          : "core";
       const { roomId, hostId } = createRoom(message.playerName ?? "Host", format);
       currentRoomId = roomId;
       currentPlayerId = hostId;
@@ -280,6 +288,21 @@ wss.on("connection", (ws) => {
         }
       }
       if (message.action?.type === "CONFIRM_ARCHIVE") {
+        const playerIndex = getPlayerIndexById(room.state, playerId);
+        if (playerIndex === -1) {
+          sendError(ws, "Invalid player.");
+          return;
+        }
+        if (
+          !canConfirmArchiveWithOptions(
+            room.state,
+            playerIndex,
+            message.action.payload ?? {}
+          )
+        ) {
+          sendError(ws, "Invalid archive confirmation.");
+          return;
+        }
         const pending = room.state.pendingArchive;
         if (pending?.playedCards) {
           lastEvent = {
@@ -301,8 +324,11 @@ wss.on("connection", (ws) => {
           recipeId,
           useWood: message.action.payload?.useWood ?? false,
           substituteType: message.action.payload?.substituteType ?? null,
+          choiceType: message.action.payload?.choiceType ?? null,
           rewardType:
             result.event.detail?.rewardType ?? message.action.payload?.rewardType ?? null,
+          rewardCount: result.event.detail?.rewardCount,
+          drawCount: result.event.detail?.drawCount,
           digDiscardedCount: result.event.detail?.digDiscardedCount,
         };
         if (recipe) {

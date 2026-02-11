@@ -1,11 +1,12 @@
 import { describe, it, expect } from "vitest";
-import { baseRuleset, expandedRuleset } from "../src/game/ruleset.js";
+import { baseRuleset, expandedRuleset, ultraExpandedRuleset } from "../src/game/ruleset.js";
 import { createCard } from "../src/game/cards.js";
 import {
   ActionTypes,
   applyAction,
   canTrade,
   canTradeWithOptions,
+  canConfirmArchiveWithOptions,
   finalizeArchive,
   performTrade,
   playCard,
@@ -70,6 +71,35 @@ function makeExpandedState() {
     ],
     ruleset: expandedRuleset,
     format: "expanded",
+    currentPlayer: 0,
+    tradesThisTurn: 0,
+    phase: "main",
+    winner: null,
+    turnCount: 1,
+    pendingArchive: null,
+  };
+}
+
+function makeUltraState() {
+  return {
+    players: [
+      {
+        deck: [],
+        hand: [],
+        active: [],
+        archive: [],
+        discard: [],
+      },
+      {
+        deck: [],
+        hand: [],
+        active: [],
+        archive: [],
+        discard: [],
+      },
+    ],
+    ruleset: ultraExpandedRuleset,
+    format: "ultra",
     currentPlayer: 0,
     tradesThisTurn: 0,
     phase: "main",
@@ -269,6 +299,97 @@ describe("rules", () => {
     expect(result.success).toBe(true);
     expect(player.hand.length).toBe(0);
     expect(result.detail.digDiscardedCount).toBe(2);
+  });
+
+  it("trades copper + tin for three bronze", () => {
+    const state = makeUltraState();
+    const player = current(state);
+    player.archive = [
+      createCard("copper", ultraExpandedRuleset),
+      createCard("tin", ultraExpandedRuleset),
+    ];
+    player.deck = [
+      createCard("bronze", ultraExpandedRuleset),
+      createCard("bronze", ultraExpandedRuleset),
+      createCard("bronze", ultraExpandedRuleset),
+    ];
+
+    const result = performTrade(state, player, "trade_copper_tin");
+    expect(result.success).toBe(true);
+    expect(player.discard.length).toBe(2);
+    expect(player.hand.filter((card) => card.type === "bronze")).toHaveLength(3);
+  });
+
+  it("trades copper + zinc for brass", () => {
+    const state = makeUltraState();
+    const player = current(state);
+    player.archive = [
+      createCard("copper", ultraExpandedRuleset),
+      createCard("zinc", ultraExpandedRuleset),
+    ];
+    player.deck = [createCard("brass", ultraExpandedRuleset)];
+
+    const result = performTrade(state, player, "trade_copper_zinc");
+    expect(result.success).toBe(true);
+    expect(player.hand.some((card) => card.type === "brass")).toBe(true);
+  });
+
+  it("requires a choice cost for brass draw trade", () => {
+    const state = makeUltraState();
+    const player = current(state);
+    player.archive = [
+      createCard("brass", ultraExpandedRuleset),
+      createCard("bronze", ultraExpandedRuleset),
+    ];
+    player.deck = [
+      createCard("gold", ultraExpandedRuleset),
+      createCard("silver", ultraExpandedRuleset),
+      createCard("bronze", ultraExpandedRuleset),
+    ];
+
+    expect(canTradeWithOptions(state, player, "trade_brass_draw", {})).toBe(false);
+    const result = performTrade(state, player, "trade_brass_draw", {
+      choiceType: "bronze",
+    });
+    expect(result.success).toBe(true);
+    expect(player.hand.length).toBe(3);
+  });
+
+  it("resolves copper and tin end-of-turn tutors", () => {
+    const state = makeUltraState();
+    const player = current(state);
+    player.active = [
+      createCard("copper", ultraExpandedRuleset),
+      createCard("tin", ultraExpandedRuleset),
+    ];
+    player.deck = [
+      createCard("tin", ultraExpandedRuleset),
+      createCard("copper", ultraExpandedRuleset),
+    ];
+
+    prepareArchive(state);
+    finalizeArchive(state, { copperChoices: ["tin"] });
+
+    const handTypes = player.hand.map((card) => card.type);
+    expect(handTypes).toContain("tin");
+    expect(handTypes).toContain("copper");
+  });
+
+  it("validates copper tutor choices when confirming archive", () => {
+    const state = makeUltraState();
+    const player = current(state);
+    player.active = [createCard("copper", ultraExpandedRuleset)];
+    player.deck = [
+      createCard("tin", ultraExpandedRuleset),
+      createCard("zinc", ultraExpandedRuleset),
+    ];
+
+    prepareArchive(state);
+    const playerIndex = state.currentPlayer;
+    expect(canConfirmArchiveWithOptions(state, playerIndex, {})).toBe(false);
+    expect(
+      canConfirmArchiveWithOptions(state, playerIndex, { copperChoices: ["tin"] })
+    ).toBe(true);
   });
 
   it("prepareArchive creates pending archive and draw count", () => {

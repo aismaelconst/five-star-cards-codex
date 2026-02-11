@@ -15,11 +15,13 @@ describe("ui/events", () => {
       onlineMode: makeButton("onlineMode"),
       formatCore: makeButton("formatCore"),
       formatExpanded: makeButton("formatExpanded"),
+      formatUltra: makeButton("formatUltra"),
       cpuEasy: makeButton("cpuEasy"),
       cpuMedium: makeButton("cpuMedium"),
       cpuHard: makeButton("cpuHard"),
       hostFormatCore: makeButton("hostFormatCore"),
       hostFormatExpanded: makeButton("hostFormatExpanded"),
+      hostFormatUltra: makeButton("hostFormatUltra"),
       createRoom: makeButton("createRoom"),
       chooseCreate: makeButton("chooseCreate"),
       chooseJoin: makeButton("chooseJoin"),
@@ -33,6 +35,9 @@ describe("ui/events", () => {
       tradeSilver: makeButton("tradeSilver"),
       tradeGems: makeButton("tradeGems"),
       tradePlatinum: makeButton("tradePlatinum"),
+      tradeCopperTin: makeButton("tradeCopperTin"),
+      tradeCopperZinc: makeButton("tradeCopperZinc"),
+      tradeBrass: makeButton("tradeBrass"),
       endTurn: makeButton("endTurn"),
       undoPlays: makeButton("undoPlays"),
       restartGame: makeButton("restartGame"),
@@ -45,6 +50,10 @@ describe("ui/events", () => {
       woodCancel: makeButton("woodCancel"),
       gemTutorConfirm: makeButton("gemTutorConfirm"),
       gemTutorCancel: makeButton("gemTutorCancel"),
+      choiceCostConfirm: makeButton("choiceCostConfirm"),
+      choiceCostCancel: makeButton("choiceCostCancel"),
+      copperTutorConfirm: makeButton("copperTutorConfirm"),
+      copperTutorCancel: makeButton("copperTutorCancel"),
     };
 
     const handlers = {
@@ -53,11 +62,13 @@ describe("ui/events", () => {
       selectOnlineMode: vi.fn(),
       selectCoreFormat: vi.fn(),
       selectExpandedFormat: vi.fn(),
+      selectUltraFormat: vi.fn(),
       selectCpuEasy: vi.fn(),
       selectCpuMedium: vi.fn(),
       selectCpuHard: vi.fn(),
       selectHostFormatCore: vi.fn(),
       selectHostFormatExpanded: vi.fn(),
+      selectHostFormatUltra: vi.fn(),
       chooseCreate: vi.fn(),
       chooseJoin: vi.fn(),
       backToChoice: vi.fn(),
@@ -77,6 +88,10 @@ describe("ui/events", () => {
       cancelWoodSubstitution: vi.fn(),
       confirmGemTutor: vi.fn(),
       cancelGemTutor: vi.fn(),
+      confirmChoiceCost: vi.fn(),
+      cancelChoiceCost: vi.fn(),
+      confirmCopperTutor: vi.fn(),
+      cancelCopperTutor: vi.fn(),
     };
 
     wireEvents(elements, handlers);
@@ -86,11 +101,13 @@ describe("ui/events", () => {
     elements.onlineMode.click();
     elements.formatCore.click();
     elements.formatExpanded.click();
+    elements.formatUltra.click();
     elements.cpuEasy.click();
     elements.cpuMedium.click();
     elements.cpuHard.click();
     elements.hostFormatCore.click();
     elements.hostFormatExpanded.click();
+    elements.hostFormatUltra.click();
     elements.chooseCreate.click();
     elements.chooseJoin.click();
     elements.backToChoiceHost.click();
@@ -104,6 +121,9 @@ describe("ui/events", () => {
     elements.tradeSilver.click();
     elements.tradeGems.click();
     elements.tradePlatinum.click();
+    elements.tradeCopperTin.click();
+    elements.tradeCopperZinc.click();
+    elements.tradeBrass.click();
     elements.endTurn.click();
     elements.undoPlays.click();
     elements.restartGame.click();
@@ -116,17 +136,23 @@ describe("ui/events", () => {
     elements.woodCancel.click();
     elements.gemTutorConfirm.click();
     elements.gemTutorCancel.click();
+    elements.choiceCostConfirm.click();
+    elements.choiceCostCancel.click();
+    elements.copperTutorConfirm.click();
+    elements.copperTutorCancel.click();
 
     expect(handlers.selectOfflineMode).toHaveBeenCalled();
     expect(handlers.selectCpuMode).toHaveBeenCalled();
     expect(handlers.selectOnlineMode).toHaveBeenCalled();
     expect(handlers.selectCoreFormat).toHaveBeenCalled();
     expect(handlers.selectExpandedFormat).toHaveBeenCalled();
+    expect(handlers.selectUltraFormat).toHaveBeenCalled();
     expect(handlers.selectCpuEasy).toHaveBeenCalled();
     expect(handlers.selectCpuMedium).toHaveBeenCalled();
     expect(handlers.selectCpuHard).toHaveBeenCalled();
     expect(handlers.selectHostFormatCore).toHaveBeenCalled();
     expect(handlers.selectHostFormatExpanded).toHaveBeenCalled();
+    expect(handlers.selectHostFormatUltra).toHaveBeenCalled();
     expect(handlers.chooseCreate).toHaveBeenCalled();
     expect(handlers.chooseJoin).toHaveBeenCalled();
     expect(handlers.backToChoice).toHaveBeenCalled();
@@ -138,6 +164,9 @@ describe("ui/events", () => {
     expect(handlers.trade).toHaveBeenCalledWith("trade_silver");
     expect(handlers.trade).toHaveBeenCalledWith("trade_gem_set");
     expect(handlers.trade).toHaveBeenCalledWith("trade_platinum");
+    expect(handlers.trade).toHaveBeenCalledWith("trade_copper_tin");
+    expect(handlers.trade).toHaveBeenCalledWith("trade_copper_zinc");
+    expect(handlers.trade).toHaveBeenCalledWith("trade_brass_draw");
     expect(handlers.endTurn).toHaveBeenCalled();
     expect(handlers.returnAllCards).toHaveBeenCalled();
     expect(handlers.resetGame).toHaveBeenCalledTimes(2);
@@ -149,5 +178,9 @@ describe("ui/events", () => {
     expect(handlers.cancelWoodSubstitution).toHaveBeenCalled();
     expect(handlers.confirmGemTutor).toHaveBeenCalled();
     expect(handlers.cancelGemTutor).toHaveBeenCalled();
+    expect(handlers.confirmChoiceCost).toHaveBeenCalled();
+    expect(handlers.cancelChoiceCost).toHaveBeenCalled();
+    expect(handlers.confirmCopperTutor).toHaveBeenCalled();
+    expect(handlers.cancelCopperTutor).toHaveBeenCalled();
   });
 });

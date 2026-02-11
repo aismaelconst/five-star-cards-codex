@@ -165,6 +165,26 @@ h3 {
   color: #515b66;
 }
 
+.chip.copper {
+  background: rgba(184, 95, 47, 0.2);
+  color: #6b341d;
+}
+
+.chip.tin {
+  background: rgba(140, 156, 168, 0.25);
+  color: #4b5563;
+}
+
+.chip.zinc {
+  background: rgba(186, 174, 160, 0.25);
+  color: #6b5a4c;
+}
+
+.chip.brass {
+  background: rgba(202, 160, 78, 0.25);
+  color: #6d4f12;
+}
+
 .play {
   display: flex;
   flex-direction: column;
@@ -357,6 +377,26 @@ h3 {
 .card.platinum {
   border-color: rgba(158, 165, 175, 0.6);
   background-image: url(/assets/cards/platinum-star.svg);
+}
+
+.card.copper {
+  border-color: rgba(184, 95, 47, 0.6);
+  background-image: url(/assets/cards/copper-star.svg);
+}
+
+.card.tin {
+  border-color: rgba(140, 156, 168, 0.6);
+  background-image: url(/assets/cards/tin-star.svg);
+}
+
+.card.zinc {
+  border-color: rgba(186, 174, 160, 0.6);
+  background-image: url(/assets/cards/zinc-star.svg);
+}
+
+.card.brass {
+  border-color: rgba(202, 160, 78, 0.6);
+  background-image: url(/assets/cards/brass-star.svg);
 }
 
 .actions-panel {
