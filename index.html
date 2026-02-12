@@ -17,21 +17,6 @@
 
       <section class="board">
         <aside class="sidebar">
-          <section class="panel info">
-            <h2>How To Play</h2>
-            <ul class="rules">
-              <li>Each player starts with a shuffled deck and draws 5 cards.</li>
-              <li>On your turn, trade (up to 5 times), then play up to 5 cards.</li>
-              <li>End your turn to archive active cards and draw from them.</li>
-              <li>Win immediately when your Archive contains 5 gold stars.</li>
-            </ul>
-            <div class="legend">
-              <span class="chip bronze">Bronze</span>
-              <span class="chip silver">Silver</span>
-              <span class="chip gold">Gold</span>
-            </div>
-          </section>
-
           <section class="panel actions-panel">
             <div class="trade-box">
               <h3>Trades</h3>
@@ -51,6 +36,22 @@
               <button class="primary" id="endTurn">Archive & End Turn</button>
               <div class="deck-info" id="deckInfo"></div>
               <div class="discard-info" id="discardInfo"></div>
+            </div>
+          </section>
+
+          <section class="panel info">
+            <h2>How To Play</h2>
+            <ul class="rules" id="rulesList">
+              <li>Each player starts with a shuffled deck and draws 5 cards.</li>
+              <li>On your turn, trade (up to 5 times), then play up to 5 cards.</li>
+              <li>End your turn to archive active cards and draw from them.</li>
+              <li>Win immediately when your Archive contains 5 gold stars.</li>
+            </ul>
+            <div id="expansionRules"></div>
+            <div class="legend" id="cardLegend">
+              <span class="chip bronze">Bronze</span>
+              <span class="chip silver">Silver</span>
+              <span class="chip gold">Gold</span>
             </div>
           </section>
         </aside>

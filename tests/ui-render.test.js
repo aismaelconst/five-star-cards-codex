@@ -1,12 +1,15 @@
 import { describe, it, expect, vi } from "vitest";
 import { renderApp, showConfirmOverlay, showTurnOverlay } from "../src/ui/render.js";
-import { baseRuleset, expandedRuleset } from "../src/game/ruleset.js";
+import { baseRuleset, expandedRuleset, ancientRuleset } from "../src/game/ruleset.js";
 
 function makeElements() {
   const ids = [
     "turnIndicator",
     "turnCounter",
     "opponentSummary",
+    "rulesList",
+    "expansionRules",
+    "cardLegend",
     "handCounts",
     "archivePile",
     "activeCards",
@@ -27,7 +30,8 @@ function makeElements() {
 
   const elements = {};
   ids.forEach((id) => {
-    const node = id.includes("Overlay") ? document.createElement("div") : document.createElement("div");
+    let node = document.createElement("div");
+    if (id === "rulesList") node = document.createElement("ul");
     node.id = id;
     elements[id] = node;
   });
@@ -147,6 +151,25 @@ describe("ui/render", () => {
 
     expect(elements.opponentSummary.querySelector(".chip.bronze")).not.toBeNull();
     expect(elements.opponentSummary.querySelector(".chip.wood")).not.toBeNull();
+  });
+
+  it("renders ancient expansion rules and legend", () => {
+    const state = makeState();
+    const elements = makeElements();
+    const handlers = {
+      playCard: vi.fn(),
+      playCardByType: vi.fn(),
+      returnCard: vi.fn(),
+    };
+    state.ruleset = ancientRuleset;
+    state.format = "ancient";
+
+    renderApp(state, elements, handlers);
+
+    expect(elements.expansionRules.textContent).toContain("Ancients");
+    expect(elements.expansionRules.textContent).toContain("Electrum");
+    expect(elements.cardLegend.querySelector(".chip.turquoise")).not.toBeNull();
+    expect(elements.cardLegend.querySelector(".chip.ruby")).toBeNull();
   });
 
   it("disables actions when not your turn online", () => {

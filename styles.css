@@ -116,6 +116,15 @@ h3 {
   flex-wrap: wrap;
 }
 
+.expansion-rules {
+  margin-top: 18px;
+}
+
+.expansion-rules h3 {
+  margin-bottom: 8px;
+  font-size: 1rem;
+}
+
 .chip {
   padding: 6px 12px;
   border-radius: 999px;

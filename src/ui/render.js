@@ -49,8 +49,83 @@ function renderHand(state, player, elements, handlers) {
   });
 }
 
+function titleCase(type) {
+  if (!type) return "";
+  return type
+    .split("_")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+}
+
+function updateHowToPlay(state, elements) {
+  if (!elements.rulesList && !elements.expansionRules && !elements.cardLegend) return;
+  const baseRules = [
+    "Each player starts with a shuffled deck and draws 5 cards.",
+    "On your turn, trade (up to 5 times), then play up to 5 cards.",
+    "End your turn to archive active cards and draw from them.",
+    "Win immediately when your Archive contains 5 gold stars.",
+  ];
+  if (elements.rulesList) {
+    elements.rulesList.innerHTML = baseRules.map((rule) => `<li>${rule}</li>`).join("");
+  }
+
+  const isExpanded = state.format === "expanded" || state.format === "ancient_expanded";
+  const isAncient = state.format === "ancient" || state.format === "ancient_expanded";
+  const expansionRules = [];
+  if (isExpanded) {
+    expansionRules.push("Gems: Ruby + Emerald + Sapphire → tutor any card (shuffle).");
+    expansionRules.push(
+      "Platinum: Platinum + Bronze + Silver → dig for a non-bronze/silver card."
+    );
+    expansionRules.push(
+      "Wood: can replace one required card in trades costing 3+ (max 1 per trade)."
+    );
+  }
+  if (isAncient) {
+    expansionRules.push(
+      "Ancients: 2 distinct ancients → archive 1 non-gold from deck (shuffle)."
+    );
+    expansionRules.push(
+      "Electrum: Electrum + 1–4 distinct non-gold/non-electrum → draw that many cards."
+    );
+  }
+
+  if (elements.expansionRules) {
+    if (expansionRules.length === 0) {
+      elements.expansionRules.innerHTML = "";
+    } else {
+      elements.expansionRules.innerHTML = `
+        <div class="expansion-rules">
+          <h3>Expansion Cards</h3>
+          <ul class="rules">
+            ${expansionRules.map((rule) => `<li>${rule}</li>`).join("")}
+          </ul>
+        </div>
+      `;
+    }
+  }
+
+  if (elements.cardLegend) {
+    const legendTypes = ["bronze", "silver", "gold"];
+    if (isExpanded) {
+      legendTypes.push("wood", "ruby", "emerald", "sapphire", "platinum");
+    }
+    if (isAncient) {
+      legendTypes.push("turquoise", "lapis_lazuli", "carnelian", "electrum");
+    }
+    elements.cardLegend.innerHTML = "";
+    legendTypes.forEach((type) => {
+      const chip = document.createElement("span");
+      chip.className = `chip ${type}`;
+      chip.textContent = titleCase(type);
+      elements.cardLegend.appendChild(chip);
+    });
+  }
+}
+
 export function renderApp(state, elements, handlers) {
   if (state.winner !== null) return;
+  updateHowToPlay(state, elements);
   const cpuPerspective = state.mode === "cpu";
   const onlinePerspective = state.mode === "online" && state.online?.playerId;
   const player = cpuPerspective

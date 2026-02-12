@@ -105,6 +105,7 @@ Rendering lives in `src/ui/render.js`.
   - CPU: the human player is always index 0.
   - Online: the player matching `state.online.playerId`.
 - The hand is rendered as individual cards for 10 or fewer cards; otherwise it collapses into pile counts per card type.
+- The "How To Play" panel is refreshed per format, showing only relevant expansion rules and legend chips.
 - Trade buttons are enabled only when the phase is `main`, it is the local player’s turn, and `canInitiateTrade()` is true.
 - `showConfirmOverlay()` renders a summary of pending archive cards and draw count.
 
