@@ -547,6 +547,21 @@ button:not(:disabled):hover {
   gap: 12px;
 }
 
+.winner-stats {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  font-size: 0.9rem;
+  color: var(--ink-2);
+}
+
+.winner-stats span {
+  background: #f6e4c5;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-weight: 600;
+}
+
 .cpu-summary {
   text-align: left;
   display: flex;

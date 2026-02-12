@@ -1,6 +1,7 @@
 import { createInitialState } from "./src/game/state.js";
 import { wireEvents } from "./src/ui/events.js";
 import { createHandlers } from "./src/ui/handlers.js";
+import { updateWinnerOverlay } from "./src/ui/winner.js";
 
 
 const state = createInitialState();
@@ -28,10 +29,10 @@ const elements = {
   winnerPanel: document.getElementById("winnerPanel"),
   winnerText: document.getElementById("winnerText"),
   restartGame: document.getElementById("restartGame"),
-  debugInfo: document.getElementById("debugInfo"),
   winnerOverlay: document.getElementById("winnerOverlay"),
   winnerModalText: document.getElementById("winnerModalText"),
   winnerModalMessage: document.getElementById("winnerModalMessage"),
+  winnerStats: document.getElementById("winnerStats"),
   restartGameModal: document.getElementById("restartGameModal"),
   confirmOverlay: document.getElementById("confirmOverlay"),
   confirmSummary: document.getElementById("confirmSummary"),
@@ -108,16 +109,7 @@ const elements = {
 
 function declareWinner(playerIndex) {
   state.winner = playerIndex;
-  const name = state.players?.[playerIndex]?.name ?? `Player ${playerIndex + 1}`;
-  elements.winnerText.textContent = `${name} wins!`;
-  elements.winnerModalText.textContent = `${name} wins!`;
-  if (elements.winnerModalMessage) {
-    elements.winnerModalMessage.textContent = "Great run. Ready for a rematch?";
-  }
-  if (elements.restartGameModal) {
-    elements.restartGameModal.hidden = false;
-  }
-  elements.winnerOverlay.hidden = false;
+  updateWinnerOverlay(state, elements, playerIndex);
   elements.turnOverlay.hidden = true;
 }
 

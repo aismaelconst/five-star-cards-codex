@@ -27,6 +27,7 @@ function setupDom() {
     <div id="winnerOverlay"></div>
     <div id="winnerModalText"></div>
     <div id="winnerModalMessage"></div>
+    <div id="winnerStats"></div>
     <button id="restartGameModal"></button>
     <div id="confirmOverlay"></div>
     <div id="confirmSummary"></div>
