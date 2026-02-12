@@ -196,7 +196,10 @@ h3 {
   border-radius: 16px;
   padding: 14px 18px;
   display: flex;
-  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: flex-start;
+  align-items: center;
   font-weight: 600;
   color: var(--ink-2);
 }
@@ -222,6 +225,10 @@ h3 {
 .counts {
   font-size: 0.9rem;
   color: var(--ink-2);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
 }
 
 .count-line + .count-line {

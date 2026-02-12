@@ -64,39 +64,34 @@ export function renderApp(state, elements, handlers) {
       state.players[state.currentPlayer === 0 ? 1 : 0];
 
   const displayOrder = state.ruleset.displayOrder ?? ["bronze", "silver", "gold"];
-  const primaryTypes = displayOrder.slice(0, 3);
-  const secondaryTypes = displayOrder.slice(3);
   const handCounts = countCards(player.hand, displayOrder);
   const archiveCounts = countCards(player.archive, displayOrder);
   const opponentArchive = countCards(opponent.archive, displayOrder);
   const opponentHandTotal = opponent.hand.length;
-  const opponentArchiveTotal = opponent.archive.length;
 
-  const buildLine = (types, counts) =>
-    types
-      .map((type) => `${type.charAt(0).toUpperCase() + type.slice(1)} ${counts[type] ?? 0}`)
-      .join(" · ");
+  const buildChips = (types, counts, container) => {
+    container.innerHTML = "";
+    types.forEach((type) => {
+      const badge = document.createElement("div");
+      badge.className = `chip ${type}`;
+      badge.textContent = `${type} x ${counts[type] ?? 0}`;
+      container.appendChild(badge);
+    });
+  };
   const currentName = state.players[state.currentPlayer]?.name ?? `Player ${state.currentPlayer + 1}`;
   elements.turnIndicator.textContent = `${currentName}'s Turn`;
   elements.turnCounter.textContent = `Turn ${state.turnCount}`;
-  if (state.mode === "cpu") {
-    const primaryOpponent = buildLine(primaryTypes, opponentArchive);
-    if (secondaryTypes.length > 0) {
-      const secondaryOpponent = buildLine(secondaryTypes, opponentArchive);
-      elements.opponentSummary.innerHTML = `<div class="count-line">Opponent Archive — ${primaryOpponent} · Hand ${opponentHandTotal}</div><div class="count-line">${secondaryOpponent}</div>`;
-    } else {
-      elements.opponentSummary.textContent = `Opponent Archive — ${primaryOpponent} · Hand ${opponentHandTotal}`;
-    }
-  } else {
-    elements.opponentSummary.textContent = `Opponent Archive — Gold ${opponentArchive.gold ?? 0} · Archive ${opponentArchiveTotal} · Hand ${opponentHandTotal}`;
+  if (elements.opponentSummary) {
+    const opponentTypes =
+      state.mode === "cpu" ? displayOrder : displayOrder;
+    buildChips(opponentTypes, opponentArchive, elements.opponentSummary);
+    const handBadge = document.createElement("div");
+    handBadge.className = "chip";
+    handBadge.textContent = `hand x ${opponentHandTotal}`;
+    elements.opponentSummary.appendChild(handBadge);
   }
-  const primaryArchive = buildLine(primaryTypes, archiveCounts);
-  const primaryHand = buildLine(primaryTypes, handCounts);
-  if (secondaryTypes.length > 0) {
-    const secondaryHand = buildLine(secondaryTypes, handCounts);
-    elements.handCounts.innerHTML = `<div class="count-line">${primaryHand}</div><div class="count-line">${secondaryHand}</div>`;
-  } else {
-    elements.handCounts.textContent = primaryHand;
+  if (elements.handCounts) {
+    buildChips(displayOrder, handCounts, elements.handCounts);
   }
 
   elements.deckInfo.textContent = `Deck: ${player.deck.length} cards`;

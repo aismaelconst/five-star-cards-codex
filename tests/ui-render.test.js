@@ -80,12 +80,14 @@ describe("ui/render", () => {
     expect(elements.turnCounter.textContent).toContain("Turn 2");
     expect(elements.deckInfo.textContent).toContain("Deck:");
     expect(elements.tradeInfo.textContent).toContain("Trades used");
-    expect(elements.opponentSummary.textContent).toContain("Gold");
+    expect(elements.opponentSummary.querySelector(".chip.gold")).not.toBeNull();
+    expect(elements.opponentSummary.textContent).toContain("hand x");
+    expect(elements.handCounts.querySelector(".chip.bronze")).not.toBeNull();
     const card = elements.handCards.querySelector(".card");
     expect(card.dataset.cardType).toBeTruthy();
   });
 
-  it("renders expanded counts with secondary line", () => {
+  it("renders expanded counts as chips", () => {
     const state = makeState();
     const elements = makeElements();
     const handlers = {
@@ -100,7 +102,7 @@ describe("ui/render", () => {
 
     renderApp(state, elements, handlers);
 
-    expect(elements.handCounts.innerHTML).toContain("Wood");
+    expect(elements.handCounts.querySelector(".chip.wood")).not.toBeNull();
     expect(elements.archivePile.textContent).toContain("platinum x 1");
   });
 
@@ -140,8 +142,8 @@ describe("ui/render", () => {
 
     renderApp(state, elements, handlers);
 
-    expect(elements.opponentSummary.innerHTML).toContain("Bronze");
-    expect(elements.opponentSummary.innerHTML).toContain("Wood");
+    expect(elements.opponentSummary.querySelector(".chip.bronze")).not.toBeNull();
+    expect(elements.opponentSummary.querySelector(".chip.wood")).not.toBeNull();
   });
 
   it("disables actions when not your turn online", () => {
