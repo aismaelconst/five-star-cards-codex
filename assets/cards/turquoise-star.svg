@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="600" height="800" viewBox="0 0 600 800">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#d2fff6"/>
+      <stop offset="0.55" stop-color="#1aa3a6"/>
+      <stop offset="1" stop-color="#0b4c52"/>
+    </linearGradient>
+    <pattern id="facet" width="140" height="140" patternUnits="userSpaceOnUse">
+      <polygon points="0,0 70,0 20,50" fill="#7ff0e7" opacity="0.7"/>
+      <polygon points="70,0 140,0 110,60" fill="#37c9c6" opacity="0.55"/>
+      <polygon points="0,140 50,90 0,70" fill="#a8fff2" opacity="0.6"/>
+      <polygon points="140,140 95,95 140,70" fill="#2fb7b4" opacity="0.6"/>
+      <polygon points="50,90 95,95 70,140" fill="#1daaa6" opacity="0.6"/>
+      <polygon points="20,50 70,70 50,90" fill="#5eddd6" opacity="0.6"/>
+    </pattern>
+    <linearGradient id="frame" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#0c5f63"/>
+      <stop offset="1" stop-color="#c8fff5"/>
+    </linearGradient>
+    <radialGradient id="shine" cx="0.22" cy="0.1" r="0.9">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.7"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect x="10" y="10" width="580" height="780" rx="30" fill="url(#bg)"/>
+  <rect x="10" y="10" width="580" height="780" rx="30" fill="url(#facet)" opacity="0.7"/>
+  <rect x="28" y="28" width="544" height="744" rx="24" fill="none" stroke="url(#frame)" stroke-width="6"/>
+  <rect x="45" y="45" width="510" height="710" rx="20" fill="none" stroke="#0a4b4f" stroke-width="2" opacity="0.7"/>
+  <g transform="translate(300 360)">
+    <polygon points="0,-150 40,-45 150,-35 60,35 90,145 0,85 -90,145 -60,35 -150,-35 -40,-45" fill="#e0fff9" stroke="#0c5f63" stroke-width="6"/>
+    <polygon points="0,-95 35,-20 95,-10 40,25 60,90 0,55 -60,90 -40,25 -95,-10 -35,-20" fill="#1a8c8c" opacity="0.95"/>
+  </g>
+  <rect x="105" y="640" width="390" height="70" rx="16" fill="#06393b" opacity="0.65"/>
+  <text x="300" y="690" text-anchor="middle" font-family="'Times New Roman', serif" font-size="48" fill="#d9fff8" letter-spacing="6">TURQUOISE</text>
+  <rect x="10" y="10" width="580" height="780" rx="30" fill="url(#shine)"/>
+</svg>

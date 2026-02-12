@@ -109,7 +109,58 @@ export const expandedRuleset = {
   },
 };
 
-export const ultraExpandedRuleset = {
+export const ancientRuleset = {
+  ...baseRuleset,
+  displayOrder: [
+    "bronze",
+    "silver",
+    "gold",
+    "turquoise",
+    "lapis_lazuli",
+    "carnelian",
+    "electrum",
+  ],
+  tradeRecipes: {
+    ...baseRuleset.tradeRecipes,
+    trade_ancients_archive: {
+      poolCost: { min: 2, max: 2, distinct: true, pool: "ancient" },
+      reward: { type: "archive" },
+    },
+    trade_electrum_draw: {
+      cost: { electrum: 1 },
+      poolCost: { min: 1, max: 4, distinct: true, pool: "non_gold_non_electrum" },
+      reward: { type: "draw" },
+    },
+  },
+  cardTypes: {
+    ...baseRuleset.cardTypes,
+    turquoise: {
+      tier: "turquoise",
+      draw: 0,
+    },
+    lapis_lazuli: {
+      tier: "lapis_lazuli",
+      draw: 0,
+    },
+    carnelian: {
+      tier: "carnelian",
+      draw: 0,
+    },
+    electrum: {
+      tier: "electrum",
+      draw: 0,
+    },
+  },
+  deckCounts: {
+    ...baseRuleset.deckCounts,
+    turquoise: 5,
+    lapis_lazuli: 5,
+    carnelian: 5,
+    electrum: 5,
+  },
+};
+
+export const ancientExpandedRuleset = {
   ...expandedRuleset,
   displayOrder: [
     "bronze",
@@ -120,51 +171,47 @@ export const ultraExpandedRuleset = {
     "emerald",
     "sapphire",
     "platinum",
-    "copper",
-    "tin",
-    "zinc",
-    "brass",
+    "turquoise",
+    "lapis_lazuli",
+    "carnelian",
+    "electrum",
   ],
   tradeRecipes: {
     ...expandedRuleset.tradeRecipes,
-    trade_copper_tin: {
-      cost: { copper: 1, tin: 1 },
-      reward: { type: "cards", card: "bronze", count: 3 },
+    trade_ancients_archive: {
+      poolCost: { min: 2, max: 2, distinct: true, pool: "ancient" },
+      reward: { type: "archive" },
     },
-    trade_copper_zinc: {
-      cost: { copper: 1, zinc: 1 },
-      reward: "brass",
-    },
-    trade_brass_draw: {
-      cost: { brass: 1 },
-      choiceCost: { count: 1, pool: "non_gem_non_wood" },
-      reward: { type: "draw", count: 3 },
+    trade_electrum_draw: {
+      cost: { electrum: 1 },
+      poolCost: { min: 1, max: 4, distinct: true, pool: "non_gold_non_electrum" },
+      reward: { type: "draw" },
     },
   },
   cardTypes: {
     ...expandedRuleset.cardTypes,
-    copper: {
-      tier: "copper",
+    turquoise: {
+      tier: "turquoise",
       draw: 0,
     },
-    tin: {
-      tier: "tin",
+    lapis_lazuli: {
+      tier: "lapis_lazuli",
       draw: 0,
     },
-    zinc: {
-      tier: "zinc",
+    carnelian: {
+      tier: "carnelian",
       draw: 0,
     },
-    brass: {
-      tier: "brass",
+    electrum: {
+      tier: "electrum",
       draw: 0,
     },
   },
   deckCounts: {
     ...expandedRuleset.deckCounts,
-    copper: 5,
-    tin: 5,
-    zinc: 5,
-    brass: 5,
+    turquoise: 5,
+    lapis_lazuli: 5,
+    carnelian: 5,
+    electrum: 5,
   },
 };

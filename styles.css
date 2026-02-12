@@ -165,24 +165,24 @@ h3 {
   color: #515b66;
 }
 
-.chip.copper {
-  background: rgba(184, 95, 47, 0.2);
-  color: #6b341d;
+.chip.turquoise {
+  background: rgba(44, 159, 160, 0.2);
+  color: #1b6c6c;
 }
 
-.chip.tin {
-  background: rgba(140, 156, 168, 0.25);
-  color: #4b5563;
+.chip.lapis_lazuli {
+  background: rgba(36, 85, 164, 0.2);
+  color: #1b3f7a;
 }
 
-.chip.zinc {
-  background: rgba(186, 174, 160, 0.25);
-  color: #6b5a4c;
+.chip.carnelian {
+  background: rgba(173, 72, 45, 0.2);
+  color: #7b2f1b;
 }
 
-.chip.brass {
-  background: rgba(202, 160, 78, 0.25);
-  color: #6d4f12;
+.chip.electrum {
+  background: rgba(210, 186, 102, 0.25);
+  color: #6b5530;
 }
 
 .play {
@@ -379,24 +379,24 @@ h3 {
   background-image: url(/assets/cards/platinum-star.svg);
 }
 
-.card.copper {
-  border-color: rgba(184, 95, 47, 0.6);
-  background-image: url(/assets/cards/copper-star.svg);
+.card.turquoise {
+  border-color: rgba(44, 159, 160, 0.6);
+  background-image: url(/assets/cards/turquoise-star.svg);
 }
 
-.card.tin {
-  border-color: rgba(140, 156, 168, 0.6);
-  background-image: url(/assets/cards/tin-star.svg);
+.card.lapis_lazuli {
+  border-color: rgba(36, 85, 164, 0.6);
+  background-image: url(/assets/cards/lapis-lazuli-star.svg);
 }
 
-.card.zinc {
-  border-color: rgba(186, 174, 160, 0.6);
-  background-image: url(/assets/cards/zinc-star.svg);
+.card.carnelian {
+  border-color: rgba(173, 72, 45, 0.6);
+  background-image: url(/assets/cards/carnelian-star.svg);
 }
 
-.card.brass {
-  border-color: rgba(202, 160, 78, 0.6);
-  background-image: url(/assets/cards/brass-star.svg);
+.card.electrum {
+  border-color: rgba(210, 186, 102, 0.6);
+  background-image: url(/assets/cards/electrum-star.svg);
 }
 
 .actions-panel {

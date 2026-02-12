@@ -6,7 +6,6 @@ import { fileURLToPath } from "url";
 import { createInitialState } from "../src/game/state.js";
 import {
   applyAction,
-  canConfirmArchiveWithOptions,
   canTradeWithOptions,
 } from "../src/game/rules.js";
 import { initializeOnlineGame } from "../src/game/online.js";
@@ -178,7 +177,8 @@ wss.on("connection", (ws) => {
     if (message.type === "create_room") {
       const format =
         message.format === "expanded" ||
-        message.format === "ultra" ||
+        message.format === "ancient" ||
+        message.format === "ancient_expanded" ||
         message.format === "core"
           ? message.format
           : "core";
@@ -293,17 +293,11 @@ wss.on("connection", (ws) => {
           sendError(ws, "Invalid player.");
           return;
         }
-        if (
-          !canConfirmArchiveWithOptions(
-            room.state,
-            playerIndex,
-            message.action.payload ?? {}
-          )
-        ) {
+        const pending = room.state.pendingArchive;
+        if (!pending || pending.playerIndex !== playerIndex) {
           sendError(ws, "Invalid archive confirmation.");
           return;
         }
-        const pending = room.state.pendingArchive;
         if (pending?.playedCards) {
           lastEvent = {
             type: "archive",
@@ -325,6 +319,7 @@ wss.on("connection", (ws) => {
           useWood: message.action.payload?.useWood ?? false,
           substituteType: message.action.payload?.substituteType ?? null,
           choiceType: message.action.payload?.choiceType ?? null,
+          poolTypes: message.action.payload?.poolTypes ?? null,
           rewardType:
             result.event.detail?.rewardType ?? message.action.payload?.rewardType ?? null,
           rewardCount: result.event.detail?.rewardCount,
@@ -332,7 +327,7 @@ wss.on("connection", (ws) => {
           digDiscardedCount: result.event.detail?.digDiscardedCount,
         };
         if (recipe) {
-          const costEntry = Object.entries(recipe.cost)[0];
+          const costEntry = Object.entries(recipe.cost ?? {})[0];
           if (costEntry) {
             lastEvent.from = costEntry[0];
             lastEvent.cost = costEntry[1];

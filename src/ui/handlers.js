@@ -24,7 +24,8 @@ export function createHandlers(state, elements, onWinner, options = {}) {
   let pendingWoodChoice = null;
   let pendingGemChoice = null;
   let pendingChoiceSelection = null;
-  let pendingCopperFlow = null;
+  let pendingPoolSelection = null;
+  let pendingArchiveTutorChoice = null;
 
   function resolveSocketUrl() {
     if (typeof window !== "undefined" && window.location) {
@@ -128,8 +129,9 @@ export function createHandlers(state, elements, onWinner, options = {}) {
   }
 
   function formatLabel(format) {
-    if (format === "expanded") return "EXPANDED";
-    if (format === "ultra") return "ULTRA";
+    if (format === "expanded") return "GEMSTONE + PLATINUM";
+    if (format === "ancient") return "ANCIENT";
+    if (format === "ancient_expanded") return "ANCIENT + GEMSTONE + PLATINUM";
     return "CORE";
   }
 
@@ -141,6 +143,42 @@ export function createHandlers(state, elements, onWinner, options = {}) {
       })
       .filter(Boolean);
     return parts.length ? parts.join(", ") : "no cards";
+  }
+
+  function formatPoolLabel(pool, displayOrder) {
+    if (pool === "ancient") return "ancients";
+    if (pool === "non_gold_non_electrum") return "non-gold/non-electrum";
+    if (Array.isArray(pool)) return pool.join("/");
+    if (Array.isArray(displayOrder)) return "cards";
+    return "cards";
+  }
+
+  function formatPoolCostLine(recipe, trade, displayOrder) {
+    if (!recipe?.poolCost) return null;
+    if (Array.isArray(trade.poolTypes) && trade.poolTypes.length > 0) {
+      return trade.poolTypes.join(", ");
+    }
+    const min = recipe.poolCost.min ?? 0;
+    const max = recipe.poolCost.max ?? min;
+    const range = min === max ? `${min}` : `${min}-${max}`;
+    const distinct = recipe.poolCost.distinct ? "distinct " : "";
+    return `${range} ${distinct}${formatPoolLabel(recipe.poolCost.pool, displayOrder)}`;
+  }
+
+  function resolvePoolTypes(pool, displayOrder) {
+    if (!pool) return [];
+    if (Array.isArray(pool)) {
+      return pool.filter((type) => displayOrder.includes(type));
+    }
+    if (pool === "ancient") {
+      return ["turquoise", "lapis_lazuli", "carnelian"].filter((type) =>
+        displayOrder.includes(type)
+      );
+    }
+    if (pool === "non_gold_non_electrum") {
+      return displayOrder.filter((type) => type !== "gold" && type !== "electrum");
+    }
+    return [];
   }
 
   function formatCpuTrade(state, trade) {
@@ -159,17 +197,31 @@ export function createHandlers(state, elements, onWinner, options = {}) {
       return `Gem tutor${woodNote}: ${reward}.`;
     }
     if (!recipe) return "Trade executed.";
-    let costLine = Object.entries(recipe.cost)
-      .map(([type, amount]) => `${amount} ${type}`)
-      .join(", ");
-    if (recipe.choiceCost && trade.choiceType) {
-      costLine = `${costLine}, ${recipe.choiceCost.count} ${trade.choiceType}`;
+    const costParts = [];
+    if (recipe.cost) {
+      Object.entries(recipe.cost).forEach(([type, amount]) => {
+        costParts.push(`${amount} ${type}`);
+      });
     }
+    if (recipe.choiceCost && trade.choiceType) {
+      costParts.push(`${recipe.choiceCost.count} ${trade.choiceType}`);
+    }
+    const poolLine = formatPoolCostLine(recipe, trade, state.ruleset.displayOrder);
+    if (poolLine) {
+      costParts.push(poolLine);
+    }
+    const costLine = costParts.length ? costParts.join(", ") : "cost";
     let rewardLine = trade.rewardType ?? recipe.reward ?? "reward";
     if (recipe.reward?.type === "cards") {
       rewardLine = `${recipe.reward.count} ${recipe.reward.card}`;
     } else if (recipe.reward?.type === "draw") {
-      rewardLine = `draw ${recipe.reward.count}`;
+      const count =
+        typeof trade.drawCount === "number"
+          ? trade.drawCount
+          : recipe.reward.count ?? 0;
+      rewardLine = `draw ${count}`;
+    } else if (recipe.reward?.type === "archive") {
+      rewardLine = trade.rewardType ? `archive ${trade.rewardType}` : "archive a card";
     } else if (typeof recipe.reward === "string") {
       rewardLine = `1 ${recipe.reward}`;
     }
@@ -264,17 +316,31 @@ export function createHandlers(state, elements, onWinner, options = {}) {
       }
       const recipe = state.ruleset.tradeRecipes?.[event.recipeId];
       if (recipe) {
-        let costLine = Object.entries(recipe.cost)
-          .map(([type, amount]) => `${amount} ${type}`)
-          .join(", ");
-        if (recipe.choiceCost && event.choiceType) {
-          costLine = `${costLine}, ${recipe.choiceCost.count} ${event.choiceType}`;
+        const costParts = [];
+        if (recipe.cost) {
+          Object.entries(recipe.cost).forEach(([type, amount]) => {
+            costParts.push(`${amount} ${type}`);
+          });
         }
+        if (recipe.choiceCost && event.choiceType) {
+          costParts.push(`${recipe.choiceCost.count} ${event.choiceType}`);
+        }
+        const poolLine = formatPoolCostLine(recipe, event, state.ruleset.displayOrder);
+        if (poolLine) {
+          costParts.push(poolLine);
+        }
+        const costLine = costParts.length ? costParts.join(", ") : "cost";
         let rewardLine = event.rewardType ?? recipe.reward ?? "reward";
         if (recipe.reward?.type === "cards") {
           rewardLine = `${recipe.reward.count} ${recipe.reward.card}`;
         } else if (recipe.reward?.type === "draw") {
-          rewardLine = `draw ${recipe.reward.count}`;
+          const count =
+            typeof event.drawCount === "number"
+              ? event.drawCount
+              : recipe.reward.count ?? 0;
+          rewardLine = `draw ${count}`;
+        } else if (recipe.reward?.type === "archive") {
+          rewardLine = event.rewardType ? `archive ${event.rewardType}` : "archive a card";
         } else if (typeof recipe.reward === "string") {
           rewardLine = `1 ${recipe.reward}`;
         }
@@ -435,9 +501,12 @@ export function createHandlers(state, elements, onWinner, options = {}) {
   }
 
   function updateFormatButtons() {
-    const isCore = state.format !== "expanded" && state.format !== "ultra";
+    const isCore =
+      !state.format ||
+      !["expanded", "ancient", "ancient_expanded"].includes(state.format);
     const isExpanded = state.format === "expanded";
-    const isUltra = state.format === "ultra";
+    const isAncient = state.format === "ancient";
+    const isAncientExpanded = state.format === "ancient_expanded";
     const toggle = (el, active) => {
       if (!el) return;
       el.classList.toggle("active", active);
@@ -445,10 +514,12 @@ export function createHandlers(state, elements, onWinner, options = {}) {
     };
     toggle(elements.formatCore, isCore);
     toggle(elements.formatExpanded, isExpanded);
-    toggle(elements.formatUltra, isUltra);
+    toggle(elements.formatAncient, isAncient);
+    toggle(elements.formatAncientExpanded, isAncientExpanded);
     toggle(elements.hostFormatCore, isCore);
     toggle(elements.hostFormatExpanded, isExpanded);
-    toggle(elements.hostFormatUltra, isUltra);
+    toggle(elements.hostFormatAncient, isAncient);
+    toggle(elements.hostFormatAncientExpanded, isAncientExpanded);
   }
 
   function startOfflineGame(format) {
@@ -524,9 +595,9 @@ export function createHandlers(state, elements, onWinner, options = {}) {
     startOfflineGame("expanded");
   }
 
-  function selectUltraFormat() {
+  function selectAncientFormat() {
     if (state.mode === "cpu") {
-      state.format = "ultra";
+      state.format = "ancient";
       updateFormatButtons();
       if (elements.formatOverlay) {
         elements.formatOverlay.hidden = true;
@@ -536,7 +607,22 @@ export function createHandlers(state, elements, onWinner, options = {}) {
       }
       return;
     }
-    startOfflineGame("ultra");
+    startOfflineGame("ancient");
+  }
+
+  function selectAncientExpandedFormat() {
+    if (state.mode === "cpu") {
+      state.format = "ancient_expanded";
+      updateFormatButtons();
+      if (elements.formatOverlay) {
+        elements.formatOverlay.hidden = true;
+      }
+      if (elements.cpuOverlay) {
+        elements.cpuOverlay.hidden = false;
+      }
+      return;
+    }
+    startOfflineGame("ancient_expanded");
   }
 
   function selectCpuEasy() {
@@ -561,8 +647,13 @@ export function createHandlers(state, elements, onWinner, options = {}) {
     updateFormatButtons();
   }
 
-  function selectHostFormatUltra() {
-    state.format = "ultra";
+  function selectHostFormatAncient() {
+    state.format = "ancient";
+    updateFormatButtons();
+  }
+
+  function selectHostFormatAncientExpanded() {
+    state.format = "ancient_expanded";
     updateFormatButtons();
   }
 
@@ -731,13 +822,15 @@ export function createHandlers(state, elements, onWinner, options = {}) {
       substituteType: null,
       rewardType: null,
       choiceType: null,
+      poolTypes: null,
     };
     const woodOptions = getWoodSubstitutionOptions(state, player, recipeId);
     const recipe = state.ruleset.tradeRecipes?.[recipeId];
+    const baseCost = recipe?.cost ?? {};
     const archiveCounts = countCards(player.archive);
     const canPayBase =
       recipe &&
-      Object.entries(recipe.cost).every(
+      Object.entries(baseCost).every(
         ([type, amount]) => (archiveCounts[type] ?? 0) >= amount
       );
     if (woodOptions.length > 0 && elements.woodOverlay) {
@@ -748,8 +841,16 @@ export function createHandlers(state, elements, onWinner, options = {}) {
       openChoiceCostOverlay();
       return null;
     }
+    if (recipe?.poolCost) {
+      openPoolCostOverlay();
+      return null;
+    }
     if (recipe?.reward === "any" && elements.gemTutorOverlay) {
       openGemTutorOverlay();
+      return null;
+    }
+    if (recipe?.reward?.type === "archive" && elements.archiveTutorOverlay) {
+      openArchiveTutorOverlay();
       return null;
     }
     return finalizeTrade();
@@ -763,16 +864,15 @@ export function createHandlers(state, elements, onWinner, options = {}) {
       substituteType: pendingTrade.substituteType,
       rewardType: pendingTrade.rewardType,
       choiceType: pendingTrade.choiceType,
+      poolTypes: pendingTrade.poolTypes,
     };
     const result = sendOrApply({ type: ActionTypes.TRADE, payload });
     pendingTrade = null;
     pendingWoodChoice = null;
     pendingGemChoice = null;
     pendingChoiceSelection = null;
-    pendingCopperFlow = null;
-    pendingChoiceSelection = null;
-    pendingCopperFlow = null;
-    pendingChoiceSelection = null;
+    pendingPoolSelection = null;
+    pendingArchiveTutorChoice = null;
     pendingCpuWinner = null;
     if (
       state.mode !== "online" &&
@@ -839,8 +939,16 @@ export function createHandlers(state, elements, onWinner, options = {}) {
       openChoiceCostOverlay();
       return;
     }
+    if (recipe?.poolCost) {
+      openPoolCostOverlay();
+      return;
+    }
     if (recipe?.reward === "any" && elements.gemTutorOverlay) {
       openGemTutorOverlay();
+      return;
+    }
+    if (recipe?.reward?.type === "archive" && elements.archiveTutorOverlay) {
+      openArchiveTutorOverlay();
       return;
     }
     finalizeTrade();
@@ -850,6 +958,8 @@ export function createHandlers(state, elements, onWinner, options = {}) {
     pendingTrade = null;
     pendingWoodChoice = null;
     pendingChoiceSelection = null;
+    pendingPoolSelection = null;
+    pendingArchiveTutorChoice = null;
     if (elements.woodOverlay) elements.woodOverlay.hidden = true;
   }
 
@@ -899,6 +1009,8 @@ export function createHandlers(state, elements, onWinner, options = {}) {
     pendingTrade = null;
     pendingGemChoice = null;
     pendingChoiceSelection = null;
+    pendingPoolSelection = null;
+    pendingArchiveTutorChoice = null;
     if (elements.gemTutorOverlay) elements.gemTutorOverlay.hidden = true;
   }
 
@@ -943,8 +1055,16 @@ export function createHandlers(state, elements, onWinner, options = {}) {
     if (elements.choiceCostOverlay) elements.choiceCostOverlay.hidden = true;
     pendingChoiceSelection = null;
     const recipe = state.ruleset.tradeRecipes?.[pendingTrade.recipeId];
+    if (recipe?.poolCost) {
+      openPoolCostOverlay();
+      return;
+    }
     if (recipe?.reward === "any" && elements.gemTutorOverlay) {
       openGemTutorOverlay();
+      return;
+    }
+    if (recipe?.reward?.type === "archive" && elements.archiveTutorOverlay) {
+      openArchiveTutorOverlay();
       return;
     }
     finalizeTrade();
@@ -953,7 +1073,154 @@ export function createHandlers(state, elements, onWinner, options = {}) {
   function cancelChoiceCost() {
     pendingTrade = null;
     pendingChoiceSelection = null;
+    pendingPoolSelection = null;
+    pendingArchiveTutorChoice = null;
     if (elements.choiceCostOverlay) elements.choiceCostOverlay.hidden = true;
+  }
+
+  function openPoolCostOverlay() {
+    if (!pendingTrade || !elements.poolCostOptions || !elements.poolCostOverlay) return;
+    const recipe = state.ruleset.tradeRecipes?.[pendingTrade.recipeId];
+    if (!recipe?.poolCost) return;
+    const player = getLocalPlayer();
+    const displayOrder = state.ruleset.displayOrder ?? ["bronze", "silver", "gold"];
+    const archiveCounts = countCards(player.archive, displayOrder);
+    const options = resolvePoolTypes(recipe.poolCost.pool, displayOrder);
+    pendingPoolSelection = {
+      selected: [],
+      min: recipe.poolCost.min ?? 0,
+      max: recipe.poolCost.max ?? recipe.poolCost.min ?? 0,
+      distinct: recipe.poolCost.distinct ?? false,
+    };
+    elements.poolCostOptions.innerHTML = "";
+    options.forEach((type) => {
+      const button = document.createElement("button");
+      button.className = "ghost option-button";
+      button.textContent = type;
+      button.dataset.choice = type;
+      if ((archiveCounts[type] ?? 0) === 0) {
+        button.disabled = true;
+      } else {
+        button.addEventListener("click", () => togglePoolChoice(type));
+      }
+      elements.poolCostOptions.appendChild(button);
+    });
+    if (elements.poolCostMessage) {
+      const min = pendingPoolSelection.min;
+      const max = pendingPoolSelection.max;
+      const range = min === max ? `${min}` : `${min}-${max}`;
+      const distinct = pendingPoolSelection.distinct ? "distinct " : "";
+      const label = formatPoolLabel(recipe.poolCost.pool, displayOrder);
+      elements.poolCostMessage.textContent = `Select ${range} ${distinct}${label}.`;
+    }
+    if (elements.poolCostConfirm) elements.poolCostConfirm.disabled = true;
+    elements.poolCostOverlay.hidden = false;
+  }
+
+  function togglePoolChoice(choice) {
+    if (!pendingPoolSelection) return;
+    const selected = pendingPoolSelection.selected;
+    const index = selected.indexOf(choice);
+    if (index >= 0) {
+      selected.splice(index, 1);
+    } else {
+      if (
+        pendingPoolSelection.distinct &&
+        selected.length >= pendingPoolSelection.max
+      ) {
+        return;
+      }
+      selected.push(choice);
+    }
+    if (elements.poolCostOptions) {
+      Array.from(elements.poolCostOptions.children).forEach((child) => {
+        child.classList.toggle(
+          "active",
+          selected.includes(child.dataset.choice)
+        );
+      });
+    }
+    if (elements.poolCostConfirm) {
+      const meetsMin = selected.length >= pendingPoolSelection.min;
+      const meetsMax = selected.length <= pendingPoolSelection.max;
+      elements.poolCostConfirm.disabled = !(meetsMin && meetsMax);
+    }
+  }
+
+  function confirmPoolCost() {
+    if (!pendingTrade || !pendingPoolSelection) return;
+    const selected = pendingPoolSelection.selected;
+    if (selected.length < pendingPoolSelection.min) return;
+    if (selected.length > pendingPoolSelection.max) return;
+    pendingTrade.poolTypes = [...selected];
+    if (elements.poolCostOverlay) elements.poolCostOverlay.hidden = true;
+    pendingPoolSelection = null;
+    const recipe = state.ruleset.tradeRecipes?.[pendingTrade.recipeId];
+    if (recipe?.reward === "any" && elements.gemTutorOverlay) {
+      openGemTutorOverlay();
+      return;
+    }
+    if (recipe?.reward?.type === "archive" && elements.archiveTutorOverlay) {
+      openArchiveTutorOverlay();
+      return;
+    }
+    finalizeTrade();
+  }
+
+  function cancelPoolCost() {
+    pendingTrade = null;
+    pendingPoolSelection = null;
+    pendingArchiveTutorChoice = null;
+    if (elements.poolCostOverlay) elements.poolCostOverlay.hidden = true;
+  }
+
+  function openArchiveTutorOverlay() {
+    if (!elements.archiveTutorOptions || !elements.archiveTutorOverlay) return;
+    const player = getLocalPlayer();
+    const displayOrder = state.ruleset.displayOrder ?? ["bronze", "silver", "gold"];
+    const deckCounts = countCards(player.deck, displayOrder);
+    pendingArchiveTutorChoice = null;
+    elements.archiveTutorOptions.innerHTML = "";
+    displayOrder.forEach((type) => {
+      if (type === "gold") return;
+      const button = document.createElement("button");
+      button.className = "ghost option-button";
+      button.textContent = type;
+      button.dataset.choice = type;
+      if ((deckCounts[type] ?? 0) === 0) {
+        button.disabled = true;
+      } else {
+        button.addEventListener("click", () => selectArchiveTutorChoice(type));
+      }
+      elements.archiveTutorOptions.appendChild(button);
+    });
+    if (elements.archiveTutorConfirm) elements.archiveTutorConfirm.disabled = true;
+    elements.archiveTutorOverlay.hidden = false;
+  }
+
+  function selectArchiveTutorChoice(choice) {
+    pendingArchiveTutorChoice = choice;
+    if (elements.archiveTutorOptions) {
+      Array.from(elements.archiveTutorOptions.children).forEach((child) => {
+        child.classList.toggle("active", child.dataset.choice === choice);
+      });
+    }
+    if (elements.archiveTutorConfirm) elements.archiveTutorConfirm.disabled = false;
+  }
+
+  function confirmArchiveTutor() {
+    if (!pendingTrade || !pendingArchiveTutorChoice) return;
+    pendingTrade.rewardType = pendingArchiveTutorChoice;
+    if (elements.archiveTutorOverlay) elements.archiveTutorOverlay.hidden = true;
+    pendingArchiveTutorChoice = null;
+    finalizeTrade();
+  }
+
+  function cancelArchiveTutor() {
+    pendingTrade = null;
+    pendingArchiveTutorChoice = null;
+    pendingPoolSelection = null;
+    if (elements.archiveTutorOverlay) elements.archiveTutorOverlay.hidden = true;
   }
 
   function playCard(index) {
@@ -998,127 +1265,7 @@ export function createHandlers(state, elements, onWinner, options = {}) {
     return result;
   }
 
-  function startCopperTutorFlow() {
-    if (!state.pendingArchive) return false;
-    const player = getLocalPlayer();
-    const playedCounts = countCards(state.pendingArchive.playedCards);
-    const copperCount = playedCounts.copper ?? 0;
-    if (copperCount === 0) return false;
-    const deckCounts = countCards(player.deck);
-    const availableTin = deckCounts.tin ?? 0;
-    const availableZinc = deckCounts.zinc ?? 0;
-    if (availableTin + availableZinc === 0) return false;
-    pendingCopperFlow = {
-      remaining: copperCount,
-      remainingTin: availableTin,
-      remainingZinc: availableZinc,
-      choices: [],
-      selection: null,
-    };
-    if (elements.confirmOverlay) elements.confirmOverlay.hidden = true;
-    advanceCopperTutor();
-    return true;
-  }
-
-  function advanceCopperTutor() {
-    if (!pendingCopperFlow) return;
-    while (pendingCopperFlow.remaining > 0) {
-      const hasTin = pendingCopperFlow.remainingTin > 0;
-      const hasZinc = pendingCopperFlow.remainingZinc > 0;
-      if (!hasTin && !hasZinc) {
-        pendingCopperFlow.remaining -= 1;
-        continue;
-      }
-      if (hasTin && hasZinc) {
-        if (!elements.copperTutorOverlay || !elements.copperTutorOptions) {
-          pendingCopperFlow.choices.push("tin");
-          pendingCopperFlow.remainingTin -= 1;
-          pendingCopperFlow.remaining -= 1;
-          continue;
-        }
-        openCopperTutorOverlay();
-        return;
-      }
-      if (hasTin) {
-        pendingCopperFlow.remainingTin -= 1;
-      } else {
-        pendingCopperFlow.remainingZinc -= 1;
-      }
-      pendingCopperFlow.remaining -= 1;
-    }
-    const choices = pendingCopperFlow.choices;
-    pendingCopperFlow = null;
-    finalizeArchive({ copperChoices: choices });
-  }
-
-  function openCopperTutorOverlay() {
-    if (!elements.copperTutorOverlay || !elements.copperTutorOptions) return;
-    pendingCopperFlow.selection = null;
-    elements.copperTutorOptions.innerHTML = "";
-    const hasTin = pendingCopperFlow.remainingTin > 0;
-    const hasZinc = pendingCopperFlow.remainingZinc > 0;
-    const options = [];
-    if (hasTin) options.push("tin");
-    if (hasZinc) options.push("zinc");
-    options.forEach((type) => {
-      const button = document.createElement("button");
-      button.className = "ghost option-button";
-      button.textContent = type;
-      button.dataset.choice = type;
-      button.addEventListener("click", () => selectCopperTutor(type));
-      elements.copperTutorOptions.appendChild(button);
-    });
-    if (elements.copperTutorConfirm) elements.copperTutorConfirm.disabled = true;
-    if (elements.copperTutorMessage) {
-      const total =
-        pendingCopperFlow.remaining +
-        pendingCopperFlow.choices.length;
-      const step = pendingCopperFlow.choices.length + 1;
-      elements.copperTutorMessage.textContent = `Choose tin or zinc (${step}/${total}).`;
-    }
-    elements.copperTutorOverlay.hidden = false;
-  }
-
-  function selectCopperTutor(choice) {
-    if (!pendingCopperFlow) return;
-    pendingCopperFlow.selection = choice;
-    if (elements.copperTutorOptions) {
-      Array.from(elements.copperTutorOptions.children).forEach((child) => {
-        child.classList.toggle("active", child.dataset.choice === choice);
-      });
-    }
-    if (elements.copperTutorConfirm) elements.copperTutorConfirm.disabled = false;
-  }
-
-  function confirmCopperTutor() {
-    if (!pendingCopperFlow || !pendingCopperFlow.selection) return;
-    const choice = pendingCopperFlow.selection;
-    pendingCopperFlow.choices.push(choice);
-    if (choice === "tin") {
-      pendingCopperFlow.remainingTin -= 1;
-    } else {
-      pendingCopperFlow.remainingZinc -= 1;
-    }
-    pendingCopperFlow.remaining -= 1;
-    pendingCopperFlow.selection = null;
-    if (elements.copperTutorOverlay) elements.copperTutorOverlay.hidden = true;
-    advanceCopperTutor();
-  }
-
-  function cancelCopperTutor() {
-    pendingCopperFlow = null;
-    if (elements.copperTutorOverlay) elements.copperTutorOverlay.hidden = true;
-    if (elements.confirmOverlay && state.phase === "confirm") {
-      elements.confirmOverlay.hidden = false;
-    }
-  }
-
   function finalizeArchive(payload = {}) {
-    if (!pendingCopperFlow && payload.copperChoices === undefined) {
-      if (startCopperTutorFlow()) {
-        return null;
-      }
-    }
     const result = sendOrApply({ type: ActionTypes.CONFIRM_ARCHIVE, payload });
     if (state.mode !== "online") {
       elements.confirmOverlay.hidden = true;
@@ -1164,7 +1311,8 @@ export function createHandlers(state, elements, onWinner, options = {}) {
     pendingWoodChoice = null;
     pendingGemChoice = null;
     pendingChoiceSelection = null;
-    pendingCopperFlow = null;
+    pendingPoolSelection = null;
+    pendingArchiveTutorChoice = null;
     const cpuDifficulty = state.cpu?.difficulty ?? null;
     const freshState = createInitialState({
       mode: state.mode,
@@ -1189,8 +1337,8 @@ export function createHandlers(state, elements, onWinner, options = {}) {
     if (elements.woodOverlay) elements.woodOverlay.hidden = true;
     if (elements.gemTutorOverlay) elements.gemTutorOverlay.hidden = true;
     if (elements.choiceCostOverlay) elements.choiceCostOverlay.hidden = true;
-    if (elements.copperTutorOverlay) elements.copperTutorOverlay.hidden = true;
-    if (elements.copperTutorOverlay) elements.copperTutorOverlay.hidden = true;
+    if (elements.poolCostOverlay) elements.poolCostOverlay.hidden = true;
+    if (elements.archiveTutorOverlay) elements.archiveTutorOverlay.hidden = true;
     hideActionToast();
 
     startGame(state);
@@ -1210,6 +1358,9 @@ export function createHandlers(state, elements, onWinner, options = {}) {
     pendingTrade = null;
     pendingWoodChoice = null;
     pendingGemChoice = null;
+    pendingChoiceSelection = null;
+    pendingPoolSelection = null;
+    pendingArchiveTutorChoice = null;
     const freshState = createInitialState();
     state.players = freshState.players;
     state.currentPlayer = freshState.currentPlayer;
@@ -1232,7 +1383,8 @@ export function createHandlers(state, elements, onWinner, options = {}) {
     if (elements.woodOverlay) elements.woodOverlay.hidden = true;
     if (elements.gemTutorOverlay) elements.gemTutorOverlay.hidden = true;
     if (elements.choiceCostOverlay) elements.choiceCostOverlay.hidden = true;
-    if (elements.copperTutorOverlay) elements.copperTutorOverlay.hidden = true;
+    if (elements.poolCostOverlay) elements.poolCostOverlay.hidden = true;
+    if (elements.archiveTutorOverlay) elements.archiveTutorOverlay.hidden = true;
     if (elements.cpuTurnOverlay) elements.cpuTurnOverlay.hidden = true;
     hideActionToast();
     elements.onlineChoiceOverlay.hidden = true;
@@ -1258,13 +1410,15 @@ export function createHandlers(state, elements, onWinner, options = {}) {
     selectOnlineMode,
     selectCoreFormat,
     selectExpandedFormat,
-    selectUltraFormat,
+    selectAncientFormat,
+    selectAncientExpandedFormat,
     selectCpuEasy,
     selectCpuMedium,
     selectCpuHard,
     selectHostFormatCore,
     selectHostFormatExpanded,
-    selectHostFormatUltra,
+    selectHostFormatAncient,
+    selectHostFormatAncientExpanded,
     createRoom,
     joinRoom,
     backToChoice,
@@ -1287,8 +1441,10 @@ export function createHandlers(state, elements, onWinner, options = {}) {
     cancelGemTutor,
     confirmChoiceCost,
     cancelChoiceCost,
-    confirmCopperTutor,
-    cancelCopperTutor,
+    confirmPoolCost,
+    cancelPoolCost,
+    confirmArchiveTutor,
+    cancelArchiveTutor,
     startTurn,
     closeCpuSummary,
   };

@@ -140,8 +140,8 @@ export function renderApp(state, elements, handlers) {
     !inMainPhase || !turnGate || !canInitiateTrade(state, player, "trade_bronze");
   elements.tradeSilver.disabled =
     !inMainPhase || !turnGate || !canInitiateTrade(state, player, "trade_silver");
-  const isExpanded = state.format === "expanded" || state.format === "ultra";
-  const isUltra = state.format === "ultra";
+  const isExpanded = state.format === "expanded" || state.format === "ancient_expanded";
+  const isAncient = state.format === "ancient" || state.format === "ancient_expanded";
   if (elements.tradeGems) {
     elements.tradeGems.hidden = !isExpanded;
     elements.tradeGems.disabled =
@@ -158,29 +158,21 @@ export function renderApp(state, elements, handlers) {
       !turnGate ||
       !canInitiateTrade(state, player, "trade_platinum");
   }
-  if (elements.tradeCopperTin) {
-    elements.tradeCopperTin.hidden = !isUltra;
-    elements.tradeCopperTin.disabled =
-      !isUltra ||
+  if (elements.tradeAncientsArchive) {
+    elements.tradeAncientsArchive.hidden = !isAncient;
+    elements.tradeAncientsArchive.disabled =
+      !isAncient ||
       !inMainPhase ||
       !turnGate ||
-      !canInitiateTrade(state, player, "trade_copper_tin");
+      !canInitiateTrade(state, player, "trade_ancients_archive");
   }
-  if (elements.tradeCopperZinc) {
-    elements.tradeCopperZinc.hidden = !isUltra;
-    elements.tradeCopperZinc.disabled =
-      !isUltra ||
+  if (elements.tradeElectrumDraw) {
+    elements.tradeElectrumDraw.hidden = !isAncient;
+    elements.tradeElectrumDraw.disabled =
+      !isAncient ||
       !inMainPhase ||
       !turnGate ||
-      !canInitiateTrade(state, player, "trade_copper_zinc");
-  }
-  if (elements.tradeBrass) {
-    elements.tradeBrass.hidden = !isUltra;
-    elements.tradeBrass.disabled =
-      !isUltra ||
-      !inMainPhase ||
-      !turnGate ||
-      !canInitiateTrade(state, player, "trade_brass_draw");
+      !canInitiateTrade(state, player, "trade_electrum_draw");
   }
   elements.endTurn.disabled = state.phase !== "main" || !turnGate;
   elements.undoPlays.disabled = !inMainPhase || !turnGate || player.active.length === 0;

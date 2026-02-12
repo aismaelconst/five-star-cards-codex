@@ -10,8 +10,11 @@ export function wireEvents(elements, handlers) {
   if (elements.formatExpanded) {
     elements.formatExpanded.addEventListener("click", handlers.selectExpandedFormat);
   }
-  if (elements.formatUltra) {
-    elements.formatUltra.addEventListener("click", handlers.selectUltraFormat);
+  if (elements.formatAncient) {
+    elements.formatAncient.addEventListener("click", handlers.selectAncientFormat);
+  }
+  if (elements.formatAncientExpanded) {
+    elements.formatAncientExpanded.addEventListener("click", handlers.selectAncientExpandedFormat);
   }
   if (elements.cpuEasy) {
     elements.cpuEasy.addEventListener("click", handlers.selectCpuEasy);
@@ -28,8 +31,14 @@ export function wireEvents(elements, handlers) {
   if (elements.hostFormatExpanded) {
     elements.hostFormatExpanded.addEventListener("click", handlers.selectHostFormatExpanded);
   }
-  if (elements.hostFormatUltra) {
-    elements.hostFormatUltra.addEventListener("click", handlers.selectHostFormatUltra);
+  if (elements.hostFormatAncient) {
+    elements.hostFormatAncient.addEventListener("click", handlers.selectHostFormatAncient);
+  }
+  if (elements.hostFormatAncientExpanded) {
+    elements.hostFormatAncientExpanded.addEventListener(
+      "click",
+      handlers.selectHostFormatAncientExpanded
+    );
   }
   elements.chooseCreate.addEventListener("click", handlers.chooseCreate);
   elements.chooseJoin.addEventListener("click", handlers.chooseJoin);
@@ -48,14 +57,17 @@ export function wireEvents(elements, handlers) {
   if (elements.tradePlatinum) {
     elements.tradePlatinum.addEventListener("click", () => handlers.trade("trade_platinum"));
   }
-  if (elements.tradeCopperTin) {
-    elements.tradeCopperTin.addEventListener("click", () => handlers.trade("trade_copper_tin"));
+  if (elements.tradeAncientsArchive) {
+    elements.tradeAncientsArchive.addEventListener(
+      "click",
+      () => handlers.trade("trade_ancients_archive")
+    );
   }
-  if (elements.tradeCopperZinc) {
-    elements.tradeCopperZinc.addEventListener("click", () => handlers.trade("trade_copper_zinc"));
-  }
-  if (elements.tradeBrass) {
-    elements.tradeBrass.addEventListener("click", () => handlers.trade("trade_brass_draw"));
+  if (elements.tradeElectrumDraw) {
+    elements.tradeElectrumDraw.addEventListener(
+      "click",
+      () => handlers.trade("trade_electrum_draw")
+    );
   }
   elements.endTurn.addEventListener("click", handlers.endTurn);
   elements.undoPlays.addEventListener("click", handlers.returnAllCards);
@@ -85,10 +97,16 @@ export function wireEvents(elements, handlers) {
   if (elements.choiceCostCancel) {
     elements.choiceCostCancel.addEventListener("click", handlers.cancelChoiceCost);
   }
-  if (elements.copperTutorConfirm) {
-    elements.copperTutorConfirm.addEventListener("click", handlers.confirmCopperTutor);
+  if (elements.poolCostConfirm) {
+    elements.poolCostConfirm.addEventListener("click", handlers.confirmPoolCost);
   }
-  if (elements.copperTutorCancel) {
-    elements.copperTutorCancel.addEventListener("click", handlers.cancelCopperTutor);
+  if (elements.poolCostCancel) {
+    elements.poolCostCancel.addEventListener("click", handlers.cancelPoolCost);
+  }
+  if (elements.archiveTutorConfirm) {
+    elements.archiveTutorConfirm.addEventListener("click", handlers.confirmArchiveTutor);
+  }
+  if (elements.archiveTutorCancel) {
+    elements.archiveTutorCancel.addEventListener("click", handlers.cancelArchiveTutor);
   }
 }

@@ -1,12 +1,15 @@
 import { describe, it, expect } from "vitest";
-import { baseRuleset, expandedRuleset, ultraExpandedRuleset } from "../src/game/ruleset.js";
+import {
+  baseRuleset,
+  expandedRuleset,
+  ancientRuleset,
+} from "../src/game/ruleset.js";
 import { createCard } from "../src/game/cards.js";
 import {
   ActionTypes,
   applyAction,
   canTrade,
   canTradeWithOptions,
-  canConfirmArchiveWithOptions,
   finalizeArchive,
   performTrade,
   playCard,
@@ -80,7 +83,7 @@ function makeExpandedState() {
   };
 }
 
-function makeUltraState() {
+function makeAncientState() {
   return {
     players: [
       {
@@ -98,8 +101,8 @@ function makeUltraState() {
         discard: [],
       },
     ],
-    ruleset: ultraExpandedRuleset,
-    format: "ultra",
+    ruleset: ancientRuleset,
+    format: "ancient",
     currentPlayer: 0,
     tradesThisTurn: 0,
     phase: "main",
@@ -301,95 +304,64 @@ describe("rules", () => {
     expect(result.detail.digDiscardedCount).toBe(2);
   });
 
-  it("trades copper + tin for three bronze", () => {
-    const state = makeUltraState();
+  it("trades two distinct ancients to archive a non-gold card", () => {
+    const state = makeAncientState();
     const player = current(state);
     player.archive = [
-      createCard("copper", ultraExpandedRuleset),
-      createCard("tin", ultraExpandedRuleset),
+      createCard("turquoise", ancientRuleset),
+      createCard("carnelian", ancientRuleset),
     ];
     player.deck = [
-      createCard("bronze", ultraExpandedRuleset),
-      createCard("bronze", ultraExpandedRuleset),
-      createCard("bronze", ultraExpandedRuleset),
+      createCard("silver", ancientRuleset),
+      createCard("gold", ancientRuleset),
     ];
 
-    const result = performTrade(state, player, "trade_copper_tin");
-    expect(result.success).toBe(true);
-    expect(player.discard.length).toBe(2);
-    expect(player.hand.filter((card) => card.type === "bronze")).toHaveLength(3);
-  });
-
-  it("trades copper + zinc for brass", () => {
-    const state = makeUltraState();
-    const player = current(state);
-    player.archive = [
-      createCard("copper", ultraExpandedRuleset),
-      createCard("zinc", ultraExpandedRuleset),
-    ];
-    player.deck = [createCard("brass", ultraExpandedRuleset)];
-
-    const result = performTrade(state, player, "trade_copper_zinc");
-    expect(result.success).toBe(true);
-    expect(player.hand.some((card) => card.type === "brass")).toBe(true);
-  });
-
-  it("requires a choice cost for brass draw trade", () => {
-    const state = makeUltraState();
-    const player = current(state);
-    player.archive = [
-      createCard("brass", ultraExpandedRuleset),
-      createCard("bronze", ultraExpandedRuleset),
-    ];
-    player.deck = [
-      createCard("gold", ultraExpandedRuleset),
-      createCard("silver", ultraExpandedRuleset),
-      createCard("bronze", ultraExpandedRuleset),
-    ];
-
-    expect(canTradeWithOptions(state, player, "trade_brass_draw", {})).toBe(false);
-    const result = performTrade(state, player, "trade_brass_draw", {
-      choiceType: "bronze",
+    const result = performTrade(state, player, "trade_ancients_archive", {
+      poolTypes: ["turquoise", "carnelian"],
+      rewardType: "silver",
     });
     expect(result.success).toBe(true);
-    expect(player.hand.length).toBe(3);
+    expect(player.archive.some((card) => card.type === "silver")).toBe(true);
+    expect(player.discard.length).toBe(2);
   });
 
-  it("resolves copper and tin end-of-turn tutors", () => {
-    const state = makeUltraState();
+  it("rejects duplicate ancients in pool cost", () => {
+    const state = makeAncientState();
     const player = current(state);
-    player.active = [
-      createCard("copper", ultraExpandedRuleset),
-      createCard("tin", ultraExpandedRuleset),
+    player.archive = [
+      createCard("turquoise", ancientRuleset),
+      createCard("turquoise", ancientRuleset),
     ];
-    player.deck = [
-      createCard("tin", ultraExpandedRuleset),
-      createCard("copper", ultraExpandedRuleset),
-    ];
+    player.deck = [createCard("silver", ancientRuleset)];
 
-    prepareArchive(state);
-    finalizeArchive(state, { copperChoices: ["tin"] });
-
-    const handTypes = player.hand.map((card) => card.type);
-    expect(handTypes).toContain("tin");
-    expect(handTypes).toContain("copper");
-  });
-
-  it("validates copper tutor choices when confirming archive", () => {
-    const state = makeUltraState();
-    const player = current(state);
-    player.active = [createCard("copper", ultraExpandedRuleset)];
-    player.deck = [
-      createCard("tin", ultraExpandedRuleset),
-      createCard("zinc", ultraExpandedRuleset),
-    ];
-
-    prepareArchive(state);
-    const playerIndex = state.currentPlayer;
-    expect(canConfirmArchiveWithOptions(state, playerIndex, {})).toBe(false);
     expect(
-      canConfirmArchiveWithOptions(state, playerIndex, { copperChoices: ["tin"] })
-    ).toBe(true);
+      canTradeWithOptions(state, player, "trade_ancients_archive", {
+        poolTypes: ["turquoise", "turquoise"],
+        rewardType: "silver",
+      })
+    ).toBe(false);
+  });
+
+  it("electrum trade draws cards equal to pool selection", () => {
+    const state = makeAncientState();
+    const player = current(state);
+    player.archive = [
+      createCard("electrum", ancientRuleset),
+      createCard("bronze", ancientRuleset),
+      createCard("silver", ancientRuleset),
+      createCard("turquoise", ancientRuleset),
+    ];
+    player.deck = [
+      createCard("bronze", ancientRuleset),
+      createCard("silver", ancientRuleset),
+      createCard("bronze", ancientRuleset),
+    ];
+
+    const result = performTrade(state, player, "trade_electrum_draw", {
+      poolTypes: ["bronze", "silver", "turquoise"],
+    });
+    expect(result.success).toBe(true);
+    expect(result.detail.drawCount).toBe(3);
   });
 
   it("prepareArchive creates pending archive and draw count", () => {

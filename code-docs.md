@@ -31,7 +31,7 @@ Player state (created in `src/game/state.js`):
 
 Game state (created in `src/game/state.js`):
 - `players` array
-- `ruleset`, `format` (`core`, `expanded`, or `ultra`)
+- `ruleset`, `format` (`core`, `expanded`, `ancient`, `ancient_expanded`)
 - `mode` (`offline`, `cpu`, `online`)
 - `currentPlayer`, `tradesThisTurn`, `turnCount`
 - `phase` (`main`, `confirm`, `between`)
@@ -46,7 +46,8 @@ Rulesets live in `src/game/ruleset.js`.
 
 - `baseRuleset` defines the core game: bronze/silver/gold cards, simple trade recipes, and win condition (5 gold in archive).
 - `expandedRuleset` extends core with `wood`, `ruby`, `emerald`, `sapphire`, and `platinum`, plus more trades and wood substitution rules.
-- `ultraExpandedRuleset` extends expanded with `copper`, `tin`, `zinc`, and `brass`, plus new trade recipes and end-of-turn tutors.
+- `ancientRuleset` extends core with `turquoise`, `lapis_lazuli`, `carnelian`, and `electrum`, plus new pool-based trade recipes.
+- `ancientExpandedRuleset` extends expanded with the ancients cards and the same ancients trade recipes.
 - Decks are created in `src/game/cards.js` using `ruleset.deckCounts` and shuffled in `src/game/state.js` via `shuffle()`.
 
 ## Rules Engine
@@ -61,10 +62,10 @@ Key behaviors:
 - Trades are validated by `canTradeWithOptions()` and executed by `performTrade()`. Trades can consume archive cards, grant cards from the deck (tutor + shuffle), draw cards, and increment `tradesThisTurn`.
 - Wood substitution is supported (expanded rules only) using `getWoodSubstitutionOptions()` and `buildCostWithWood()`.
 - Platinum trade (`trade_platinum`) “digs” by popping cards from the deck until a non bronze/silver is found, discarding the rest.
-- Ultra trades introduce `choiceCost` (e.g., brass requires an extra non-gem/non-wood card) and `reward` variants (`cards`, `draw`).
+- Trade recipes can include `choiceCost` (additional cost type), `poolCost` (distinct selections from a pool), and `reward` variants (`cards`, `draw`, `archive`).
 - Playing a card moves it from hand to active; returning moves active cards back to hand.
 - `prepareArchive()` stages active cards into `pendingArchive` and switches phase to `confirm`.
-- `finalizeArchive()` moves pending cards to archive, resolves copper/tin/zinc tutor effects (before draws), draws cards based on total `draw`, checks win condition, advances turn, and sets phase to `between`.
+- `finalizeArchive()` moves pending cards to archive, draws cards based on total `draw`, checks win condition, advances turn, and sets phase to `between`.
 
 Phase model:
 - `main`: player can trade and play cards.
@@ -116,19 +117,18 @@ Event wiring is centralized in `src/ui/events.js` and binds UI controls to handl
 The handler orchestration lives in `src/ui/handlers.js`.
 
 Key responsibilities:
-- Mode selection (offline, CPU, online) and format selection (core/expanded/ultra).
+- Mode selection (offline, CPU, online) and format selection (core/gemstone+platinum/ancient/ancient+gemstone+platinum).
 - Calling `startGame()` and initializing CPU or online state.
-- Managing overlays (confirm archive, turn overlay, wood substitution, gem tutor, choice cost, copper tutor, CPU summary).
+- Managing overlays (confirm archive, turn overlay, wood substitution, gem tutor, choice cost, pool cost, archive tutor, CPU summary).
 - Converting UI actions into `applyAction()` calls or online `action` messages.
 
 Trade overlays:
 - If a trade can use wood, the wood overlay is shown first.
-- If the trade requires an additional cost (e.g., brass), the choice cost overlay is shown.
+- If the trade requires an additional cost, the choice cost overlay is shown.
+- If the trade requires a pool selection (`poolCost`), the pool cost overlay is shown.
 - If the trade reward is `any`, the gem tutor overlay is shown to pick a target type.
+- If the trade reward is `archive`, the archive tutor overlay is shown to pick a non-gold target type.
 - After the overlays resolve, the trade is finalized and applied.
-
-Copper tutor overlay:
-- When confirming archive with copper in play, the UI prompts for tin/zinc choices before sending `CONFIRM_ARCHIVE`.
 
 CPU flow:
 - `maybeRunCpuTurn()` runs after the human completes their archive in CPU mode.
@@ -151,7 +151,7 @@ Server responsibilities:
 - Start games once both players are ready.
 - Apply actions using the same `applyAction()` rules as the client.
 - Broadcast sanitized state updates to each player after every action.
-- Validate copper tutor choices on archive confirmation (`canConfirmArchiveWithOptions`).
+- Validate trade payloads on the server via `canTradeWithOptions()` before applying actions.
 
 Key message types:
 - `create_room`, `join_room`, `ready_up`

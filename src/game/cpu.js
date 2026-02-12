@@ -10,19 +10,17 @@ import {
 const EASY_TRADE_PRIORITY = [
   "trade_silver",
   "trade_bronze",
-  "trade_copper_zinc",
-  "trade_copper_tin",
-  "trade_brass_draw",
   "trade_gem_set",
   "trade_platinum",
+  "trade_ancients_archive",
+  "trade_electrum_draw",
 ];
 const MEDIUM_TRADE_PRIORITY = [
   "trade_silver",
   "trade_gem_set",
   "trade_platinum",
-  "trade_copper_zinc",
-  "trade_copper_tin",
-  "trade_brass_draw",
+  "trade_ancients_archive",
+  "trade_electrum_draw",
   "trade_bronze",
 ];
 const HARD_TRADE_PRIORITY = MEDIUM_TRADE_PRIORITY;
@@ -32,10 +30,10 @@ const MEDIUM_PLAY_PRIORITY = [
   "gold",
   "silver",
   "bronze",
-  "brass",
-  "copper",
-  "tin",
-  "zinc",
+  "electrum",
+  "turquoise",
+  "lapis_lazuli",
+  "carnelian",
   "ruby",
   "emerald",
   "sapphire",
@@ -48,10 +46,10 @@ const CARD_VALUE = {
   gold: 100,
   silver: 30,
   bronze: 10,
-  brass: 18,
-  copper: 8,
-  tin: 6,
-  zinc: 6,
+  electrum: 18,
+  turquoise: 14,
+  lapis_lazuli: 14,
+  carnelian: 14,
   platinum: 25,
   sapphire: 20,
   emerald: 20,
@@ -85,16 +83,30 @@ function getTutorPriority(state, difficulty) {
     "gold",
     "silver",
     "platinum",
-    "brass",
-    "copper",
-    "tin",
-    "zinc",
+    "electrum",
+    "turquoise",
+    "lapis_lazuli",
+    "carnelian",
     "sapphire",
     "emerald",
     "ruby",
     "wood",
     "bronze",
   ];
+}
+
+function resolvePoolTypes(pool, displayOrder) {
+  if (!pool) return [];
+  if (Array.isArray(pool)) return pool.filter((type) => displayOrder.includes(type));
+  if (pool === "ancient") {
+    return ["turquoise", "lapis_lazuli", "carnelian"].filter((type) =>
+      displayOrder.includes(type)
+    );
+  }
+  if (pool === "non_gold_non_electrum") {
+    return displayOrder.filter((type) => type !== "gold" && type !== "electrum");
+  }
+  return [];
 }
 
 function getCardValue(type) {
@@ -106,7 +118,8 @@ function countByType(cards, displayOrder) {
 }
 
 function canPayBaseCost(recipe, counts) {
-  return Object.entries(recipe.cost).every(
+  const cost = recipe.cost ?? {};
+  return Object.entries(cost).every(
     ([type, amount]) => (counts[type] ?? 0) >= amount
   );
 }
@@ -134,6 +147,54 @@ function pickTutorReward(state, player, difficulty) {
   return priority.find((type) => (deckCounts[type] ?? 0) > 0) ?? null;
 }
 
+function pickArchiveReward(deckCounts) {
+  let best = null;
+  let bestValue = -Infinity;
+  Object.entries(deckCounts).forEach(([type, count]) => {
+    if (count <= 0) return;
+    if (type === "gold") return;
+    const value = getCardValue(type);
+    if (value > bestValue || (value === bestValue && (!best || type < best))) {
+      best = type;
+      bestValue = value;
+    }
+  });
+  return best;
+}
+
+function choosePoolTypesForRecipe(state, player, recipe) {
+  if (!recipe?.poolCost) return [];
+  const displayOrder = state.ruleset.displayOrder ?? [];
+  const allowed = resolvePoolTypes(recipe.poolCost.pool, displayOrder);
+  const archiveCounts = countByType(player.archive, displayOrder);
+  const available = allowed.filter((type) => (archiveCounts[type] ?? 0) > 0);
+  const sorted = [...available].sort((a, b) => {
+    const diff = getCardValue(a) - getCardValue(b);
+    if (diff !== 0) return diff;
+    return a.localeCompare(b);
+  });
+  const min = recipe.poolCost.min ?? 0;
+  const max = recipe.poolCost.max ?? min;
+  if (sorted.length < min) return null;
+  if (recipe.reward?.type === "draw" && recipe.reward.count === undefined) {
+    let best = sorted.slice(0, min);
+    let bestScore = -Infinity;
+    const limit = Math.min(max, sorted.length);
+    for (let n = min; n <= limit; n += 1) {
+      const slice = sorted.slice(0, n);
+      const cost = slice.reduce((sum, type) => sum + getCardValue(type), 0);
+      const reward = n * DRAW_VALUE;
+      const score = reward - cost;
+      if (score > bestScore) {
+        bestScore = score;
+        best = slice;
+      }
+    }
+    return best;
+  }
+  return sorted.slice(0, min);
+}
+
 function buildCostWithWood(cost, substituteType) {
   const adjusted = { ...cost };
   adjusted[substituteType] = Math.max(0, (adjusted[substituteType] ?? 0) - 1);
@@ -142,15 +203,23 @@ function buildCostWithWood(cost, substituteType) {
 }
 
 function getPayloadCost(recipe, payload) {
-  let cost = recipe.cost;
+  let cost = recipe.cost ?? {};
   if (payload.useWood && payload.substituteType) {
-    cost = buildCostWithWood(recipe.cost, payload.substituteType);
+    cost = buildCostWithWood(cost, payload.substituteType);
   }
   if (recipe.choiceCost && payload.choiceType) {
     cost = {
       ...cost,
       [payload.choiceType]: (cost[payload.choiceType] ?? 0) + recipe.choiceCost.count,
     };
+  }
+  if (recipe.poolCost && Array.isArray(payload.poolTypes)) {
+    payload.poolTypes.forEach((type) => {
+      cost = {
+        ...cost,
+        [type]: (cost[type] ?? 0) + 1,
+      };
+    });
   }
   return cost;
 }
@@ -203,7 +272,16 @@ function scoreTradePayload(state, player, recipe, payload) {
     rewardType = recipe.reward.card;
     rewardValue = getCardValue(recipe.reward.card) * recipe.reward.count;
   } else if (recipe.reward?.type === "draw") {
-    rewardValue = recipe.reward.count * DRAW_VALUE;
+    const drawCount =
+      typeof recipe.reward.count === "number"
+        ? recipe.reward.count
+        : Array.isArray(payload.poolTypes)
+          ? payload.poolTypes.length
+          : 0;
+    rewardValue = drawCount * DRAW_VALUE;
+  } else if (recipe.reward?.type === "archive") {
+    rewardType = payload.rewardType;
+    rewardValue = rewardType ? getCardValue(rewardType) : 0;
   }
   const cost = getPayloadCost(recipe, payload);
   const score = rewardValue - costValue(cost);
@@ -244,6 +322,17 @@ function finalizeTradePayload(state, player, recipeId, payload) {
     const choiceType = chooseChoiceCostType(state, player, recipeId, payload);
     if (!choiceType) return null;
     finalized.choiceType = choiceType;
+  }
+  if (recipe.poolCost) {
+    const poolTypes = choosePoolTypesForRecipe(state, player, recipe);
+    if (!poolTypes) return null;
+    finalized.poolTypes = poolTypes;
+  }
+  if (recipe.reward?.type === "archive" && !finalized.rewardType) {
+    const deckCounts = countCards(player.deck, state.ruleset.displayOrder);
+    const rewardType = pickArchiveReward(deckCounts);
+    if (!rewardType) return null;
+    finalized.rewardType = rewardType;
   }
   if (canTradeWithOptions(state, player, recipeId, finalized)) return finalized;
   return null;
@@ -413,19 +502,6 @@ function scorePlay(state, player, type) {
   if (type === "wood" && (archiveCounts.wood ?? 0) === 0) {
     score += WOOD_SETUP_BONUS;
   }
-  if (type === "copper") {
-    if ((deckCounts.tin ?? 0) > 0 || (deckCounts.zinc ?? 0) > 0) {
-      score += DRAW_VALUE;
-    }
-  }
-  if (type === "tin" || type === "zinc") {
-    if ((deckCounts.copper ?? 0) > 0) {
-      score += DRAW_VALUE;
-    }
-  }
-  if (type === "brass") {
-    score += DRAW_VALUE * 0.5;
-  }
   return score;
 }
 
@@ -486,8 +562,10 @@ export function executeCpuTurn(state, options = {}) {
       useWood: payload.useWood,
       substituteType: payload.substituteType,
       choiceType: payload.choiceType ?? null,
+      poolTypes: payload.poolTypes ?? null,
       rewardType:
         result?.event?.detail?.rewardType ?? payload.rewardType ?? null,
+      drawCount: result?.event?.detail?.drawCount,
       digDiscardedCount: result?.event?.detail?.digDiscardedCount,
     });
   }

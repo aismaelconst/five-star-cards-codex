@@ -16,11 +16,11 @@ function getTradeRecipe(state, recipeId) {
   return state.ruleset.tradeRecipes?.[recipeId] ?? null;
 }
 
-function sumCost(cost) {
+function sumCost(cost = {}) {
   return Object.values(cost).reduce((sum, value) => sum + value, 0);
 }
 
-function canPayCost(counts, cost) {
+function canPayCost(counts, cost = {}) {
   return Object.entries(cost).every(
     ([type, amount]) => (counts[type] ?? 0) >= amount
   );
@@ -34,6 +34,21 @@ function buildCostWithWood(cost, substituteType) {
 }
 
 const GEM_TYPES = new Set(["ruby", "emerald", "sapphire"]);
+const ANCIENT_TYPES = ["turquoise", "lapis_lazuli", "carnelian"];
+
+function resolvePoolTypes(ruleset, pool) {
+  const displayOrder = ruleset.displayOrder ?? Object.keys(ruleset.cardTypes ?? {});
+  if (Array.isArray(pool)) {
+    return pool.filter((type) => displayOrder.includes(type));
+  }
+  if (pool === "ancient") {
+    return ANCIENT_TYPES.filter((type) => displayOrder.includes(type));
+  }
+  if (pool === "non_gold_non_electrum") {
+    return displayOrder.filter((type) => type !== "gold" && type !== "electrum");
+  }
+  return [];
+}
 
 function getChoicePoolTypes(ruleset, pool, exclude = []) {
   const displayOrder = ruleset.displayOrder ?? Object.keys(ruleset.cardTypes ?? {});
@@ -57,19 +72,61 @@ function getChoiceCostOptionsForCost(ruleset, recipe, counts, baseCost) {
   });
 }
 
+function buildPoolCostCounts(poolTypes) {
+  return poolTypes.reduce((acc, type) => {
+    acc[type] = (acc[type] ?? 0) + 1;
+    return acc;
+  }, {});
+}
+
+function getPoolCostCounts(state, recipe, options) {
+  if (!recipe.poolCost) return { valid: true, counts: {}, poolTypes: [] };
+  const poolTypes = Array.isArray(options.poolTypes) ? options.poolTypes : null;
+  if (!poolTypes) return { valid: false, counts: {}, poolTypes: [] };
+  const min = recipe.poolCost.min ?? poolTypes.length;
+  const max = recipe.poolCost.max ?? poolTypes.length;
+  if (poolTypes.length < min || poolTypes.length > max) {
+    return { valid: false, counts: {}, poolTypes: [] };
+  }
+  if (recipe.poolCost.distinct) {
+    const unique = new Set(poolTypes);
+    if (unique.size !== poolTypes.length) {
+      return { valid: false, counts: {}, poolTypes: [] };
+    }
+  }
+  const allowed = resolvePoolTypes(state.ruleset, recipe.poolCost.pool);
+  if (poolTypes.some((type) => !allowed.includes(type))) {
+    return { valid: false, counts: {}, poolTypes: [] };
+  }
+  return { valid: true, counts: buildPoolCostCounts(poolTypes), poolTypes };
+}
+
+function canSatisfyPoolCost(counts, poolCost, ruleset) {
+  if (!poolCost) return true;
+  const allowed = resolvePoolTypes(ruleset, poolCost.pool);
+  if (allowed.length === 0) return false;
+  const min = poolCost.min ?? poolCost.max ?? 0;
+  if (poolCost.distinct) {
+    const available = allowed.filter((type) => (counts[type] ?? 0) > 0).length;
+    return available >= min;
+  }
+  const total = allowed.reduce((sum, type) => sum + (counts[type] ?? 0), 0);
+  return total >= min;
+}
+
 export function getChoiceCostOptions(state, player, recipeId, options = {}) {
   const recipe = getTradeRecipe(state, recipeId);
   if (!recipe?.choiceCost) return [];
   const counts = countCards(player.archive);
-  let baseCost = recipe.cost;
+  let baseCost = recipe.cost ?? {};
   if (options.useWood) {
     const rules = state.ruleset.woodSubstitution;
     if (!rules?.allow) return [];
-    if (sumCost(recipe.cost) < rules.minCost) return [];
+    if (sumCost(baseCost) < rules.minCost) return [];
     if ((counts.wood ?? 0) < 1) return [];
-    if (!options.substituteType || !recipe.cost[options.substituteType]) return [];
+    if (!options.substituteType || !baseCost[options.substituteType]) return [];
     if (recipeId === "trade_platinum" && options.substituteType === "platinum") return [];
-    baseCost = buildCostWithWood(recipe.cost, options.substituteType);
+    baseCost = buildCostWithWood(baseCost, options.substituteType);
   }
   return getChoiceCostOptionsForCost(state.ruleset, recipe, counts, baseCost);
 }
@@ -78,15 +135,16 @@ function getTradeCost(state, player, recipeId, options = {}) {
   const recipe = getTradeRecipe(state, recipeId);
   if (!recipe) return null;
   const counts = countCards(player.archive);
-  let cost = recipe.cost;
+  const baseCost = recipe.cost ?? {};
+  let cost = baseCost;
   if (options.useWood) {
     const rules = state.ruleset.woodSubstitution;
     if (!rules?.allow) return null;
-    if (sumCost(recipe.cost) < rules.minCost) return null;
+    if (sumCost(baseCost) < rules.minCost) return null;
     if ((counts.wood ?? 0) < 1) return null;
-    if (!options.substituteType || !recipe.cost[options.substituteType]) return null;
+    if (!options.substituteType || !baseCost[options.substituteType]) return null;
     if (recipeId === "trade_platinum" && options.substituteType === "platinum") return null;
-    cost = buildCostWithWood(recipe.cost, options.substituteType);
+    cost = buildCostWithWood(baseCost, options.substituteType);
   }
   if (recipe.choiceCost) {
     if (!options.choiceType) return null;
@@ -97,50 +155,16 @@ function getTradeCost(state, player, recipeId, options = {}) {
       [options.choiceType]: (cost[options.choiceType] ?? 0) + recipe.choiceCost.count,
     };
   }
+  const poolCost = getPoolCostCounts(state, recipe, options);
+  if (!poolCost.valid) return null;
+  Object.entries(poolCost.counts).forEach(([type, amount]) => {
+    cost = {
+      ...cost,
+      [type]: (cost[type] ?? 0) + amount,
+    };
+  });
   if (!canPayCost(counts, cost)) return null;
   return cost;
-}
-
-function canConfirmCopperChoices(state, player, pending, options = {}) {
-  if (!pending?.playedCards) return true;
-  const copperCount = countCards(pending.playedCards).copper ?? 0;
-  if (copperCount === 0) return true;
-  const choices = Array.isArray(options.copperChoices) ? options.copperChoices : [];
-  let choiceIndex = 0;
-  const deckCounts = countCards(player.deck, state.ruleset.displayOrder);
-  let remainingTin = deckCounts.tin ?? 0;
-  let remainingZinc = deckCounts.zinc ?? 0;
-  for (let i = 0; i < copperCount; i += 1) {
-    const hasTin = remainingTin > 0;
-    const hasZinc = remainingZinc > 0;
-    if (!hasTin && !hasZinc) {
-      continue;
-    }
-    if (hasTin && hasZinc) {
-      const choice = choices[choiceIndex];
-      if (choice !== "tin" && choice !== "zinc") return false;
-      choiceIndex += 1;
-      if (choice === "tin") {
-        remainingTin -= 1;
-      } else {
-        remainingZinc -= 1;
-      }
-      continue;
-    }
-    if (hasTin) {
-      remainingTin -= 1;
-    } else {
-      remainingZinc -= 1;
-    }
-  }
-  return choiceIndex === choices.length;
-}
-
-export function canConfirmArchiveWithOptions(state, playerIndex, options = {}) {
-  const pending = state.pendingArchive;
-  if (!pending || pending.playerIndex !== playerIndex) return false;
-  const player = state.players[playerIndex];
-  return canConfirmCopperChoices(state, player, pending, options);
 }
 
 export function getWoodSubstitutionOptions(state, player, recipeId) {
@@ -148,13 +172,14 @@ export function getWoodSubstitutionOptions(state, player, recipeId) {
   if (!recipe) return [];
   const rules = state.ruleset.woodSubstitution;
   if (!rules?.allow) return [];
-  if (sumCost(recipe.cost) < rules.minCost) return [];
+  const baseCost = recipe.cost ?? {};
+  if (sumCost(baseCost) < rules.minCost) return [];
   const counts = countCards(player.archive);
   if ((counts.wood ?? 0) < 1) return [];
   const options = [];
-  Object.entries(recipe.cost).forEach(([type]) => {
+  Object.entries(baseCost).forEach(([type]) => {
     if (recipeId === "trade_platinum" && type === "platinum") return;
-    const adjusted = buildCostWithWood(recipe.cost, type);
+    const adjusted = buildCostWithWood(baseCost, type);
     if (canPayCost(counts, adjusted)) {
       options.push(type);
     }
@@ -168,28 +193,29 @@ export function canInitiateTrade(state, player, recipeId) {
   if (state.phase !== "main") return false;
   if (state.tradesThisTurn >= state.ruleset.maxTrades) return false;
   const counts = countCards(player.archive);
-  let canPay = false;
-  if (canPayCost(counts, recipe.cost)) {
-    if (!recipe.choiceCost) {
-      canPay = true;
-    } else if (
-      getChoiceCostOptionsForCost(state.ruleset, recipe, counts, recipe.cost).length > 0
-    ) {
-      canPay = true;
+  const baseCost = recipe.cost ?? {};
+  const canPayWithCost = (cost) => {
+    if (!canPayCost(counts, cost)) return false;
+    const remaining = { ...counts };
+    Object.entries(cost).forEach(([type, amount]) => {
+      remaining[type] = (remaining[type] ?? 0) - amount;
+    });
+    if (recipe.choiceCost) {
+      if (getChoiceCostOptionsForCost(state.ruleset, recipe, counts, cost).length === 0) {
+        return false;
+      }
     }
-  }
+    if (recipe.poolCost && !canSatisfyPoolCost(remaining, recipe.poolCost, state.ruleset)) {
+      return false;
+    }
+    return true;
+  };
+  let canPay = canPayWithCost(baseCost);
   if (!canPay) {
     const woodOptions = getWoodSubstitutionOptions(state, player, recipeId);
     for (const substituteType of woodOptions) {
-      const adjusted = buildCostWithWood(recipe.cost, substituteType);
-      if (!canPayCost(counts, adjusted)) continue;
-      if (!recipe.choiceCost) {
-        canPay = true;
-        break;
-      }
-      if (
-        getChoiceCostOptionsForCost(state.ruleset, recipe, counts, adjusted).length > 0
-      ) {
+      const adjusted = buildCostWithWood(baseCost, substituteType);
+      if (canPayWithCost(adjusted)) {
         canPay = true;
         break;
       }
@@ -211,6 +237,11 @@ export function canInitiateTrade(state, player, recipeId) {
   }
   if (recipe.reward?.type === "draw") {
     return true;
+  }
+  if (recipe.reward?.type === "archive") {
+    return Object.entries(deckCounts).some(
+      ([type, count]) => count > 0 && type !== "gold"
+    );
   }
   return false;
 }
@@ -257,6 +288,10 @@ export function canTradeWithOptions(state, player, recipeId, options = {}) {
   }
   if (recipe.reward?.type === "draw") {
     return true;
+  }
+  if (recipe.reward?.type === "archive") {
+    if (!options.rewardType || options.rewardType === "gold") return false;
+    return (deckCounts[options.rewardType] ?? 0) > 0;
   }
   return false;
 }
@@ -351,8 +386,26 @@ export function performTrade(state, player, recipeId, options = {}) {
       detail.rewardCount = moved;
     }
   } else if (recipe.reward?.type === "draw") {
-    const drawn = drawCards(player, recipe.reward.count);
+    const drawCount =
+      typeof recipe.reward.count === "number"
+        ? recipe.reward.count
+        : Array.isArray(options.poolTypes)
+          ? options.poolTypes.length
+          : 0;
+    const drawn = drawCards(player, drawCount);
     detail.drawCount = drawn.length;
+  } else if (recipe.reward?.type === "archive") {
+    if (options.rewardType && options.rewardType !== "gold") {
+      const rewardIndex = player.deck.findIndex(
+        (card) => getCardType(card) === options.rewardType
+      );
+      if (rewardIndex !== -1) {
+        const [reward] = player.deck.splice(rewardIndex, 1);
+        player.archive.push(reward);
+        player.deck = shuffle(player.deck);
+        detail.rewardType = options.rewardType;
+      }
+    }
   }
   state.tradesThisTurn += 1;
   return { success: true, detail };
@@ -410,43 +463,6 @@ export function finalizeArchive(state, options = {}) {
 
   player.archive.push(...pending.playedCards);
   player.active = [];
-
-  const tutorFromDeck = (type) => {
-    const rewardIndex = player.deck.findIndex((card) => getCardType(card) === type);
-    if (rewardIndex === -1) return false;
-    const [reward] = player.deck.splice(rewardIndex, 1);
-    player.hand.push(reward);
-    player.deck = shuffle(player.deck);
-    return true;
-  };
-
-  const playedCounts = countCards(pending.playedCards);
-  const copperCount = playedCounts.copper ?? 0;
-  const tinCount = playedCounts.tin ?? 0;
-  const zincCount = playedCounts.zinc ?? 0;
-  const copperChoices = Array.isArray(options.copperChoices) ? options.copperChoices : [];
-  let choiceIndex = 0;
-  for (let i = 0; i < copperCount; i += 1) {
-    const deckCounts = countCards(player.deck, state.ruleset.displayOrder);
-    const hasTin = (deckCounts.tin ?? 0) > 0;
-    const hasZinc = (deckCounts.zinc ?? 0) > 0;
-    if (!hasTin && !hasZinc) continue;
-    let choice = null;
-    if (hasTin && hasZinc) {
-      const requested = copperChoices[choiceIndex];
-      choice = requested === "tin" || requested === "zinc" ? requested : "tin";
-      choiceIndex += requested === "tin" || requested === "zinc" ? 1 : 0;
-    } else {
-      choice = hasTin ? "tin" : "zinc";
-    }
-    tutorFromDeck(choice);
-  }
-  for (let i = 0; i < tinCount; i += 1) {
-    tutorFromDeck("copper");
-  }
-  for (let i = 0; i < zincCount; i += 1) {
-    tutorFromDeck("copper");
-  }
 
   drawCards(player, pending.drawCount);
 

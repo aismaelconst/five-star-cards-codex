@@ -3,7 +3,7 @@ import { getCardTooltip } from "../src/ui/card-tooltips.js";
 import {
   baseRuleset,
   expandedRuleset,
-  ultraExpandedRuleset,
+  ancientRuleset,
 } from "../src/game/ruleset.js";
 
 describe("card tooltips", () => {
@@ -26,9 +26,15 @@ describe("card tooltips", () => {
     expect(tooltip).toContain("discard bronze/silver");
   });
 
-  it("includes copper expansion effects", () => {
-    const tooltip = getCardTooltip("copper", ultraExpandedRuleset);
-    expect(tooltip).toContain("Tutor 1 tin or zinc");
-    expect(tooltip).toContain("Trade: 1 copper + 1 tin");
+  it("includes ancients archive trade", () => {
+    const tooltip = getCardTooltip("turquoise", ancientRuleset);
+    expect(tooltip).toContain("Turquoise");
+    expect(tooltip).toContain("Trade: 2 distinct ancients");
+    expect(tooltip).toContain("archive 1 non-gold");
+  });
+
+  it("formats lapis lazuli name", () => {
+    const tooltip = getCardTooltip("lapis_lazuli", ancientRuleset);
+    expect(tooltip).toContain("Lapis Lazuli");
   });
 });
