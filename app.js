@@ -10,7 +10,6 @@ const elements = {
   turnCounter: document.getElementById("turnCounter"),
   opponentSummary: document.getElementById("opponentSummary"),
   opponentAlert: document.getElementById("opponentAlert"),
-  archiveCounts: document.getElementById("archiveCounts"),
   handCounts: document.getElementById("handCounts"),
   archivePile: document.getElementById("archivePile"),
   activeCards: document.getElementById("activeCards"),

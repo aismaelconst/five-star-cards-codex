@@ -7,7 +7,6 @@ function makeElements() {
     "turnIndicator",
     "turnCounter",
     "opponentSummary",
-    "archiveCounts",
     "handCounts",
     "archivePile",
     "activeCards",
@@ -102,7 +101,7 @@ describe("ui/render", () => {
     renderApp(state, elements, handlers);
 
     expect(elements.handCounts.innerHTML).toContain("Wood");
-    expect(elements.archiveCounts.innerHTML).toContain("Platinum");
+    expect(elements.archivePile.textContent).toContain("platinum x 1");
   });
 
   it("renders expanded hand piles by type", () => {

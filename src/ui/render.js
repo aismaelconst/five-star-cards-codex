@@ -93,12 +93,9 @@ export function renderApp(state, elements, handlers) {
   const primaryArchive = buildLine(primaryTypes, archiveCounts);
   const primaryHand = buildLine(primaryTypes, handCounts);
   if (secondaryTypes.length > 0) {
-    const secondaryArchive = buildLine(secondaryTypes, archiveCounts);
     const secondaryHand = buildLine(secondaryTypes, handCounts);
-    elements.archiveCounts.innerHTML = `<div class="count-line">${primaryArchive}</div><div class="count-line">${secondaryArchive}</div>`;
     elements.handCounts.innerHTML = `<div class="count-line">${primaryHand}</div><div class="count-line">${secondaryHand}</div>`;
   } else {
-    elements.archiveCounts.textContent = primaryArchive;
     elements.handCounts.textContent = primaryHand;
   }
 

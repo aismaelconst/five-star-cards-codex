@@ -6,7 +6,6 @@ function setupDom() {
     <div id="turnCounter"></div>
     <div id="opponentSummary"></div>
     <div id="opponentAlert"></div>
-    <div id="archiveCounts"></div>
     <div id="handCounts"></div>
     <div id="archivePile"></div>
     <div id="activeCards"></div>
