@@ -84,7 +84,7 @@ describe("cpu", () => {
   it("cpu uses ancients archive trade in ancient format", () => {
     const state = createInitialState({
       mode: "cpu",
-      format: "ancient",
+      format: "ancient_expanded",
       playerNames: ["You", "CPU"],
     });
     state.currentPlayer = 1;
@@ -102,19 +102,24 @@ describe("cpu", () => {
   it("cpu uses electrum to declutter a large hand", () => {
     const state = createInitialState({
       mode: "cpu",
-      format: "ancient",
+      format: "ancient_expanded",
       playerNames: ["You", "CPU"],
     });
     state.currentPlayer = 1;
     state.cpu = { difficulty: "easy" };
     const cpu = state.players[1];
     cpu.archive = ["electrum", "bronze", "silver"];
-    cpu.hand = Array.from({ length: 12 }, () => "bronze");
+    cpu.hand = [
+      "wood",
+      "wood",
+      ...Array.from({ length: 10 }, () => "bronze"),
+    ];
 
     const summary = executeCpuTurn(state, { difficulty: "easy", cpuIndex: 1 });
 
     expect(summary.trades[0].recipeId).toBe("trade_electrum_draw");
-    expect(summary.trades[0].handArchive.bronze).toBe(5);
+    expect(summary.trades[0].handArchive.wood).toBe(2);
+    expect(summary.trades[0].handArchive.bronze).toBe(3);
   });
 
   it("hard uses gem set when bronze trade is unavailable", () => {

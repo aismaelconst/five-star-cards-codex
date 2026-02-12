@@ -66,8 +66,8 @@ You may trade **before and/or after** playing cards. You may **not** trade after
 
 - **Any two distinct ancients (turquoise, lapis lazuli, carnelian) → archive 1 non‑gold from deck**
   - Choose a non‑gold card from your deck and place it directly into your Archive, then shuffle.
-- **Electrum + Bronze + Silver → archive 1–5 Bronze/Silver from hand**
-  - Choose 1–5 Bronze/Silver cards from your hand and move them directly to Archive.
+- **Electrum + Bronze + Silver → archive 1–5 non-gold cards from hand**
+  - Choose 1–5 non-gold cards from your hand and move them directly to Archive.
 
 ## 2. Play Cards (Optional)
 
@@ -111,4 +111,4 @@ Gemstone + Platinum Trades:
 Ancients Trades:
 
 - 2 distinct ancients → archive 1 non‑gold from deck (shuffle)
-- Electrum + Bronze + Silver → archive 1–5 Bronze/Silver from hand
+- Electrum + Bronze + Silver → archive 1–5 non-gold cards from hand

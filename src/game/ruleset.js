@@ -41,6 +41,35 @@ export const baseRuleset = {
   },
 };
 
+const ANCIENT_DISPLAY_ORDER = [
+  "bronze",
+  "silver",
+  "gold",
+  "turquoise",
+  "lapis_lazuli",
+  "carnelian",
+  "electrum",
+];
+
+const ANCIENT_EXPANDED_DISPLAY_ORDER = [
+  "bronze",
+  "silver",
+  "gold",
+  "wood",
+  "ruby",
+  "emerald",
+  "sapphire",
+  "platinum",
+  "turquoise",
+  "lapis_lazuli",
+  "carnelian",
+  "electrum",
+];
+
+function getNonGoldAllowed(displayOrder) {
+  return displayOrder.filter((type) => type !== "gold");
+}
+
 export const expandedRuleset = {
   ...baseRuleset,
   displayOrder: [
@@ -111,15 +140,7 @@ export const expandedRuleset = {
 
 export const ancientRuleset = {
   ...baseRuleset,
-  displayOrder: [
-    "bronze",
-    "silver",
-    "gold",
-    "turquoise",
-    "lapis_lazuli",
-    "carnelian",
-    "electrum",
-  ],
+  displayOrder: ANCIENT_DISPLAY_ORDER,
   tradeRecipes: {
     ...baseRuleset.tradeRecipes,
     trade_ancients_archive: {
@@ -128,7 +149,12 @@ export const ancientRuleset = {
     },
     trade_electrum_draw: {
       cost: { electrum: 1, bronze: 1, silver: 1 },
-      reward: { type: "archive_hand", min: 1, max: 5, allowed: ["bronze", "silver"] },
+      reward: {
+        type: "archive_hand",
+        min: 1,
+        max: 5,
+        allowed: getNonGoldAllowed(ANCIENT_DISPLAY_ORDER),
+      },
     },
   },
   cardTypes: {
@@ -161,20 +187,7 @@ export const ancientRuleset = {
 
 export const ancientExpandedRuleset = {
   ...expandedRuleset,
-  displayOrder: [
-    "bronze",
-    "silver",
-    "gold",
-    "wood",
-    "ruby",
-    "emerald",
-    "sapphire",
-    "platinum",
-    "turquoise",
-    "lapis_lazuli",
-    "carnelian",
-    "electrum",
-  ],
+  displayOrder: ANCIENT_EXPANDED_DISPLAY_ORDER,
   tradeRecipes: {
     ...expandedRuleset.tradeRecipes,
     trade_ancients_archive: {
@@ -183,7 +196,12 @@ export const ancientExpandedRuleset = {
     },
     trade_electrum_draw: {
       cost: { electrum: 1, bronze: 1, silver: 1 },
-      reward: { type: "archive_hand", min: 1, max: 5, allowed: ["bronze", "silver"] },
+      reward: {
+        type: "archive_hand",
+        min: 1,
+        max: 5,
+        allowed: getNonGoldAllowed(ANCIENT_EXPANDED_DISPLAY_ORDER),
+      },
     },
   },
   cardTypes: {

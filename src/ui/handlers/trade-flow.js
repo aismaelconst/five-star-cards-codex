@@ -408,7 +408,9 @@ export function createTradeFlow(options) {
     const player = getLocalPlayer();
     const displayOrder = state.ruleset.displayOrder ?? ["bronze", "silver", "gold"];
     const handCounts = countCards(player.hand, displayOrder);
-    const allowed = recipe.reward.allowed ?? [];
+    const allowed = (recipe.reward.allowed ?? []).filter(
+      (type) => (handCounts[type] ?? 0) > 0
+    );
     pendingHandArchive = {
       allowed,
       counts: handCounts,

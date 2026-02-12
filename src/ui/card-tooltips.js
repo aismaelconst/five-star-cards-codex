@@ -55,7 +55,15 @@ function formatTradeBullet(recipe, type, ruleset) {
     const max = recipe.reward.max ?? min;
     const range = min === max ? `${min}` : `${min}-${max}`;
     const allowed = recipe.reward.allowed ?? [];
-    const label = allowed.length > 0 ? allowed.join("/") : "cards";
+    let label = "cards";
+    if (allowed.length > 0) {
+      const displayOrder = ruleset?.displayOrder ?? [];
+      const nonGold = displayOrder.filter((type) => type !== "gold");
+      const allowedSet = new Set(allowed);
+      const isAllNonGold =
+        nonGold.length > 0 && nonGold.every((type) => allowedSet.has(type));
+      label = isAllNonGold ? "non-gold cards" : allowed.join("/");
+    }
     reward = `archive ${range} ${label} from hand`;
   } else if (recipe.reward?.type === "archive") {
     reward = "archive 1 non-gold from deck";

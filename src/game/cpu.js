@@ -118,8 +118,16 @@ function chooseHandArchiveSelection(state, player, recipe) {
   const counts = countByType(player.hand, state.ruleset.displayOrder);
   const eligible = allowed.reduce((sum, type) => sum + (counts[type] ?? 0), 0);
   if (eligible < min) return null;
-  const preferred = ["bronze", "silver"].filter((type) => allowed.includes(type));
-  const order = preferred.length > 0 ? preferred : allowed;
+  const cardDefs = state.ruleset.cardTypes ?? {};
+  const order = [...allowed].sort((a, b) => {
+    const drawA = cardDefs[a]?.draw ?? 0;
+    const drawB = cardDefs[b]?.draw ?? 0;
+    if (drawA !== drawB) return drawA - drawB;
+    const valueA = getCardValue(a);
+    const valueB = getCardValue(b);
+    if (valueA !== valueB) return valueA - valueB;
+    return a.localeCompare(b);
+  });
   const selected = {};
   let total = 0;
   order.forEach((type) => {

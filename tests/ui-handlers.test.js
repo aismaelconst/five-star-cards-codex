@@ -202,26 +202,30 @@ describe("ui/handlers", () => {
   });
 
   it("opens hand archive overlay for electrum trade and archives from hand", () => {
-    state = createInitialState({ mode: "offline", format: "ancient" });
+    state = createInitialState({ mode: "offline", format: "ancient_expanded" });
     elements = makeElements();
     const handlers = createHandlers(state, elements, onWinner);
     const player = state.players[0];
     player.archive = ["electrum", "bronze", "silver"];
-    player.hand = ["bronze", "bronze", "silver"];
+    player.hand = ["bronze", "wood", "ruby"];
 
     handlers.trade("trade_electrum_draw");
 
     expect(elements.handArchiveOverlay.hidden).toBe(false);
     const rows = Array.from(elements.handArchiveOptions.querySelectorAll(".hand-archive-row"));
     const bronzeRow = rows.find((row) => row.dataset.type === "bronze");
+    const woodRow = rows.find((row) => row.dataset.type === "wood");
+    const rubyRow = rows.find((row) => row.dataset.type === "ruby");
     const silverRow = rows.find((row) => row.dataset.type === "silver");
     bronzeRow.querySelector(".hand-archive-plus").click();
-    silverRow.querySelector(".hand-archive-plus").click();
+    woodRow.querySelector(".hand-archive-plus").click();
+    rubyRow.querySelector(".hand-archive-plus").click();
     handlers.confirmHandArchive();
 
+    expect(silverRow).toBeUndefined();
     expect(state.tradesThisTurn).toBe(1);
     expect(player.discard.length).toBe(3);
-    expect(player.hand.length).toBe(1);
+    expect(player.hand.length).toBe(0);
   });
 
   it("prepares archive on endTurn", () => {

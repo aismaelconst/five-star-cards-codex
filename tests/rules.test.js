@@ -352,18 +352,18 @@ describe("rules", () => {
       createCard("silver", ancientRuleset),
     ];
     player.hand = [
-      createCard("bronze", ancientRuleset),
+      createCard("turquoise", ancientRuleset),
       createCard("bronze", ancientRuleset),
       createCard("silver", ancientRuleset),
     ];
 
     const result = performTrade(state, player, "trade_electrum_draw", {
-      handArchive: { bronze: 2, silver: 1 },
+      handArchive: { turquoise: 1, bronze: 1, silver: 1 },
     });
     expect(result.success).toBe(true);
     expect(player.hand.length).toBe(0);
     expect(player.archive.length).toBe(3);
-    expect(result.detail.handArchive).toEqual({ bronze: 2, silver: 1 });
+    expect(result.detail.handArchive).toEqual({ turquoise: 1, bronze: 1, silver: 1 });
   });
 
   it("rejects electrum trade with invalid hand archive selection", () => {
@@ -379,6 +379,23 @@ describe("rules", () => {
     expect(
       canTradeWithOptions(state, player, "trade_electrum_draw", {
         handArchive: { bronze: 2 },
+      })
+    ).toBe(false);
+  });
+
+  it("rejects electrum trade when hand archive includes gold", () => {
+    const state = makeAncientState();
+    const player = current(state);
+    player.archive = [
+      createCard("electrum", ancientRuleset),
+      createCard("bronze", ancientRuleset),
+      createCard("silver", ancientRuleset),
+    ];
+    player.hand = [createCard("gold", ancientRuleset)];
+
+    expect(
+      canTradeWithOptions(state, player, "trade_electrum_draw", {
+        handArchive: { gold: 1 },
       })
     ).toBe(false);
   });
@@ -436,6 +453,7 @@ describe("rules", () => {
     expect(state.currentPlayer).toBe(1);
     expect(state.phase).toBe("between");
   });
+
 
   it("declares winner when archive has five gold", () => {
     const state = makeState();
