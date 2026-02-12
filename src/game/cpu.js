@@ -569,7 +569,8 @@ export function chooseCpuPlays(state, player, difficulty) {
       return a.type.localeCompare(b.type);
     });
     const maxPlays = state.ruleset.maxPlays ?? 5;
-    return entries.slice(0, maxPlays).map((entry) => entry.type);
+    const plays = entries.slice(0, maxPlays).map((entry) => entry.type);
+    return applyEmptyHandGuard(state, player, plays);
   }
   const priority = getPlayPriority(difficulty);
   const counts = countCards(player.hand, priority);
@@ -582,7 +583,18 @@ export function chooseCpuPlays(state, player, difficulty) {
       remaining -= 1;
     }
   });
-  return plays;
+  return applyEmptyHandGuard(state, player, plays);
+}
+
+function applyEmptyHandGuard(state, player, plays) {
+  if (plays.length === 0) return plays;
+  if (plays.length < player.hand.length) return plays;
+  const drawCount = plays.reduce((sum, type) => {
+    const draw = state.ruleset.cardTypes?.[type]?.draw ?? 0;
+    return sum + draw;
+  }, 0);
+  if (drawCount > 0) return plays;
+  return plays.slice(0, Math.max(0, plays.length - 1));
 }
 
 export function executeCpuTurn(state, options = {}) {

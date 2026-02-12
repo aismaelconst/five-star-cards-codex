@@ -122,6 +122,25 @@ describe("cpu", () => {
     expect(summary.trades[0].handArchive.bronze).toBe(3);
   });
 
+  it("cpu avoids playing the last zero-draw card when it would empty the hand", () => {
+    const state = createInitialState({
+      mode: "cpu",
+      format: "ancient_expanded",
+      playerNames: ["You", "CPU"],
+    });
+    state.currentPlayer = 1;
+    state.cpu = { difficulty: "medium" };
+    const cpu = state.players[1];
+    cpu.archive = [];
+    cpu.hand = ["wood"];
+    cpu.deck = ["bronze"];
+
+    const summary = executeCpuTurn(state, { difficulty: "medium", cpuIndex: 1 });
+
+    expect(summary.plays.length).toBe(0);
+    expect(cpu.hand.length).toBe(1);
+  });
+
   it("hard uses gem set when bronze trade is unavailable", () => {
     const state = createInitialState({
       mode: "cpu",
@@ -427,7 +446,8 @@ describe("cpu", () => {
 
     const summary = executeCpuTurn(state, { difficulty: "hard", cpuIndex: 1 });
 
-    expect(summary.plays).toEqual(["wood"]);
+    expect(summary.plays).toEqual([]);
+    expect(cpu.hand.length).toBe(1);
   });
 
   it("hard tie-breaks play order deterministically", () => {
@@ -443,8 +463,7 @@ describe("cpu", () => {
 
     const summary = executeCpuTurn(state, { difficulty: "hard", cpuIndex: 1 });
 
-    expect(summary.plays[0]).toBe("emerald");
-    expect(summary.plays[1]).toBe("ruby");
+    expect(summary.plays).toEqual(["emerald"]);
   });
 
   it("starts cpu turn from between phase", () => {

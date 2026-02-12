@@ -137,6 +137,7 @@ Trade overlays:
 CPU flow:
 - `maybeRunCpuTurn()` runs after the human completes their archive in CPU mode.
 - The CPU summary overlay is shown if enabled.
+- The CPU avoids playing its entire hand if that would result in a zero-draw turn with an empty hand.
 
 ## Online Client
 
