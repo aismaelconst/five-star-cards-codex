@@ -80,8 +80,11 @@ describe("ui/render", () => {
     expect(elements.turnCounter.textContent).toContain("Turn 2");
     expect(elements.deckInfo.textContent).toContain("Deck:");
     expect(elements.tradeInfo.textContent).toContain("Trades used");
+    expect(elements.opponentSummary.querySelector(".summary-title")?.textContent).toContain(
+      "Opponent Summary"
+    );
     expect(elements.opponentSummary.querySelector(".chip.gold")).not.toBeNull();
-    expect(elements.opponentSummary.textContent).toContain("hand x");
+    expect(elements.opponentSummary.querySelector(".summary-hand")?.textContent).toContain("Hand:");
     expect(elements.handCounts.querySelector(".chip.bronze")).not.toBeNull();
     const card = elements.handCards.querySelector(".card");
     expect(card.dataset.cardType).toBeTruthy();

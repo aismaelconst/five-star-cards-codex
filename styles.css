@@ -204,6 +204,25 @@ h3 {
   color: var(--ink-2);
 }
 
+.summary-title {
+  flex-basis: 100%;
+  font-size: 0.95rem;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.summary-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.summary-hand {
+  font-size: 0.9rem;
+  color: var(--ink-2);
+}
+
 .zones {
   display: flex;
   flex-direction: column;

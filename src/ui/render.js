@@ -82,13 +82,20 @@ export function renderApp(state, elements, handlers) {
   elements.turnIndicator.textContent = `${currentName}'s Turn`;
   elements.turnCounter.textContent = `Turn ${state.turnCount}`;
   if (elements.opponentSummary) {
-    const opponentTypes =
-      state.mode === "cpu" ? displayOrder : displayOrder;
-    buildChips(opponentTypes, opponentArchive, elements.opponentSummary);
-    const handBadge = document.createElement("div");
-    handBadge.className = "chip";
-    handBadge.textContent = `hand x ${opponentHandTotal}`;
-    elements.opponentSummary.appendChild(handBadge);
+    const opponentTypes = state.mode === "cpu" ? displayOrder : displayOrder;
+    elements.opponentSummary.innerHTML = "";
+    const title = document.createElement("div");
+    title.className = "summary-title";
+    title.textContent = "Opponent Summary";
+    const chips = document.createElement("div");
+    chips.className = "summary-chips";
+    buildChips(opponentTypes, opponentArchive, chips);
+    const handInfo = document.createElement("div");
+    handInfo.className = "summary-hand";
+    handInfo.textContent = `Hand: ${opponentHandTotal}`;
+    elements.opponentSummary.appendChild(title);
+    elements.opponentSummary.appendChild(chips);
+    elements.opponentSummary.appendChild(handInfo);
   }
   if (elements.handCounts) {
     buildChips(displayOrder, handCounts, elements.handCounts);
