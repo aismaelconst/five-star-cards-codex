@@ -11,7 +11,7 @@ This document describes how the Five Star Cards codebase is structured, how the 
 ## Directory Map
 
 - `src/game/` contains game rules, state, lifecycle, CPU logic, and online helpers.
-- `src/ui/` contains rendering, event wiring, and interaction handlers.
+- `src/ui/` contains rendering, event wiring, and interaction handlers (trade flow helpers live under `src/ui/handlers/`).
 - `src/online/` contains the WebSocket client wrapper used by the browser.
 - `src/shared/` contains cross-cutting utilities (shuffle, card counting, IDs).
 - `assets/` contains SVG card art used by the UI.
@@ -115,6 +115,7 @@ Card tooltips are generated in `src/ui/card-tooltips.js` and include draw rules,
 Event wiring is centralized in `src/ui/events.js` and binds UI controls to handler functions.
 
 The handler orchestration lives in `src/ui/handlers.js`.
+Trade selection overlays and pool-cost handling are implemented in `src/ui/handlers/trade-flow.js`, with shared formatting helpers in `src/ui/handlers/trade-utils.js`.
 
 Key responsibilities:
 - Mode selection (offline, CPU, online) and format selection (core/gemstone+platinum/ancient/ancient+gemstone+platinum).
