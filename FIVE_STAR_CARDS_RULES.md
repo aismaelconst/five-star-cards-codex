@@ -2,15 +2,24 @@
 
 A light, fast card game about building toward five gold stars.
 
-## Components
+## Formats
 
-Each player has a personal deck of 155 **star cards**:
+Choose one format before starting the game:
 
-- 5 gold stars
-- 25 silver stars
-- 125 bronze stars
+- **Core (155 cards)**
+  - 125 bronze, 25 silver, 5 gold
+- **Gemstone + Platinum (180 cards)**
+  - Core + 5 each: wood, ruby, emerald, sapphire, platinum
+- **Ancient (175 cards)**
+  - Core + 5 each: turquoise, lapis lazuli, carnelian, electrum
+- **Ancient + Gemstone + Platinum (200 cards)**
+  - Gemstone + Platinum + Ancients
 
-Each player also has three personal zones: **Hand**, **Active Cards**, **Archive**, and a **Discard** pile.
+All non-core cards have **draw 0** (they do not draw cards at end of turn).
+
+## Zones
+
+Each player has: **Hand**, **Active Cards**, **Archive**, and **Discard**.
 
 ## Setup
 
@@ -30,17 +39,36 @@ You may trade **before and/or after** playing cards. You may **not** trade after
 
 ## 1. Trading (Optional)
 
-You may trade **up to 5 times per turn**. Each trade uses cards from your **Archive** (not your Hand):
+- You may trade **up to 5 times per turn**.
+- Trades use cards from your **Archive** (not your Hand).
+- Traded cards go to **Discard**.
+- Trades that tutor a card from the deck **shuffle the deck** after the tutor.
 
-- Trade **5 bronze** from Archive to Discard to tutor **1 silver** from your deck into your hand.
-- Trade **5 silver** from Archive to Discard to tutor **1 gold** from your deck into your hand.
+### Core Trades (all formats)
 
-After each trade, **shuffle your deck**. Traded cards go to your Discard pile.
+- **5 bronze → tutor 1 silver**
+- **5 silver → tutor 1 gold**
 
-Important:
+### Gemstone + Platinum Trades (Gemstone + Platinum, Ancient + Gemstone + Platinum)
 
-- You may not trade using cards that were just archived this turn (because the Archive step happens last).
-- You may immediately play any card you trade for, if you are still in the Play Cards step.
+- **Ruby + Emerald + Sapphire → tutor any card**
+  - Choose any card type from your deck and put it into your hand.
+- **Platinum + Bronze + Silver → dig**
+  - Reveal cards from the top of your deck until you hit a **non‑bronze/silver** card.
+  - Discard the revealed bronze/silver cards, add the first non‑bronze/silver card to your hand.
+
+**Wood substitution (Gemstone + Platinum formats only)**
+- Wood can replace **one required card** in a trade whose base cost is **3+ cards**.
+- Max **one wood per trade**.
+- Wood **cannot** replace platinum in the platinum trade.
+
+### Ancients Trades (Ancient, Ancient + Gemstone + Platinum)
+
+- **Any two distinct ancients (turquoise, lapis lazuli, carnelian) → archive 1 non‑gold from deck**
+  - Choose a non‑gold card from your deck and place it directly into your Archive, then shuffle.
+- **Electrum + 1–4 distinct non‑gold, non‑electrum cards → draw that many cards**
+  - The 1–4 cards must all be **different types**.
+  - Draw **one card per non‑electrum card** traded this way.
 
 ## 2. Play Cards (Optional)
 
@@ -52,25 +80,16 @@ At the end of your turn:
 
 1. Move all cards from **Active Cards** to your **Archive**.
 2. Draw cards based on what you just played (now archived):
-   - **1 card** per bronze
-   - **2 cards** per silver
-   - **3 cards** per gold
+   - **Bronze: 1**
+   - **Silver: 2**
+   - **Gold: 3**
+   - **All other cards: 0**
 
 ## Winning the Game
 
-You **win immediately** when your Archive contains **5 gold stars**, even if this happens mid-turn (for example, after a trade or after the Archive step).
-
-## Example Turn (Quick)
-
-- You start with 2 silver and 3 bronze in Archive.
-- You trade 5 bronze for 1 silver (discarding the bronzes, tutoring a silver, and shuffling).
-- You play 2 silver and 2 bronze (4 cards total).
-- End of turn: those 4 cards move to Archive.
-- You draw 2+2+1+1 = 6 cards.
+You **win immediately** when your Archive contains **5 gold**, even if this happens mid‑turn.
 
 ---
-
-If you want, I can also add a short “design note” section or a quick start reference card.
 
 ## Quick Reference
 
@@ -80,13 +99,17 @@ Turn Order:
 - Play (up to 5 cards)
 - Archive & Draw
 
-Trade Rates:
+Core Trades:
 
-- 5 bronze -> 1 silver (tutor, then shuffle)
-- 5 silver -> 1 gold (tutor, then shuffle)
+- 5 bronze → 1 silver (tutor, shuffle)
+- 5 silver → 1 gold (tutor, shuffle)
 
-Draw Rates:
+Gemstone + Platinum Trades:
 
-- Bronze: 1
-- Silver: 2
-- Gold: 3
+- Ruby + Emerald + Sapphire → tutor any card (shuffle)
+- Platinum + Bronze + Silver → dig for non‑bronze/silver
+
+Ancients Trades:
+
+- 2 distinct ancients → archive 1 non‑gold from deck (shuffle)
+- Electrum + 1–4 distinct non‑gold/non‑electrum → draw that many cards
