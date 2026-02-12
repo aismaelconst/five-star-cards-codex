@@ -114,6 +114,8 @@ export function createTradeFlow(options) {
     if (!elements.woodSubOptions || !elements.woodOverlay) return;
     pendingWoodChoice = null;
     elements.woodSubOptions.innerHTML = "";
+    const player = getLocalPlayer();
+    const archiveCounts = countCards(player.archive);
     const allOptions = allowNoWood ? ["none", ...options] : options;
     if (elements.woodMessage) {
       elements.woodMessage.textContent = allowNoWood
@@ -123,7 +125,12 @@ export function createTradeFlow(options) {
     allOptions.forEach((type) => {
       const button = document.createElement("button");
       button.className = "ghost option-button";
-      button.textContent = type === "none" ? "No wood" : `Replace ${type}`;
+      if (type === "none") {
+        button.textContent = "No wood";
+      } else {
+        const count = archiveCounts[type] ?? 0;
+        button.textContent = `Replace ${type} (${count})`;
+      }
       button.dataset.choice = type;
       button.addEventListener("click", () => selectWoodChoice(type));
       elements.woodSubOptions.appendChild(button);
@@ -225,6 +232,7 @@ export function createTradeFlow(options) {
   function openChoiceCostOverlay() {
     if (!pendingTrade || !elements.choiceCostOptions || !elements.choiceCostOverlay) return;
     const player = getLocalPlayer();
+    const archiveCounts = countCards(player.archive);
     const options = getChoiceCostOptions(state, player, pendingTrade.recipeId, {
       useWood: pendingTrade.useWood,
       substituteType: pendingTrade.substituteType,
@@ -234,7 +242,8 @@ export function createTradeFlow(options) {
     options.forEach((type) => {
       const button = document.createElement("button");
       button.className = "ghost option-button";
-      button.textContent = type;
+      const count = archiveCounts[type] ?? 0;
+      button.textContent = `${type} (${count})`;
       button.dataset.choice = type;
       button.addEventListener("click", () => selectChoiceCost(type));
       elements.choiceCostOptions.appendChild(button);
@@ -301,7 +310,7 @@ export function createTradeFlow(options) {
     options.forEach((type) => {
       const button = document.createElement("button");
       button.className = "ghost option-button";
-      button.textContent = type;
+      button.textContent = `${type} (${archiveCounts[type] ?? 0})`;
       button.dataset.choice = type;
       if ((archiveCounts[type] ?? 0) === 0) {
         button.disabled = true;
