@@ -466,6 +466,8 @@ export function createHandlers(state, elements, onWinner, options = {}) {
     cancelChoiceCost: tradeFlow.cancelChoiceCost,
     confirmPoolCost: tradeFlow.confirmPoolCost,
     cancelPoolCost: tradeFlow.cancelPoolCost,
+    confirmHandArchive: tradeFlow.confirmHandArchive,
+    cancelHandArchive: tradeFlow.cancelHandArchive,
     confirmArchiveTutor: tradeFlow.confirmArchiveTutor,
     cancelArchiveTutor: tradeFlow.cancelArchiveTutor,
     startTurn,

@@ -130,6 +130,7 @@ Trade overlays:
 - If the trade requires an additional cost, the choice cost overlay is shown.
 - If the trade requires a pool selection (`poolCost`), the pool cost overlay is shown.
 - If the trade reward is `any`, the gem tutor overlay is shown to pick a target type.
+- If the trade reward is `archive_hand`, the hand archive overlay is shown to pick card counts from hand.
 - If the trade reward is `archive`, the archive tutor overlay is shown to pick a non-gold target type.
 - After the overlays resolve, the trade is finalized and applied.
 

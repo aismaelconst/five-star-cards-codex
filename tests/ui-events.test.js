@@ -57,6 +57,8 @@ describe("ui/events", () => {
       poolCostCancel: makeButton("poolCostCancel"),
       archiveTutorConfirm: makeButton("archiveTutorConfirm"),
       archiveTutorCancel: makeButton("archiveTutorCancel"),
+      handArchiveConfirm: makeButton("handArchiveConfirm"),
+      handArchiveCancel: makeButton("handArchiveCancel"),
     };
 
     const handlers = {
@@ -99,6 +101,8 @@ describe("ui/events", () => {
       cancelPoolCost: vi.fn(),
       confirmArchiveTutor: vi.fn(),
       cancelArchiveTutor: vi.fn(),
+      confirmHandArchive: vi.fn(),
+      cancelHandArchive: vi.fn(),
     };
 
     wireEvents(elements, handlers);
@@ -150,6 +154,8 @@ describe("ui/events", () => {
     elements.poolCostCancel.click();
     elements.archiveTutorConfirm.click();
     elements.archiveTutorCancel.click();
+    elements.handArchiveConfirm.click();
+    elements.handArchiveCancel.click();
 
     expect(handlers.selectOfflineMode).toHaveBeenCalled();
     expect(handlers.selectCpuMode).toHaveBeenCalled();
@@ -195,5 +201,7 @@ describe("ui/events", () => {
     expect(handlers.cancelPoolCost).toHaveBeenCalled();
     expect(handlers.confirmArchiveTutor).toHaveBeenCalled();
     expect(handlers.cancelArchiveTutor).toHaveBeenCalled();
+    expect(handlers.confirmHandArchive).toHaveBeenCalled();
+    expect(handlers.cancelHandArchive).toHaveBeenCalled();
   });
 });

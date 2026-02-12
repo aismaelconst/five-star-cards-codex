@@ -106,6 +106,11 @@ const elements = {
   archiveTutorOptions: document.getElementById("archiveTutorOptions"),
   archiveTutorConfirm: document.getElementById("archiveTutorConfirm"),
   archiveTutorCancel: document.getElementById("archiveTutorCancel"),
+  handArchiveOverlay: document.getElementById("handArchiveOverlay"),
+  handArchiveOptions: document.getElementById("handArchiveOptions"),
+  handArchiveConfirm: document.getElementById("handArchiveConfirm"),
+  handArchiveCancel: document.getElementById("handArchiveCancel"),
+  handArchiveMessage: document.getElementById("handArchiveMessage"),
   actionToast: document.getElementById("actionToast"),
   actionToastText: document.getElementById("actionToastText"),
 };

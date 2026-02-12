@@ -131,6 +131,14 @@ export function createOnlineFlow({
               ? event.drawCount
               : recipe.reward.count ?? 0;
           rewardLine = `draw ${count}`;
+        } else if (recipe.reward?.type === "archive_hand") {
+          const handArchive = event.handArchive ?? {};
+          const parts = Object.entries(handArchive)
+            .filter(([, value]) => value)
+            .map(([type, value]) => `${value} ${type}`);
+          rewardLine = parts.length
+            ? `archive ${parts.join(", ")} from hand`
+            : "archive cards from hand";
         } else if (recipe.reward?.type === "archive") {
           rewardLine = event.rewardType ? `archive ${event.rewardType}` : "archive a card";
         } else if (typeof recipe.reward === "string") {

@@ -50,6 +50,13 @@ function formatTradeBullet(recipe, type, ruleset) {
     } else {
       reward = "draw cards equal to cards traded";
     }
+  } else if (recipe.reward?.type === "archive_hand") {
+    const min = recipe.reward.min ?? 1;
+    const max = recipe.reward.max ?? min;
+    const range = min === max ? `${min}` : `${min}-${max}`;
+    const allowed = recipe.reward.allowed ?? [];
+    const label = allowed.length > 0 ? allowed.join("/") : "cards";
+    reward = `archive ${range} ${label} from hand`;
   } else if (recipe.reward?.type === "archive") {
     reward = "archive 1 non-gold from deck";
   } else if (typeof recipe.reward === "string") {

@@ -101,6 +101,11 @@ function setupDom() {
     <div id="archiveTutorOptions"></div>
     <button id="archiveTutorConfirm"></button>
     <button id="archiveTutorCancel"></button>
+    <div id="handArchiveOverlay"></div>
+    <div id="handArchiveMessage"></div>
+    <div id="handArchiveOptions"></div>
+    <button id="handArchiveConfirm"></button>
+    <button id="handArchiveCancel"></button>
     <div id="actionToast"></div>
     <div id="actionToastText"></div>
   `;

@@ -33,6 +33,12 @@ describe("card tooltips", () => {
     expect(tooltip).toContain("archive 1 non-gold");
   });
 
+  it("includes electrum hand archive trade", () => {
+    const tooltip = getCardTooltip("electrum", ancientRuleset);
+    expect(tooltip).toContain("Electrum");
+    expect(tooltip).toContain("archive 1-5 bronze/silver");
+  });
+
   it("formats lapis lazuli name", () => {
     const tooltip = getCardTooltip("lapis_lazuli", ancientRuleset);
     expect(tooltip).toContain("Lapis Lazuli");

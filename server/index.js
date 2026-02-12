@@ -325,6 +325,7 @@ wss.on("connection", (ws) => {
           rewardCount: result.event.detail?.rewardCount,
           drawCount: result.event.detail?.drawCount,
           digDiscardedCount: result.event.detail?.digDiscardedCount,
+          handArchive: result.event.detail?.handArchive ?? message.action.payload?.handArchive ?? null,
         };
         if (recipe) {
           const costEntry = Object.entries(recipe.cost ?? {})[0];

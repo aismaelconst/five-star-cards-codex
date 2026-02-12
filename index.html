@@ -27,7 +27,7 @@
                 <button id="tradeGems">Trade Gems → Tutor</button>
                 <button id="tradePlatinum">Trade Platinum → Dig</button>
                 <button id="tradeAncientsArchive">Trade 2 Ancients → Archive non-gold</button>
-                <button id="tradeElectrumDraw">Trade Electrum + 1–4 Distinct → Draw N</button>
+                <button id="tradeElectrumDraw">Trade Electrum + Bronze + Silver → Archive 1–5</button>
               </div>
               <div class="trade-info" id="tradeInfo"></div>
             </div>
@@ -290,6 +290,18 @@
         <div class="confirm-actions">
           <button class="ghost" id="archiveTutorCancel">Cancel</button>
           <button class="primary" id="archiveTutorConfirm">Confirm</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="overlay confirm-overlay" id="handArchiveOverlay" hidden>
+      <div class="overlay-card">
+        <h2>Archive From Hand</h2>
+        <p id="handArchiveMessage"></p>
+        <div class="confirm-cards" id="handArchiveOptions"></div>
+        <div class="confirm-actions">
+          <button class="ghost" id="handArchiveCancel">Cancel</button>
+          <button class="primary" id="handArchiveConfirm">Confirm</button>
         </div>
       </div>
     </div>

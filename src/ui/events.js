@@ -109,4 +109,10 @@ export function wireEvents(elements, handlers) {
   if (elements.archiveTutorCancel) {
     elements.archiveTutorCancel.addEventListener("click", handlers.cancelArchiveTutor);
   }
+  if (elements.handArchiveConfirm) {
+    elements.handArchiveConfirm.addEventListener("click", handlers.confirmHandArchive);
+  }
+  if (elements.handArchiveCancel) {
+    elements.handArchiveCancel.addEventListener("click", handlers.cancelHandArchive);
+  }
 }

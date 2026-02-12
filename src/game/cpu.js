@@ -62,6 +62,7 @@ const GEM_SET_BONUS = 30;
 const PLATINUM_SET_BONUS = 20;
 const WOOD_SETUP_BONUS = 5;
 const WIN_BONUS = 500;
+const HAND_DECLUTTER_THRESHOLD = 10;
 
 const HARD_WOOD_RECIPES = new Set(["trade_silver", "trade_gem_set"]);
 
@@ -107,6 +108,31 @@ function resolvePoolTypes(pool, displayOrder) {
     return displayOrder.filter((type) => type !== "gold" && type !== "electrum");
   }
   return [];
+}
+
+function chooseHandArchiveSelection(state, player, recipe) {
+  if (!recipe?.reward || recipe.reward.type !== "archive_hand") return null;
+  const allowed = recipe.reward.allowed ?? [];
+  const min = recipe.reward.min ?? 1;
+  const max = recipe.reward.max ?? min;
+  const counts = countByType(player.hand, state.ruleset.displayOrder);
+  const eligible = allowed.reduce((sum, type) => sum + (counts[type] ?? 0), 0);
+  if (eligible < min) return null;
+  const preferred = ["bronze", "silver"].filter((type) => allowed.includes(type));
+  const order = preferred.length > 0 ? preferred : allowed;
+  const selected = {};
+  let total = 0;
+  order.forEach((type) => {
+    if (total >= max) return;
+    const available = counts[type] ?? 0;
+    const take = Math.min(available, max - total);
+    if (take > 0) {
+      selected[type] = take;
+      total += take;
+    }
+  });
+  if (total < min) return null;
+  return selected;
 }
 
 function getCardValue(type) {
@@ -282,6 +308,12 @@ function scoreTradePayload(state, player, recipe, payload) {
   } else if (recipe.reward?.type === "archive") {
     rewardType = payload.rewardType;
     rewardValue = rewardType ? getCardValue(rewardType) : 0;
+  } else if (recipe.reward?.type === "archive_hand") {
+    const handArchive = payload.handArchive ?? {};
+    rewardValue = Object.entries(handArchive).reduce(
+      (sum, [type, amount]) => sum + getCardValue(type) * amount,
+      0
+    );
   }
   const cost = getPayloadCost(recipe, payload);
   const score = rewardValue - costValue(cost);
@@ -334,6 +366,11 @@ function finalizeTradePayload(state, player, recipeId, payload) {
     if (!rewardType) return null;
     finalized.rewardType = rewardType;
   }
+  if (recipe.reward?.type === "archive_hand" && !finalized.handArchive) {
+    const selection = chooseHandArchiveSelection(state, player, recipe);
+    if (!selection) return null;
+    finalized.handArchive = selection;
+  }
   if (canTradeWithOptions(state, player, recipeId, finalized)) return finalized;
   return null;
 }
@@ -341,6 +378,9 @@ function finalizeTradePayload(state, player, recipeId, payload) {
 function buildTradePayload(state, player, recipeId, difficulty) {
   const recipe = state.ruleset.tradeRecipes?.[recipeId];
   if (!recipe) return null;
+  if (recipe.reward?.type === "archive_hand" && player.hand.length <= HAND_DECLUTTER_THRESHOLD) {
+    return null;
+  }
   const counts = countCards(player.archive);
   const basePayable = canPayBaseCost(recipe, counts);
   const rewardType = recipe.reward === "any" ? pickTutorReward(state, player, difficulty) : null;
@@ -563,6 +603,7 @@ export function executeCpuTurn(state, options = {}) {
       substituteType: payload.substituteType,
       choiceType: payload.choiceType ?? null,
       poolTypes: payload.poolTypes ?? null,
+      handArchive: result?.event?.detail?.handArchive ?? payload.handArchive ?? null,
       rewardType:
         result?.event?.detail?.rewardType ?? payload.rewardType ?? null,
       drawCount: result?.event?.detail?.drawCount,

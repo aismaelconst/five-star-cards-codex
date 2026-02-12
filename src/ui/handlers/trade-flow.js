@@ -16,6 +16,7 @@ export function createTradeFlow(options) {
   let pendingChoiceSelection = null;
   let pendingPoolSelection = null;
   let pendingArchiveTutorChoice = null;
+  let pendingHandArchive = null;
 
   function resetPending() {
     pendingTrade = null;
@@ -24,6 +25,7 @@ export function createTradeFlow(options) {
     pendingChoiceSelection = null;
     pendingPoolSelection = null;
     pendingArchiveTutorChoice = null;
+    pendingHandArchive = null;
   }
 
   function hideOverlays() {
@@ -32,6 +34,7 @@ export function createTradeFlow(options) {
     if (elements.choiceCostOverlay) elements.choiceCostOverlay.hidden = true;
     if (elements.poolCostOverlay) elements.poolCostOverlay.hidden = true;
     if (elements.archiveTutorOverlay) elements.archiveTutorOverlay.hidden = true;
+    if (elements.handArchiveOverlay) elements.handArchiveOverlay.hidden = true;
   }
 
   function trade(recipeId) {
@@ -45,6 +48,7 @@ export function createTradeFlow(options) {
       rewardType: null,
       choiceType: null,
       poolTypes: null,
+      handArchive: null,
     };
     const woodOptions = getWoodSubstitutionOptions(state, player, recipeId);
     const recipe = state.ruleset.tradeRecipes?.[recipeId];
@@ -71,6 +75,10 @@ export function createTradeFlow(options) {
       openGemTutorOverlay();
       return null;
     }
+    if (recipe?.reward?.type === "archive_hand" && elements.handArchiveOverlay) {
+      openHandArchiveOverlay();
+      return null;
+    }
     if (recipe?.reward?.type === "archive" && elements.archiveTutorOverlay) {
       openArchiveTutorOverlay();
       return null;
@@ -87,6 +95,7 @@ export function createTradeFlow(options) {
       rewardType: pendingTrade.rewardType,
       choiceType: pendingTrade.choiceType,
       poolTypes: pendingTrade.poolTypes,
+      handArchive: pendingTrade.handArchive,
     };
     const result = sendOrApply({ type: ActionTypes.TRADE, payload });
     resetPending();
@@ -168,6 +177,10 @@ export function createTradeFlow(options) {
     }
     if (recipe?.reward === "any" && elements.gemTutorOverlay) {
       openGemTutorOverlay();
+      return;
+    }
+    if (recipe?.reward?.type === "archive_hand" && elements.handArchiveOverlay) {
+      openHandArchiveOverlay();
       return;
     }
     if (recipe?.reward?.type === "archive" && elements.archiveTutorOverlay) {
@@ -280,6 +293,10 @@ export function createTradeFlow(options) {
       openGemTutorOverlay();
       return;
     }
+    if (recipe?.reward?.type === "archive_hand" && elements.handArchiveOverlay) {
+      openHandArchiveOverlay();
+      return;
+    }
     if (recipe?.reward?.type === "archive" && elements.archiveTutorOverlay) {
       openArchiveTutorOverlay();
       return;
@@ -368,6 +385,10 @@ export function createTradeFlow(options) {
       openGemTutorOverlay();
       return;
     }
+    if (recipe?.reward?.type === "archive_hand" && elements.handArchiveOverlay) {
+      openHandArchiveOverlay();
+      return;
+    }
     if (recipe?.reward?.type === "archive" && elements.archiveTutorOverlay) {
       openArchiveTutorOverlay();
       return;
@@ -378,6 +399,130 @@ export function createTradeFlow(options) {
   function cancelPoolCost() {
     resetPending();
     if (elements.poolCostOverlay) elements.poolCostOverlay.hidden = true;
+  }
+
+  function openHandArchiveOverlay() {
+    if (!pendingTrade || !elements.handArchiveOptions || !elements.handArchiveOverlay) return;
+    const recipe = state.ruleset.tradeRecipes?.[pendingTrade.recipeId];
+    if (!recipe?.reward || recipe.reward.type !== "archive_hand") return;
+    const player = getLocalPlayer();
+    const displayOrder = state.ruleset.displayOrder ?? ["bronze", "silver", "gold"];
+    const handCounts = countCards(player.hand, displayOrder);
+    const allowed = recipe.reward.allowed ?? [];
+    pendingHandArchive = {
+      allowed,
+      counts: handCounts,
+      selected: {},
+      min: recipe.reward.min ?? 1,
+      max: recipe.reward.max ?? recipe.reward.min ?? 1,
+    };
+    elements.handArchiveOptions.innerHTML = "";
+    allowed.forEach((type) => {
+      const row = document.createElement("div");
+      row.className = "hand-archive-row";
+      row.dataset.type = type;
+
+      const label = document.createElement("div");
+      const chip = document.createElement("span");
+      chip.className = `chip ${type}`;
+      chip.textContent = type;
+      const meta = document.createElement("span");
+      meta.className = "hand-archive-meta";
+      meta.textContent = `hand x ${handCounts[type] ?? 0}`;
+      label.appendChild(chip);
+      label.appendChild(meta);
+
+      const controls = document.createElement("div");
+      controls.className = "hand-archive-controls";
+      const minus = document.createElement("button");
+      minus.className = "ghost option-button hand-archive-minus";
+      minus.textContent = "-";
+      minus.addEventListener("click", () => adjustHandArchive(type, -1));
+      const count = document.createElement("span");
+      count.className = "hand-archive-count";
+      count.textContent = "0";
+      const plus = document.createElement("button");
+      plus.className = "ghost option-button hand-archive-plus";
+      plus.textContent = "+";
+      plus.addEventListener("click", () => adjustHandArchive(type, 1));
+      controls.appendChild(minus);
+      controls.appendChild(count);
+      controls.appendChild(plus);
+
+      row.appendChild(label);
+      row.appendChild(controls);
+      elements.handArchiveOptions.appendChild(row);
+    });
+    updateHandArchiveUI();
+    elements.handArchiveOverlay.hidden = false;
+  }
+
+  function adjustHandArchive(type, delta) {
+    if (!pendingHandArchive) return;
+    const selected = pendingHandArchive.selected[type] ?? 0;
+    const available = pendingHandArchive.counts[type] ?? 0;
+    const total = getHandArchiveTotal();
+    if (delta > 0) {
+      if (total >= pendingHandArchive.max) return;
+      if (selected >= available) return;
+      pendingHandArchive.selected[type] = selected + 1;
+    } else if (delta < 0) {
+      if (selected <= 0) return;
+      const next = selected - 1;
+      if (next <= 0) {
+        delete pendingHandArchive.selected[type];
+      } else {
+        pendingHandArchive.selected[type] = next;
+      }
+    }
+    updateHandArchiveUI();
+  }
+
+  function getHandArchiveTotal() {
+    if (!pendingHandArchive) return 0;
+    return Object.values(pendingHandArchive.selected).reduce((sum, value) => sum + value, 0);
+  }
+
+  function updateHandArchiveUI() {
+    if (!pendingHandArchive) return;
+    const total = getHandArchiveTotal();
+    const min = pendingHandArchive.min;
+    const max = pendingHandArchive.max;
+    const range = min === max ? `${min}` : `${min}-${max}`;
+    if (elements.handArchiveMessage) {
+      elements.handArchiveMessage.textContent = `Select ${range} card(s) from your hand to archive. Selected: ${total}.`;
+    }
+    if (elements.handArchiveConfirm) {
+      elements.handArchiveConfirm.disabled = !(total >= min && total <= max);
+    }
+    if (elements.handArchiveOptions) {
+      Array.from(elements.handArchiveOptions.children).forEach((row) => {
+        const type = row.dataset.type;
+        const selected = pendingHandArchive.selected[type] ?? 0;
+        const available = pendingHandArchive.counts[type] ?? 0;
+        const count = row.querySelector(".hand-archive-count");
+        const minus = row.querySelector(".hand-archive-minus");
+        const plus = row.querySelector(".hand-archive-plus");
+        if (count) count.textContent = `${selected}`;
+        if (minus) minus.disabled = selected === 0;
+        if (plus) plus.disabled = selected >= available || total >= max;
+      });
+    }
+  }
+
+  function confirmHandArchive() {
+    if (!pendingTrade || !pendingHandArchive) return;
+    const total = getHandArchiveTotal();
+    if (total < pendingHandArchive.min || total > pendingHandArchive.max) return;
+    pendingTrade.handArchive = { ...pendingHandArchive.selected };
+    if (elements.handArchiveOverlay) elements.handArchiveOverlay.hidden = true;
+    pendingHandArchive = null;
+    finalizeTrade();
+  }
+
+  function cancelHandArchive() {
+    resetPending();
+    if (elements.handArchiveOverlay) elements.handArchiveOverlay.hidden = true;
   }
 
   function openArchiveTutorOverlay() {
@@ -437,6 +582,8 @@ export function createTradeFlow(options) {
     cancelChoiceCost,
     confirmPoolCost,
     cancelPoolCost,
+    confirmHandArchive,
+    cancelHandArchive,
     confirmArchiveTutor,
     cancelArchiveTutor,
     resetPending,

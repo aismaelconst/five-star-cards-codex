@@ -602,6 +602,40 @@ button:not(:disabled):hover {
   margin-top: 8px;
 }
 
+#handArchiveOptions {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.hand-archive-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+}
+
+.hand-archive-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--ink-2);
+  font-size: 0.85rem;
+}
+
+.hand-archive-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.hand-archive-count {
+  min-width: 24px;
+  text-align: center;
+  font-weight: 600;
+  color: var(--ink);
+}
+
 .confirm-actions {
   display: flex;
   gap: 12px;

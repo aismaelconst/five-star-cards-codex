@@ -99,6 +99,24 @@ describe("cpu", () => {
     expect(summary.trades[0].rewardType).toBe("silver");
   });
 
+  it("cpu uses electrum to declutter a large hand", () => {
+    const state = createInitialState({
+      mode: "cpu",
+      format: "ancient",
+      playerNames: ["You", "CPU"],
+    });
+    state.currentPlayer = 1;
+    state.cpu = { difficulty: "easy" };
+    const cpu = state.players[1];
+    cpu.archive = ["electrum", "bronze", "silver"];
+    cpu.hand = Array.from({ length: 12 }, () => "bronze");
+
+    const summary = executeCpuTurn(state, { difficulty: "easy", cpuIndex: 1 });
+
+    expect(summary.trades[0].recipeId).toBe("trade_electrum_draw");
+    expect(summary.trades[0].handArchive.bronze).toBe(5);
+  });
+
   it("hard uses gem set when bronze trade is unavailable", () => {
     const state = createInitialState({
       mode: "cpu",

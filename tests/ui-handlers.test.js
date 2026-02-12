@@ -82,6 +82,11 @@ function makeElements() {
     archiveTutorOptions: document.createElement("div"),
     archiveTutorConfirm: document.createElement("button"),
     archiveTutorCancel: document.createElement("button"),
+    handArchiveOverlay: Object.assign(document.createElement("div"), { hidden: true }),
+    handArchiveMessage: document.createElement("div"),
+    handArchiveOptions: document.createElement("div"),
+    handArchiveConfirm: document.createElement("button"),
+    handArchiveCancel: document.createElement("button"),
     actionToast,
     actionToastText: document.createElement("div"),
   };
@@ -194,6 +199,29 @@ describe("ui/handlers", () => {
     expect(state.tradesThisTurn).toBe(1);
     expect(player.archive).toContain("silver");
     expect(player.discard.length).toBe(2);
+  });
+
+  it("opens hand archive overlay for electrum trade and archives from hand", () => {
+    state = createInitialState({ mode: "offline", format: "ancient" });
+    elements = makeElements();
+    const handlers = createHandlers(state, elements, onWinner);
+    const player = state.players[0];
+    player.archive = ["electrum", "bronze", "silver"];
+    player.hand = ["bronze", "bronze", "silver"];
+
+    handlers.trade("trade_electrum_draw");
+
+    expect(elements.handArchiveOverlay.hidden).toBe(false);
+    const rows = Array.from(elements.handArchiveOptions.querySelectorAll(".hand-archive-row"));
+    const bronzeRow = rows.find((row) => row.dataset.type === "bronze");
+    const silverRow = rows.find((row) => row.dataset.type === "silver");
+    bronzeRow.querySelector(".hand-archive-plus").click();
+    silverRow.querySelector(".hand-archive-plus").click();
+    handlers.confirmHandArchive();
+
+    expect(state.tradesThisTurn).toBe(1);
+    expect(player.discard.length).toBe(3);
+    expect(player.hand.length).toBe(1);
   });
 
   it("prepares archive on endTurn", () => {

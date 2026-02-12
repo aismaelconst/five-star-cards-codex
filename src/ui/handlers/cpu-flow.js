@@ -61,6 +61,14 @@ export function createCpuFlow({
           ? trade.drawCount
           : recipe.reward.count ?? 0;
       rewardLine = `draw ${count}`;
+    } else if (recipe.reward?.type === "archive_hand") {
+      const handArchive = trade.handArchive ?? {};
+      const parts = Object.entries(handArchive)
+        .filter(([, value]) => value)
+        .map(([type, value]) => `${value} ${type}`);
+      rewardLine = parts.length
+        ? `archive ${parts.join(", ")} from hand`
+        : "archive cards from hand";
     } else if (recipe.reward?.type === "archive") {
       rewardLine = trade.rewardType ? `archive ${trade.rewardType}` : "archive a card";
     } else if (typeof recipe.reward === "string") {

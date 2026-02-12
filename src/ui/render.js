@@ -86,7 +86,7 @@ function updateHowToPlay(state, elements) {
       "Ancients: 2 distinct ancients → archive 1 non-gold from deck (shuffle)."
     );
     expansionRules.push(
-      "Electrum: Electrum + 1–4 distinct non-gold/non-electrum → draw that many cards."
+      "Electrum: Electrum + Bronze + Silver → archive 1–5 Bronze/Silver from hand."
     );
   }
 

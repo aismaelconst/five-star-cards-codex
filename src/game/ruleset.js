@@ -127,9 +127,8 @@ export const ancientRuleset = {
       reward: { type: "archive" },
     },
     trade_electrum_draw: {
-      cost: { electrum: 1 },
-      poolCost: { min: 1, max: 4, distinct: true, pool: "non_gold_non_electrum" },
-      reward: { type: "draw" },
+      cost: { electrum: 1, bronze: 1, silver: 1 },
+      reward: { type: "archive_hand", min: 1, max: 5, allowed: ["bronze", "silver"] },
     },
   },
   cardTypes: {
@@ -183,9 +182,8 @@ export const ancientExpandedRuleset = {
       reward: { type: "archive" },
     },
     trade_electrum_draw: {
-      cost: { electrum: 1 },
-      poolCost: { min: 1, max: 4, distinct: true, pool: "non_gold_non_electrum" },
-      reward: { type: "draw" },
+      cost: { electrum: 1, bronze: 1, silver: 1 },
+      reward: { type: "archive_hand", min: 1, max: 5, allowed: ["bronze", "silver"] },
     },
   },
   cardTypes: {

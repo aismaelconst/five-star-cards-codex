@@ -144,6 +144,9 @@ function getTradeCost(state, player, recipeId, options = {}) {
     if ((counts.wood ?? 0) < 1) return null;
     if (!options.substituteType || !baseCost[options.substituteType]) return null;
     if (recipeId === "trade_platinum" && options.substituteType === "platinum") return null;
+    if (recipeId === "trade_electrum_draw" && options.substituteType === "electrum") {
+      return null;
+    }
     cost = buildCostWithWood(baseCost, options.substituteType);
   }
   if (recipe.choiceCost) {
@@ -179,6 +182,7 @@ export function getWoodSubstitutionOptions(state, player, recipeId) {
   const options = [];
   Object.entries(baseCost).forEach(([type]) => {
     if (recipeId === "trade_platinum" && type === "platinum") return;
+    if (recipeId === "trade_electrum_draw" && type === "electrum") return;
     const adjusted = buildCostWithWood(baseCost, type);
     if (canPayCost(counts, adjusted)) {
       options.push(type);
@@ -238,6 +242,14 @@ export function canInitiateTrade(state, player, recipeId) {
   if (recipe.reward?.type === "draw") {
     return true;
   }
+  if (recipe.reward?.type === "archive_hand") {
+    const allowed = recipe.reward.allowed ?? [];
+    if (allowed.length === 0) return false;
+    const handCounts = countCards(player.hand);
+    const eligible = allowed.reduce((sum, type) => sum + (handCounts[type] ?? 0), 0);
+    const min = recipe.reward.min ?? 1;
+    return eligible >= min;
+  }
   if (recipe.reward?.type === "archive") {
     return Object.entries(deckCounts).some(
       ([type, count]) => count > 0 && type !== "gold"
@@ -289,6 +301,22 @@ export function canTradeWithOptions(state, player, recipeId, options = {}) {
   if (recipe.reward?.type === "draw") {
     return true;
   }
+  if (recipe.reward?.type === "archive_hand") {
+    if (!options.handArchive || typeof options.handArchive !== "object") return false;
+    const min = recipe.reward.min ?? 0;
+    const max = recipe.reward.max ?? min;
+    const allowed = recipe.reward.allowed ?? [];
+    const handCounts = countCards(player.hand);
+    let total = 0;
+    for (const [type, amount] of Object.entries(options.handArchive)) {
+      if (!allowed.includes(type)) return false;
+      if (typeof amount !== "number" || amount <= 0) return false;
+      if ((handCounts[type] ?? 0) < amount) return false;
+      total += amount;
+    }
+    if (total < min || total > max) return false;
+    return true;
+  }
   if (recipe.reward?.type === "archive") {
     if (!options.rewardType || options.rewardType === "gold") return false;
     return (deckCounts[options.rewardType] ?? 0) > 0;
@@ -302,6 +330,18 @@ function removeCardsFromArchive(player, type, count) {
     if (getCardType(card) === type && removed < count) {
       removed += 1;
       player.discard.push(card);
+      return false;
+    }
+    return true;
+  });
+}
+
+function removeCardsFromHand(player, type, count) {
+  let removed = 0;
+  player.hand = player.hand.filter((card) => {
+    if (getCardType(card) === type && removed < count) {
+      removed += 1;
+      player.archive.push(card);
       return false;
     }
     return true;
@@ -406,6 +446,14 @@ export function performTrade(state, player, recipeId, options = {}) {
         detail.rewardType = options.rewardType;
       }
     }
+  } else if (recipe.reward?.type === "archive_hand") {
+    const handArchive = options.handArchive ?? {};
+    Object.entries(handArchive).forEach(([type, amount]) => {
+      if (amount > 0) {
+        removeCardsFromHand(player, type, amount);
+      }
+    });
+    detail.handArchive = { ...handArchive };
   }
   state.tradesThisTurn += 1;
   return { success: true, detail };
