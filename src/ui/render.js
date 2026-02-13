@@ -71,6 +71,7 @@ function updateHowToPlay(state, elements) {
 
   const isExpanded = state.format === "expanded";
   const isAncient = state.format === "ancient";
+  const isMinted = state.format === "minted";
   const expansionRules = [];
   if (isExpanded) {
     expansionRules.push("Gems: Ruby + Emerald + Sapphire → tutor any card (shuffle).");
@@ -90,6 +91,17 @@ function updateHowToPlay(state, elements) {
     );
     expansionRules.push(
       "Copper: can substitute for one card in 2-card trades; when spent, tutor a copper to hand (shuffle)."
+    );
+  }
+  if (isMinted) {
+    expansionRules.push("Ingot: counts as 3 bronze in archive trades.");
+    expansionRules.push("Sterling: counts as 2 silver in archive trades.");
+    expansionRules.push("Ledger: counts as 1 bronze or 1 silver in archive trades.");
+    expansionRules.push(
+      "Mint: Mint + any non-gold → tutor ingot/sterling/ledger to hand (shuffle)."
+    );
+    expansionRules.push(
+      "Hallmark: Hallmark + Bronze + Silver → archive ingot, sterling, mint (shuffle)."
     );
   }
 
@@ -115,6 +127,9 @@ function updateHowToPlay(state, elements) {
     }
     if (isAncient) {
       legendTypes.push("turquoise", "lapis_lazuli", "carnelian", "electrum", "copper");
+    }
+    if (isMinted) {
+      legendTypes.push("ingot", "sterling", "ledger", "mint", "hallmark");
     }
     elements.cardLegend.innerHTML = "";
     legendTypes.forEach((type) => {
@@ -219,6 +234,7 @@ export function renderApp(state, elements, handlers) {
     !inMainPhase || !turnGate || !canInitiateTrade(state, player, "trade_silver");
   const isExpanded = state.format === "expanded";
   const isAncient = state.format === "ancient";
+  const isMinted = state.format === "minted";
   if (elements.tradeGems) {
     elements.tradeGems.hidden = !isExpanded;
     elements.tradeGems.disabled =
@@ -250,6 +266,22 @@ export function renderApp(state, elements, handlers) {
       !inMainPhase ||
       !turnGate ||
       !canInitiateTrade(state, player, "trade_electrum_draw");
+  }
+  if (elements.tradeMint) {
+    elements.tradeMint.hidden = !isMinted;
+    elements.tradeMint.disabled =
+      !isMinted ||
+      !inMainPhase ||
+      !turnGate ||
+      !canInitiateTrade(state, player, "trade_mint");
+  }
+  if (elements.tradeHallmark) {
+    elements.tradeHallmark.hidden = !isMinted;
+    elements.tradeHallmark.disabled =
+      !isMinted ||
+      !inMainPhase ||
+      !turnGate ||
+      !canInitiateTrade(state, player, "trade_hallmark");
   }
   elements.endTurn.disabled = state.phase !== "main" || !turnGate;
   elements.undoPlays.disabled = !inMainPhase || !turnGate || player.active.length === 0;

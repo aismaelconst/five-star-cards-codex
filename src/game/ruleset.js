@@ -51,6 +51,16 @@ const ANCIENT_DISPLAY_ORDER = [
   "electrum",
   "copper",
 ];
+const MINTED_DISPLAY_ORDER = [
+  "bronze",
+  "silver",
+  "gold",
+  "ingot",
+  "sterling",
+  "ledger",
+  "mint",
+  "hallmark",
+];
 
 function getNonGoldAllowed(displayOrder) {
   return displayOrder.filter((type) => type !== "gold");
@@ -174,5 +184,54 @@ export const ancientRuleset = {
     carnelian: 5,
     electrum: 5,
     copper: 5,
+  },
+};
+
+export const mintedRuleset = {
+  ...baseRuleset,
+  displayOrder: MINTED_DISPLAY_ORDER,
+  tradeRecipes: {
+    ...baseRuleset.tradeRecipes,
+    trade_mint: {
+      cost: { mint: 1 },
+      choiceCost: { count: 1, pool: "non_gold" },
+      reward: "any",
+      rewardOptions: ["ingot", "sterling", "ledger"],
+    },
+    trade_hallmark: {
+      cost: { hallmark: 1, bronze: 1, silver: 1 },
+      reward: { type: "archive_cards", cards: ["ingot", "sterling", "mint"] },
+    },
+  },
+  cardTypes: {
+    ...baseRuleset.cardTypes,
+    ingot: {
+      tier: "ingot",
+      draw: 0,
+    },
+    sterling: {
+      tier: "sterling",
+      draw: 0,
+    },
+    ledger: {
+      tier: "ledger",
+      draw: 0,
+    },
+    mint: {
+      tier: "mint",
+      draw: 0,
+    },
+    hallmark: {
+      tier: "hallmark",
+      draw: 0,
+    },
+  },
+  deckCounts: {
+    ...baseRuleset.deckCounts,
+    ingot: 5,
+    sterling: 5,
+    ledger: 5,
+    mint: 5,
+    hallmark: 5,
   },
 };

@@ -26,6 +26,91 @@ function canPayCost(counts, cost = {}) {
   );
 }
 
+function applyEfficiencySubstitution(counts, cost = {}) {
+  const requiredBronze = cost.bronze ?? 0;
+  const requiredSilver = cost.silver ?? 0;
+  if (requiredBronze === 0 && requiredSilver === 0) return null;
+  const maxIngot = counts.ingot ?? 0;
+  const maxSterling = counts.sterling ?? 0;
+  const maxLedger = counts.ledger ?? 0;
+  let best = null;
+  for (let ingot = 0; ingot <= maxIngot; ingot += 1) {
+    for (let sterling = 0; sterling <= maxSterling; sterling += 1) {
+      for (let ledgerBronze = 0; ledgerBronze <= maxLedger; ledgerBronze += 1) {
+        for (
+          let ledgerSilver = 0;
+          ledgerSilver <= maxLedger - ledgerBronze;
+          ledgerSilver += 1
+        ) {
+          const bronzeCovered = ingot * 3 + ledgerBronze;
+          const silverCovered = sterling * 2 + ledgerSilver;
+          const remainingBronze = Math.max(0, requiredBronze - bronzeCovered);
+          const remainingSilver = Math.max(0, requiredSilver - silverCovered);
+          if (remainingBronze > (counts.bronze ?? 0)) continue;
+          if (remainingSilver > (counts.silver ?? 0)) continue;
+          const usedSpecial = ingot + sterling + ledgerBronze + ledgerSilver;
+          const overpay =
+            Math.max(0, bronzeCovered - requiredBronze) +
+            Math.max(0, silverCovered - requiredSilver);
+          const ledgerUsed = ledgerBronze + ledgerSilver;
+          const candidate = {
+            ingot,
+            sterling,
+            ledgerUsed,
+            remainingBronze,
+            remainingSilver,
+            usedSpecial,
+            overpay,
+          };
+          if (!best) {
+            best = candidate;
+            continue;
+          }
+          if (candidate.usedSpecial < best.usedSpecial) {
+            best = candidate;
+            continue;
+          }
+          if (candidate.usedSpecial === best.usedSpecial) {
+            if (candidate.overpay < best.overpay) {
+              best = candidate;
+              continue;
+            }
+            if (candidate.overpay === best.overpay && candidate.ledgerUsed < best.ledgerUsed) {
+              best = candidate;
+            }
+          }
+        }
+      }
+    }
+  }
+  if (!best || best.usedSpecial === 0) return null;
+  const adjusted = { ...cost };
+  if (requiredBronze > 0) {
+    adjusted.bronze = best.remainingBronze;
+    if (adjusted.bronze <= 0) delete adjusted.bronze;
+  }
+  if (requiredSilver > 0) {
+    adjusted.silver = best.remainingSilver;
+    if (adjusted.silver <= 0) delete adjusted.silver;
+  }
+  if (best.ingot > 0) {
+    adjusted.ingot = (adjusted.ingot ?? 0) + best.ingot;
+  }
+  if (best.sterling > 0) {
+    adjusted.sterling = (adjusted.sterling ?? 0) + best.sterling;
+  }
+  if (best.ledgerUsed > 0) {
+    adjusted.ledger = (adjusted.ledger ?? 0) + best.ledgerUsed;
+  }
+  return adjusted;
+}
+
+function canPayCostWithEfficiency(counts, cost = {}) {
+  if (canPayCost(counts, cost)) return true;
+  const adjusted = applyEfficiencySubstitution(counts, cost);
+  return adjusted ? canPayCost(counts, adjusted) : false;
+}
+
 function buildCostWithWood(cost, substituteType) {
   const adjusted = { ...cost };
   adjusted[substituteType] = Math.max(0, (adjusted[substituteType] ?? 0) - 1);
@@ -71,7 +156,7 @@ function getChoiceCostOptionsForCost(ruleset, recipe, counts, baseCost) {
   return pool.filter((type) => {
     const combined = { ...baseCost };
     combined[type] = (combined[type] ?? 0) + recipe.choiceCost.count;
-    return canPayCost(counts, combined);
+    return canPayCostWithEfficiency(counts, combined);
   });
 }
 
@@ -226,6 +311,12 @@ function getTradeCost(state, player, recipeId, options = {}) {
     cost.copper = (cost.copper ?? 0) + 1;
   }
   if (!canPayCost(counts, cost)) {
+    const efficiencyAdjusted = applyEfficiencySubstitution(counts, cost);
+    if (efficiencyAdjusted) {
+      cost = efficiencyAdjusted;
+    }
+  }
+  if (!canPayCost(counts, cost)) {
     const substituted = applyCopperSubstitution(recipeId, counts, cost);
     if (!substituted) return null;
     cost = substituted;
@@ -262,9 +353,14 @@ export function canInitiateTrade(state, player, recipeId) {
   const counts = countCards(player.archive);
   const baseCost = recipe.cost ?? {};
   const canPayWithCost = (cost) => {
-    if (!canPayCost(counts, cost)) return false;
+    let effectiveCost = cost;
+    if (!canPayCost(counts, cost)) {
+      const adjusted = applyEfficiencySubstitution(counts, cost);
+      if (!adjusted || !canPayCost(counts, adjusted)) return false;
+      effectiveCost = adjusted;
+    }
     const remaining = { ...counts };
-    Object.entries(cost).forEach(([type, amount]) => {
+    Object.entries(effectiveCost).forEach(([type, amount]) => {
       remaining[type] = (remaining[type] ?? 0) - amount;
     });
     if (recipe.choiceCost) {
@@ -290,6 +386,10 @@ export function canInitiateTrade(state, player, recipeId) {
   }
   if (!canPay) return false;
   if (recipe.reward === "any") {
+    if (Array.isArray(recipe.rewardOptions) && recipe.rewardOptions.length > 0) {
+      const deckCounts = countCards(player.deck);
+      return recipe.rewardOptions.some((type) => (deckCounts[type] ?? 0) > 0);
+    }
     return player.deck.length > 0;
   }
   if (recipe.reward === "dig_non_bronze_silver") {
@@ -317,6 +417,10 @@ export function canInitiateTrade(state, player, recipeId) {
     return Object.entries(deckCounts).some(
       ([type, count]) => count > 0 && type !== "gold"
     );
+  }
+  if (recipe.reward?.type === "archive_cards") {
+    const cards = recipe.reward.cards ?? [];
+    return cards.some((type) => (deckCounts[type] ?? 0));
   }
   return false;
 }
@@ -348,6 +452,13 @@ export function canTradeWithOptions(state, player, recipeId, options = {}) {
   if (!cost) return false;
   if (recipe.reward === "any") {
     if (!options.rewardType) return false;
+    if (
+      Array.isArray(recipe.rewardOptions) &&
+      recipe.rewardOptions.length > 0 &&
+      !recipe.rewardOptions.includes(options.rewardType)
+    ) {
+      return false;
+    }
     const deckCounts = countCards(player.deck);
     return (deckCounts[options.rewardType] ?? 0) > 0;
   }
@@ -383,6 +494,10 @@ export function canTradeWithOptions(state, player, recipeId, options = {}) {
   if (recipe.reward?.type === "archive") {
     if (!options.rewardType || options.rewardType === "gold") return false;
     return (deckCounts[options.rewardType] ?? 0) > 0;
+  }
+  if (recipe.reward?.type === "archive_cards") {
+    const cards = recipe.reward.cards ?? [];
+    return cards.some((type) => (deckCounts[type] ?? 0) > 0);
   }
   return false;
 }
@@ -445,6 +560,13 @@ export function performTrade(state, player, recipeId, options = {}) {
 
   let detail = {};
   if (recipe.reward === "any") {
+    if (
+      Array.isArray(recipe.rewardOptions) &&
+      recipe.rewardOptions.length > 0 &&
+      !recipe.rewardOptions.includes(options.rewardType)
+    ) {
+      return { success: false };
+    }
     const rewardIndex = player.deck.findIndex(
       (card) => getCardType(card) === options.rewardType
     );
@@ -508,6 +630,23 @@ export function performTrade(state, player, recipeId, options = {}) {
         player.deck = shuffle(player.deck);
         detail.rewardType = options.rewardType;
       }
+    }
+  } else if (recipe.reward?.type === "archive_cards") {
+    const rewardCards = [];
+    const cards = recipe.reward.cards ?? [];
+    cards.forEach((type) => {
+      const rewardIndex = player.deck.findIndex(
+        (card) => getCardType(card) === type
+      );
+      if (rewardIndex !== -1) {
+        const [reward] = player.deck.splice(rewardIndex, 1);
+        player.archive.push(reward);
+        rewardCards.push(type);
+      }
+    });
+    if (rewardCards.length > 0) {
+      player.deck = shuffle(player.deck);
+      detail.rewardCards = rewardCards;
     }
   } else if (recipe.reward?.type === "archive_hand") {
     const handArchive = options.handArchive ?? {};

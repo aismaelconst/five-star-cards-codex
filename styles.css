@@ -199,6 +199,31 @@ h3 {
   color: #7a2e18;
 }
 
+.chip.ingot {
+  background: rgba(201, 124, 77, 0.25);
+  color: #7b3a1b;
+}
+
+.chip.sterling {
+  background: rgba(170, 185, 205, 0.25);
+  color: #4b5a6b;
+}
+
+.chip.ledger {
+  background: rgba(201, 187, 148, 0.28);
+  color: #5a4a2f;
+}
+
+.chip.mint {
+  background: rgba(98, 186, 150, 0.25);
+  color: #1f6b4d;
+}
+
+.chip.hallmark {
+  background: rgba(200, 120, 108, 0.25);
+  color: #7a3a32;
+}
+
 .play {
   display: flex;
   flex-direction: column;
@@ -442,6 +467,31 @@ h3 {
 .card.copper {
   border-color: rgba(181, 108, 72, 0.6);
   background-image: url(/assets/cards/copper-star.svg);
+}
+
+.card.ingot {
+  border-color: rgba(201, 124, 77, 0.6);
+  background-image: url(/assets/cards/ingot-star.svg);
+}
+
+.card.sterling {
+  border-color: rgba(170, 185, 205, 0.6);
+  background-image: url(/assets/cards/sterling-star.svg);
+}
+
+.card.ledger {
+  border-color: rgba(201, 187, 148, 0.6);
+  background-image: url(/assets/cards/ledger-star.svg);
+}
+
+.card.mint {
+  border-color: rgba(98, 186, 150, 0.6);
+  background-image: url(/assets/cards/mint-star.svg);
+}
+
+.card.hallmark {
+  border-color: rgba(200, 120, 108, 0.6);
+  background-image: url(/assets/cards/hallmark-star.svg);
 }
 
 .actions-panel {

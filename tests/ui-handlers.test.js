@@ -199,6 +199,29 @@ describe("ui/handlers", () => {
     expect(player.discard.length).toBe(2);
   });
 
+  it("limits mint tutor options to efficiency cards", () => {
+    state = createInitialState({ mode: "offline", format: "minted" });
+    elements = makeElements();
+    const handlers = createHandlers(state, elements, onWinner);
+    const player = state.players[0];
+    player.archive = ["mint", "bronze"];
+    player.deck = ["ingot", "sterling", "ledger", "bronze"];
+
+    handlers.trade("trade_mint");
+
+    expect(elements.choiceCostOverlay.hidden).toBe(false);
+    const choiceButtons = Array.from(elements.choiceCostOptions.querySelectorAll("button"));
+    const bronzeButton = choiceButtons.find((button) => button.dataset.choice === "bronze");
+    bronzeButton.click();
+    handlers.confirmChoiceCost();
+
+    expect(elements.gemTutorOverlay.hidden).toBe(false);
+    const tutorOptions = Array.from(elements.gemTutorOptions.querySelectorAll("button")).map(
+      (button) => button.dataset.choice
+    );
+    expect(tutorOptions).toEqual(["ingot", "sterling", "ledger"]);
+  });
+
   it("opens hand archive overlay for electrum trade and archives from hand", () => {
     state = createInitialState({ mode: "offline", format: "ancient" });
     elements = makeElements();

@@ -178,6 +178,7 @@ wss.on("connection", (ws) => {
       const format =
         message.format === "expanded" ||
         message.format === "ancient" ||
+        message.format === "minted" ||
         message.format === "core"
           ? message.format
           : "core";
@@ -321,6 +322,7 @@ wss.on("connection", (ws) => {
           poolTypes: message.action.payload?.poolTypes ?? null,
           rewardType:
             result.event.detail?.rewardType ?? message.action.payload?.rewardType ?? null,
+          rewardCards: result.event.detail?.rewardCards ?? null,
           rewardCount: result.event.detail?.rewardCount,
           drawCount: result.event.detail?.drawCount,
           digDiscardedCount: result.event.detail?.digDiscardedCount,

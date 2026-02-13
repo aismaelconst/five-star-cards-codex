@@ -10,6 +10,8 @@ import {
 const EASY_TRADE_PRIORITY = [
   "trade_silver",
   "trade_bronze",
+  "trade_hallmark",
+  "trade_mint",
   "trade_gem_set",
   "trade_platinum",
   "trade_ancients_archive",
@@ -21,6 +23,8 @@ const MEDIUM_TRADE_PRIORITY = [
   "trade_platinum",
   "trade_ancients_archive",
   "trade_electrum_draw",
+  "trade_hallmark",
+  "trade_mint",
   "trade_bronze",
 ];
 const HARD_TRADE_PRIORITY = MEDIUM_TRADE_PRIORITY;
@@ -30,6 +34,11 @@ const MEDIUM_PLAY_PRIORITY = [
   "gold",
   "silver",
   "bronze",
+  "hallmark",
+  "mint",
+  "ledger",
+  "ingot",
+  "sterling",
   "electrum",
   "copper",
   "turquoise",
@@ -47,6 +56,11 @@ const CARD_VALUE = {
   gold: 100,
   silver: 30,
   bronze: 10,
+  ingot: 22,
+  sterling: 32,
+  ledger: 18,
+  mint: 16,
+  hallmark: 24,
   electrum: 18,
   copper: 6,
   turquoise: 14,
@@ -80,12 +94,20 @@ function getPlayPriority(difficulty) {
   return EASY_PLAY_PRIORITY;
 }
 
-function getTutorPriority(state, difficulty) {
-  if (difficulty === "easy") return state.ruleset.displayOrder ?? EASY_PLAY_PRIORITY;
-  return [
-    "gold",
-    "silver",
-    "platinum",
+function getTutorPriority(state, difficulty, allowed) {
+  let priority;
+  if (difficulty === "easy") {
+    priority = state.ruleset.displayOrder ?? EASY_PLAY_PRIORITY;
+  } else {
+    priority = [
+      "gold",
+      "silver",
+      "platinum",
+      "hallmark",
+      "mint",
+    "ledger",
+    "ingot",
+    "sterling",
     "electrum",
     "turquoise",
     "lapis_lazuli",
@@ -93,9 +115,13 @@ function getTutorPriority(state, difficulty) {
     "sapphire",
     "emerald",
     "ruby",
-    "wood",
-    "bronze",
-  ];
+      "wood",
+      "bronze",
+    ];
+  }
+  if (!allowed || allowed.length === 0) return priority;
+  const allowedSet = new Set(allowed);
+  return priority.filter((type) => allowedSet.has(type));
 }
 
 function resolvePoolTypes(pool, displayOrder) {
@@ -174,13 +200,19 @@ function pickBestRewardByValue(deckCounts) {
   return best;
 }
 
-function pickTutorReward(state, player, difficulty) {
+function pickTutorReward(state, player, difficulty, allowed) {
   const deckCounts = countCards(player.deck, state.ruleset.displayOrder);
+  const allowedSet = Array.isArray(allowed) && allowed.length > 0 ? new Set(allowed) : null;
+  const filteredCounts = allowedSet
+    ? Object.fromEntries(
+        Object.entries(deckCounts).filter(([type]) => allowedSet.has(type))
+      )
+    : deckCounts;
   if (difficulty === "hard") {
-    return pickBestRewardByValue(deckCounts);
+    return pickBestRewardByValue(filteredCounts);
   }
-  const priority = getTutorPriority(state, difficulty);
-  return priority.find((type) => (deckCounts[type] ?? 0) > 0) ?? null;
+  const priority = getTutorPriority(state, difficulty, allowed);
+  return priority.find((type) => (filteredCounts[type] ?? 0) > 0) ?? null;
 }
 
 function pickArchiveReward(deckCounts) {
@@ -323,6 +355,12 @@ function scoreTradePayload(state, player, recipe, payload) {
   } else if (recipe.reward?.type === "archive") {
     rewardType = payload.rewardType;
     rewardValue = rewardType ? getCardValue(rewardType) : 0;
+  } else if (recipe.reward?.type === "archive_cards") {
+    const rewardCards = recipe.reward.cards ?? [];
+    rewardValue = rewardCards.reduce(
+      (sum, type) => sum + ((deckCounts[type] ?? 0) > 0 ? getCardValue(type) : 0),
+      0
+    );
   } else if (recipe.reward?.type === "archive_hand") {
     const handArchive = payload.handArchive ?? {};
     rewardValue = Object.entries(handArchive).reduce(
@@ -398,7 +436,10 @@ function buildTradePayload(state, player, recipeId, difficulty) {
   }
   const counts = countCards(player.archive);
   const basePayable = canPayBaseCost(recipe, counts);
-  const rewardType = recipe.reward === "any" ? pickTutorReward(state, player, difficulty) : null;
+  const rewardType =
+    recipe.reward === "any"
+      ? pickTutorReward(state, player, difficulty, recipe.rewardOptions)
+      : null;
   const basePayload = {
     recipeId,
     useWood: false,
@@ -438,7 +479,9 @@ function chooseHardTrade(state, player) {
   const deckCounts = countCards(player.deck, state.ruleset.displayOrder);
   recipes.forEach(([recipeId, recipe]) => {
     const rewardType =
-      recipe.reward === "any" ? pickTutorReward(state, player, "hard") : null;
+      recipe.reward === "any"
+        ? pickTutorReward(state, player, "hard", recipe.rewardOptions)
+        : null;
     const basePayload = {
       recipeId,
       useWood: false,
@@ -631,6 +674,7 @@ export function executeCpuTurn(state, options = {}) {
       choiceType: payload.choiceType ?? null,
       poolTypes: payload.poolTypes ?? null,
       handArchive: result?.event?.detail?.handArchive ?? payload.handArchive ?? null,
+      rewardCards: result?.event?.detail?.rewardCards ?? null,
       rewardType:
         result?.event?.detail?.rewardType ?? payload.rewardType ?? null,
       drawCount: result?.event?.detail?.drawCount,

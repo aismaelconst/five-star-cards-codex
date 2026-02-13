@@ -31,7 +31,7 @@ Player state (created in `src/game/state.js`):
 
 Game state (created in `src/game/state.js`):
 - `players` array
-- `ruleset`, `format` (`core`, `expanded`, `ancient`)
+- `ruleset`, `format` (`core`, `expanded`, `ancient`, `minted`)
 - `mode` (`offline`, `cpu`, `online`)
 - `currentPlayer`, `tradesThisTurn`, `turnCount`
 - `phase` (`main`, `confirm`, `between`)
@@ -46,8 +46,8 @@ Rulesets live in `src/game/ruleset.js`.
 
 - `baseRuleset` defines the core game: bronze/silver/gold cards, simple trade recipes, and win condition (5 gold in archive).
 - `expandedRuleset` extends core with `wood`, `ruby`, `emerald`, `sapphire`, and `platinum`, plus more trades and wood substitution rules.
-- `ancientRuleset` extends core with `turquoise`, `lapis_lazuli`, `carnelian`, and `electrum`, plus new pool-based trade recipes.
-- `ancientExpandedRuleset` extends expanded with the ancients cards and the same ancients trade recipes.
+- `ancientRuleset` extends core with `turquoise`, `lapis_lazuli`, `carnelian`, `electrum`, and `copper`, plus new pool-based trade recipes and electrum hand archiving.
+- `mintedRuleset` extends core with `ingot`, `sterling`, `ledger`, `mint`, and `hallmark`, plus efficiency substitutions and archive-focused trades.
 - Decks are created in `src/game/cards.js` using `ruleset.deckCounts` and shuffled in `src/game/state.js` via `shuffle()`.
 
 ## Rules Engine
@@ -62,7 +62,8 @@ Key behaviors:
 - Trades are validated by `canTradeWithOptions()` and executed by `performTrade()`. Trades can consume archive cards, grant cards from the deck (tutor + shuffle), draw cards, and increment `tradesThisTurn`.
 - Wood substitution is supported (expanded rules only) using `getWoodSubstitutionOptions()` and `buildCostWithWood()`.
 - Platinum trade (`trade_platinum`) “digs” by popping cards from the deck until a non bronze/silver is found, discarding the rest.
-- Trade recipes can include `choiceCost` (additional cost type), `poolCost` (distinct selections from a pool), and `reward` variants (`cards`, `draw`, `archive`).
+- Trade recipes can include `choiceCost` (additional cost type), `poolCost` (distinct selections from a pool), `rewardOptions` (restricted tutor targets), and `reward` variants (`cards`, `draw`, `archive`, `archive_cards`).
+- Minted efficiency cards (`ingot`, `sterling`, `ledger`) can satisfy bronze/silver trade costs with a conversion step inside `getTradeCost()` and `canInitiateTrade()`.
 - Playing a card moves it from hand to active; returning moves active cards back to hand.
 - `prepareArchive()` stages active cards into `pendingArchive` and switches phase to `confirm`.
 - `finalizeArchive()` moves pending cards to archive, draws cards based on total `draw`, checks win condition, advances turn, and sets phase to `between`.
@@ -130,6 +131,7 @@ Trade overlays:
 - If the trade requires an additional cost, the choice cost overlay is shown.
 - If the trade requires a pool selection (`poolCost`), the pool cost overlay is shown.
 - If the trade reward is `any`, the gem tutor overlay is shown to pick a target type.
+- Minted uses the same tutor overlay, but restricts choices to the efficiency cards via `rewardOptions`.
 - If the trade reward is `archive_hand`, the hand archive overlay is shown to pick card counts from hand (Electrum allows archiving 1–2 non-gold cards).
 - If the trade reward is `archive`, the archive tutor overlay is shown to pick a non-gold target type.
 - After the overlays resolve, the trade is finalized and applied.

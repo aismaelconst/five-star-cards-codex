@@ -122,6 +122,24 @@ describe("cpu", () => {
     expect(summary.trades[0].handArchive.turquoise).toBe(1);
   });
 
+  it("cpu uses mint to tutor efficiency cards in minted format", () => {
+    const state = createInitialState({
+      mode: "cpu",
+      format: "minted",
+      playerNames: ["You", "CPU"],
+    });
+    state.currentPlayer = 1;
+    state.cpu = { difficulty: "easy" };
+    const cpu = state.players[1];
+    cpu.archive = ["mint", "bronze"];
+    cpu.deck = ["ingot"];
+
+    const summary = executeCpuTurn(state, { difficulty: "easy", cpuIndex: 1 });
+
+    expect(summary.trades[0].recipeId).toBe("trade_mint");
+    expect(cpu.hand).toContain("ingot");
+  });
+
   it("cpu avoids playing the last zero-draw card when it would empty the hand", () => {
     const state = createInitialState({
       mode: "cpu",

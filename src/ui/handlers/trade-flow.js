@@ -72,7 +72,7 @@ export function createTradeFlow(options) {
       return null;
     }
     if (recipe?.reward === "any" && elements.gemTutorOverlay) {
-      openGemTutorOverlay();
+      openGemTutorOverlay(recipe);
       return null;
     }
     if (recipe?.reward?.type === "archive_hand" && elements.handArchiveOverlay) {
@@ -176,7 +176,7 @@ export function createTradeFlow(options) {
       return;
     }
     if (recipe?.reward === "any" && elements.gemTutorOverlay) {
-      openGemTutorOverlay();
+      openGemTutorOverlay(recipe);
       return;
     }
     if (recipe?.reward?.type === "archive_hand" && elements.handArchiveOverlay) {
@@ -195,14 +195,18 @@ export function createTradeFlow(options) {
     if (elements.woodOverlay) elements.woodOverlay.hidden = true;
   }
 
-  function openGemTutorOverlay() {
+  function openGemTutorOverlay(recipe) {
     if (!elements.gemTutorOptions || !elements.gemTutorOverlay) return;
     const player = getLocalPlayer();
     const displayOrder = state.ruleset.displayOrder ?? ["bronze", "silver", "gold"];
+    const allowed =
+      Array.isArray(recipe?.rewardOptions) && recipe.rewardOptions.length > 0
+        ? recipe.rewardOptions.filter((type) => displayOrder.includes(type))
+        : displayOrder;
     const deckCounts = countCards(player.deck, displayOrder);
     pendingGemChoice = null;
     elements.gemTutorOptions.innerHTML = "";
-    displayOrder.forEach((type) => {
+    allowed.forEach((type) => {
       const button = document.createElement("button");
       button.className = "ghost option-button";
       button.textContent = type;
@@ -296,7 +300,7 @@ export function createTradeFlow(options) {
       return;
     }
     if (recipe?.reward === "any" && elements.gemTutorOverlay) {
-      openGemTutorOverlay();
+      openGemTutorOverlay(recipe);
       return;
     }
     if (recipe?.reward?.type === "archive_hand" && elements.handArchiveOverlay) {
@@ -394,7 +398,7 @@ export function createTradeFlow(options) {
     pendingPoolSelection = null;
     const recipe = state.ruleset.tradeRecipes?.[pendingTrade.recipeId];
     if (recipe?.reward === "any" && elements.gemTutorOverlay) {
-      openGemTutorOverlay();
+      openGemTutorOverlay(recipe);
       return;
     }
     if (recipe?.reward?.type === "archive_hand" && elements.handArchiveOverlay) {

@@ -4,6 +4,7 @@ import {
   baseRuleset,
   expandedRuleset,
   ancientRuleset,
+  mintedRuleset,
 } from "../src/game/ruleset.js";
 
 describe("card tooltips", () => {
@@ -49,5 +50,18 @@ describe("card tooltips", () => {
   it("formats lapis lazuli name", () => {
     const tooltip = getCardTooltip("lapis_lazuli", ancientRuleset);
     expect(tooltip).toContain("Lapis Lazuli");
+  });
+
+  it("includes minted substitution notes", () => {
+    const tooltip = getCardTooltip("ingot", mintedRuleset);
+    expect(tooltip).toContain("Ingot");
+    expect(tooltip).toContain("3 bronze");
+  });
+
+  it("includes mint and hallmark trades", () => {
+    const mintTooltip = getCardTooltip("mint", mintedRuleset);
+    expect(mintTooltip).toContain("tutor ingot/sterling/ledger");
+    const hallmarkTooltip = getCardTooltip("hallmark", mintedRuleset);
+    expect(hallmarkTooltip).toContain("archive ingot/sterling/mint");
   });
 });

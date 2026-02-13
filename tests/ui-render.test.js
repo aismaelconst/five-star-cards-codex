@@ -1,6 +1,11 @@
 import { describe, it, expect, vi } from "vitest";
 import { renderApp, showConfirmOverlay, showTurnOverlay } from "../src/ui/render.js";
-import { baseRuleset, expandedRuleset, ancientRuleset } from "../src/game/ruleset.js";
+import {
+  baseRuleset,
+  expandedRuleset,
+  ancientRuleset,
+  mintedRuleset,
+} from "../src/game/ruleset.js";
 
 function makeElements() {
   const ids = [
@@ -19,6 +24,8 @@ function makeElements() {
     "discardInfo",
     "tradeBronze",
     "tradeSilver",
+    "tradeMint",
+    "tradeHallmark",
     "endTurn",
     "undoPlays",
     "confirmOverlay",
@@ -38,6 +45,8 @@ function makeElements() {
 
   elements.tradeBronze = document.createElement("button");
   elements.tradeSilver = document.createElement("button");
+  elements.tradeMint = document.createElement("button");
+  elements.tradeHallmark = document.createElement("button");
   elements.endTurn = document.createElement("button");
   elements.undoPlays = document.createElement("button");
 
@@ -170,6 +179,25 @@ describe("ui/render", () => {
     expect(elements.expansionRules.textContent).toContain("Electrum");
     expect(elements.cardLegend.querySelector(".chip.turquoise")).not.toBeNull();
     expect(elements.cardLegend.querySelector(".chip.copper")).not.toBeNull();
+    expect(elements.cardLegend.querySelector(".chip.ruby")).toBeNull();
+  });
+
+  it("renders minted expansion rules and legend", () => {
+    const state = makeState();
+    const elements = makeElements();
+    const handlers = {
+      playCard: vi.fn(),
+      playCardByType: vi.fn(),
+      returnCard: vi.fn(),
+    };
+    state.ruleset = mintedRuleset;
+    state.format = "minted";
+
+    renderApp(state, elements, handlers);
+
+    expect(elements.expansionRules.textContent).toContain("Ingot");
+    expect(elements.expansionRules.textContent).toContain("Hallmark");
+    expect(elements.cardLegend.querySelector(".chip.ingot")).not.toBeNull();
     expect(elements.cardLegend.querySelector(".chip.ruby")).toBeNull();
   });
 

@@ -22,7 +22,7 @@ function formatTradeBullet(recipe, type, ruleset) {
     if (!poolTypes.includes(type)) return null;
   }
 
-  if (recipe.reward === "any") {
+  if (recipe.reward === "any" && !recipe.rewardOptions) {
     return "• Trade: Ruby + Emerald + Sapphire → tutor any card";
   }
   if (recipe.reward === "dig_non_bronze_silver") {
@@ -71,6 +71,11 @@ function formatTradeBullet(recipe, type, ruleset) {
     reward = `archive ${range} ${label} from hand`;
   } else if (recipe.reward?.type === "archive") {
     reward = "archive 1 non-gold from deck";
+  } else if (recipe.reward?.type === "archive_cards") {
+    const cards = recipe.reward.cards ?? [];
+    reward = cards.length ? `archive ${cards.join("/")}` : "archive cards";
+  } else if (recipe.reward === "any" && recipe.rewardOptions) {
+    reward = `tutor ${recipe.rewardOptions.join("/")}`;
   } else if (typeof recipe.reward === "string") {
     reward = `1 ${recipe.reward}`;
   }
@@ -126,6 +131,15 @@ export function getCardTooltip(type, ruleset) {
   if (type === "copper") {
     lines.push("• Can replace one required card in 2-card trades.");
     lines.push("• When traded, tutor a copper to hand (shuffle).");
+  }
+  if (type === "ingot") {
+    lines.push("• Counts as 3 bronze in archive trades.");
+  }
+  if (type === "sterling") {
+    lines.push("• Counts as 2 silver in archive trades.");
+  }
+  if (type === "ledger") {
+    lines.push("• Counts as 1 bronze or 1 silver in archive trades.");
   }
   if (type === "gold") {
     lines.push("• Counts toward win condition (5 gold in archive).");

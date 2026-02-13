@@ -3,6 +3,7 @@ import {
   baseRuleset,
   expandedRuleset,
   ancientRuleset,
+  mintedRuleset,
 } from "../src/game/ruleset.js";
 import { createCard } from "../src/game/cards.js";
 import {
@@ -103,6 +104,35 @@ function makeAncientState() {
     ],
     ruleset: ancientRuleset,
     format: "ancient",
+    currentPlayer: 0,
+    tradesThisTurn: 0,
+    phase: "main",
+    winner: null,
+    turnCount: 1,
+    pendingArchive: null,
+  };
+}
+
+function makeMintedState() {
+  return {
+    players: [
+      {
+        deck: [],
+        hand: [],
+        active: [],
+        archive: [],
+        discard: [],
+      },
+      {
+        deck: [],
+        hand: [],
+        active: [],
+        archive: [],
+        discard: [],
+      },
+    ],
+    ruleset: mintedRuleset,
+    format: "minted",
     currentPlayer: 0,
     tradesThisTurn: 0,
     phase: "main",
@@ -437,6 +467,90 @@ describe("rules", () => {
     expect(player.discard.length).toBe(2);
     expect(player.archive.some((card) => card.type === "silver")).toBe(true);
     expect(player.hand.some((card) => card.type === "copper")).toBe(true);
+  });
+
+  it("ingot counts as three bronze for bronze trades", () => {
+    const state = makeMintedState();
+    const player = current(state);
+    player.archive = [
+      createCard("ingot", mintedRuleset),
+      createCard("bronze", mintedRuleset),
+      createCard("bronze", mintedRuleset),
+    ];
+    player.deck = [createCard("silver", mintedRuleset)];
+
+    const result = performTrade(state, player, "trade_bronze");
+
+    expect(result.success).toBe(true);
+    expect(player.hand.some((card) => card.type === "silver")).toBe(true);
+    expect(player.discard.filter((card) => card.type === "ingot")).toHaveLength(1);
+  });
+
+  it("sterling and ledger count toward silver trades", () => {
+    const state = makeMintedState();
+    const player = current(state);
+    player.archive = [
+      createCard("sterling", mintedRuleset),
+      createCard("ledger", mintedRuleset),
+      createCard("silver", mintedRuleset),
+      createCard("silver", mintedRuleset),
+    ];
+    player.deck = [createCard("gold", mintedRuleset)];
+
+    const result = performTrade(state, player, "trade_silver");
+
+    expect(result.success).toBe(true);
+    expect(player.hand.some((card) => card.type === "gold")).toBe(true);
+    expect(player.discard.filter((card) => card.type === "sterling")).toHaveLength(1);
+  });
+
+  it("mint trade restricts rewards to efficiency cards", () => {
+    const state = makeMintedState();
+    const player = current(state);
+    player.archive = [createCard("mint", mintedRuleset), createCard("bronze", mintedRuleset)];
+    player.deck = [
+      createCard("ingot", mintedRuleset),
+      createCard("sterling", mintedRuleset),
+      createCard("ledger", mintedRuleset),
+    ];
+
+    const rejected = performTrade(state, player, "trade_mint", {
+      choiceType: "bronze",
+      rewardType: "bronze",
+    });
+
+    expect(rejected.success).toBe(false);
+
+    const result = performTrade(state, player, "trade_mint", {
+      choiceType: "bronze",
+      rewardType: "ingot",
+    });
+
+    expect(result.success).toBe(true);
+    expect(player.hand.some((card) => card.type === "ingot")).toBe(true);
+  });
+
+  it("hallmark archives efficiency cards from the deck", () => {
+    const state = makeMintedState();
+    const player = current(state);
+    player.archive = [
+      createCard("hallmark", mintedRuleset),
+      createCard("bronze", mintedRuleset),
+      createCard("silver", mintedRuleset),
+    ];
+    player.deck = [
+      createCard("ingot", mintedRuleset),
+      createCard("sterling", mintedRuleset),
+      createCard("mint", mintedRuleset),
+      createCard("bronze", mintedRuleset),
+    ];
+
+    const result = performTrade(state, player, "trade_hallmark");
+
+    expect(result.success).toBe(true);
+    expect(player.archive.filter((card) => card.type === "ingot")).toHaveLength(1);
+    expect(player.archive.filter((card) => card.type === "sterling")).toHaveLength(1);
+    expect(player.archive.filter((card) => card.type === "mint")).toHaveLength(1);
   });
 
   it("prepareArchive creates pending archive and draw count", () => {

@@ -141,6 +141,14 @@ export function createOnlineFlow({
             : "archive cards from hand";
         } else if (recipe.reward?.type === "archive") {
           rewardLine = event.rewardType ? `archive ${event.rewardType}` : "archive a card";
+        } else if (recipe.reward?.type === "archive_cards") {
+          const rewardCards =
+            Array.isArray(event.rewardCards) && event.rewardCards.length > 0
+              ? event.rewardCards
+              : recipe.reward.cards ?? [];
+          rewardLine = rewardCards.length
+            ? `archive ${rewardCards.join(", ")}`
+            : "archive cards";
         } else if (typeof recipe.reward === "string") {
           rewardLine = `1 ${recipe.reward}`;
         }
