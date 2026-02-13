@@ -62,6 +62,11 @@ function makeElements() {
     woodSubOptions: document.createElement("div"),
     woodConfirm: document.createElement("button"),
     woodCancel: document.createElement("button"),
+    efficiencyOverlay: Object.assign(document.createElement("div"), { hidden: true }),
+    efficiencyMessage: document.createElement("div"),
+    efficiencyOptions: document.createElement("div"),
+    efficiencyConfirm: document.createElement("button"),
+    efficiencyCancel: document.createElement("button"),
     gemTutorOverlay: document.createElement("div"),
     gemTutorOptions: document.createElement("div"),
     gemTutorConfirm: document.createElement("button"),
@@ -220,6 +225,19 @@ describe("ui/handlers", () => {
       (button) => button.dataset.choice
     );
     expect(tutorOptions).toEqual(["ingot", "sterling", "ledger"]);
+  });
+
+  it("opens efficiency overlay for bronze trade in minted format", () => {
+    state = createInitialState({ mode: "offline", format: "minted" });
+    elements = makeElements();
+    const handlers = createHandlers(state, elements, onWinner);
+    const player = state.players[0];
+    player.archive = ["ingot", "bronze", "bronze"];
+    player.deck = ["silver"];
+
+    handlers.trade("trade_bronze");
+
+    expect(elements.efficiencyOverlay.hidden).toBe(false);
   });
 
   it("opens hand archive overlay for electrum trade and archives from hand", () => {

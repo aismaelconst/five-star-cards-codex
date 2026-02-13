@@ -63,7 +63,7 @@ Key behaviors:
 - Wood substitution is supported (expanded rules only) using `getWoodSubstitutionOptions()` and `buildCostWithWood()`.
 - Platinum trade (`trade_platinum`) “digs” by popping cards from the deck until a non bronze/silver is found, discarding the rest.
 - Trade recipes can include `choiceCost` (additional cost type), `poolCost` (distinct selections from a pool), `rewardOptions` (restricted tutor targets), and `reward` variants (`cards`, `draw`, `archive`, `archive_cards`).
-- Minted efficiency cards (`ingot`, `sterling`, `ledger`) can satisfy bronze/silver trade costs with a conversion step inside `getTradeCost()` and `canInitiateTrade()`.
+- Minted efficiency cards (`ingot`, `sterling`, `ledger`) can satisfy bronze/silver trade costs with an optional conversion step inside `getTradeCost()` and `canInitiateTrade()`, controlled by the `useEfficiency` trade payload flag.
 - Playing a card moves it from hand to active; returning moves active cards back to hand.
 - `prepareArchive()` stages active cards into `pendingArchive` and switches phase to `confirm`.
 - `finalizeArchive()` moves pending cards to archive, draws cards based on total `draw`, checks win condition, advances turn, and sets phase to `between`.

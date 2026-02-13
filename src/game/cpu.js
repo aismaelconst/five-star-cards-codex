@@ -444,10 +444,22 @@ function buildTradePayload(state, player, recipeId, difficulty) {
     recipeId,
     useWood: false,
     substituteType: null,
+    useEfficiency: false,
     rewardType,
   };
   const finalizedBase = finalizeTradePayload(state, player, recipeId, basePayload);
   if (finalizedBase) return finalizedBase;
+  const efficiencyPayload = {
+    ...basePayload,
+    useEfficiency: true,
+  };
+  const finalizedEfficiency = finalizeTradePayload(
+    state,
+    player,
+    recipeId,
+    efficiencyPayload
+  );
+  if (finalizedEfficiency) return finalizedEfficiency;
   const substituteType = chooseWoodSubstitution(
     state,
     player,
@@ -460,9 +472,16 @@ function buildTradePayload(state, player, recipeId, difficulty) {
     recipeId,
     useWood: true,
     substituteType,
+    useEfficiency: false,
     rewardType,
   };
-  return finalizeTradePayload(state, player, recipeId, woodPayload);
+  const finalizedWood = finalizeTradePayload(state, player, recipeId, woodPayload);
+  if (finalizedWood) return finalizedWood;
+  const finalizedWoodEfficiency = finalizeTradePayload(state, player, recipeId, {
+    ...woodPayload,
+    useEfficiency: true,
+  });
+  return finalizedWoodEfficiency;
 }
 
 function chooseHardTrade(state, player) {
@@ -486,11 +505,19 @@ function chooseHardTrade(state, player) {
       recipeId,
       useWood: false,
       substituteType: null,
+      useEfficiency: false,
       rewardType,
     };
     const finalizedBase = finalizeTradePayload(state, player, recipeId, basePayload);
     if (finalizedBase) {
       candidates.push({ recipeId, recipe, payload: finalizedBase });
+    }
+    const finalizedEfficiency = finalizeTradePayload(state, player, recipeId, {
+      ...basePayload,
+      useEfficiency: true,
+    });
+    if (finalizedEfficiency) {
+      candidates.push({ recipeId, recipe, payload: finalizedEfficiency });
     }
     const woodOptions = getWoodSubstitutionOptions(state, player, recipeId);
     woodOptions.forEach((substituteType) => {
@@ -498,11 +525,19 @@ function chooseHardTrade(state, player) {
         recipeId,
         useWood: true,
         substituteType,
+        useEfficiency: false,
         rewardType,
       };
       const finalized = finalizeTradePayload(state, player, recipeId, payload);
       if (finalized) {
         candidates.push({ recipeId, recipe, payload: finalized });
+      }
+      const finalizedEfficiency = finalizeTradePayload(state, player, recipeId, {
+        ...payload,
+        useEfficiency: true,
+      });
+      if (finalizedEfficiency) {
+        candidates.push({ recipeId, recipe, payload: finalizedEfficiency });
       }
     });
   });

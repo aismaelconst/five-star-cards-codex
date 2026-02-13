@@ -85,6 +85,11 @@ function setupDom() {
     <div id="woodSubOptions"></div>
     <button id="woodConfirm"></button>
     <button id="woodCancel"></button>
+    <div id="efficiencyOverlay"></div>
+    <div id="efficiencyMessage"></div>
+    <div id="efficiencyOptions"></div>
+    <button id="efficiencyConfirm"></button>
+    <button id="efficiencyCancel"></button>
     <div id="gemTutorOverlay"></div>
     <div id="gemTutorOptions"></div>
     <button id="gemTutorConfirm"></button>

@@ -51,6 +51,8 @@ describe("ui/events", () => {
       cpuTurnConfirm: makeButton("cpuTurnConfirm"),
       woodConfirm: makeButton("woodConfirm"),
       woodCancel: makeButton("woodCancel"),
+      efficiencyConfirm: makeButton("efficiencyConfirm"),
+      efficiencyCancel: makeButton("efficiencyCancel"),
       gemTutorConfirm: makeButton("gemTutorConfirm"),
       gemTutorCancel: makeButton("gemTutorCancel"),
       choiceCostConfirm: makeButton("choiceCostConfirm"),
@@ -95,6 +97,8 @@ describe("ui/events", () => {
       closeCpuSummary: vi.fn(),
       confirmWoodSubstitution: vi.fn(),
       cancelWoodSubstitution: vi.fn(),
+      confirmEfficiencyChoice: vi.fn(),
+      cancelEfficiencyChoice: vi.fn(),
       confirmGemTutor: vi.fn(),
       cancelGemTutor: vi.fn(),
       confirmChoiceCost: vi.fn(),
@@ -150,6 +154,8 @@ describe("ui/events", () => {
     elements.cpuTurnConfirm.click();
     elements.woodConfirm.click();
     elements.woodCancel.click();
+    elements.efficiencyConfirm.click();
+    elements.efficiencyCancel.click();
     elements.gemTutorConfirm.click();
     elements.gemTutorCancel.click();
     elements.choiceCostConfirm.click();
@@ -199,6 +205,8 @@ describe("ui/events", () => {
     expect(handlers.closeCpuSummary).toHaveBeenCalled();
     expect(handlers.confirmWoodSubstitution).toHaveBeenCalled();
     expect(handlers.cancelWoodSubstitution).toHaveBeenCalled();
+    expect(handlers.confirmEfficiencyChoice).toHaveBeenCalled();
+    expect(handlers.cancelEfficiencyChoice).toHaveBeenCalled();
     expect(handlers.confirmGemTutor).toHaveBeenCalled();
     expect(handlers.cancelGemTutor).toHaveBeenCalled();
     expect(handlers.confirmChoiceCost).toHaveBeenCalled();

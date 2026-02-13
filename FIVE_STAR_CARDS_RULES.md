@@ -80,6 +80,7 @@ You may trade **before and/or after** playing cards. You may **not** trade after
   - Counts as **2 silver** when paying trade costs from the Archive.
 - **Ledger**
   - Counts as **1 bronze or 1 silver** when paying trade costs from the Archive.
+- You may choose whether to apply these efficiency counts or pay with regular bronze/silver.
 - **Mint + any non-gold → tutor ingot/sterling/ledger**
   - Choose one of ingot, sterling, or ledger from your deck and put it into your hand, then shuffle.
 - **Hallmark + Bronze + Silver → archive ingot, sterling, mint**

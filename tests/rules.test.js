@@ -469,7 +469,7 @@ describe("rules", () => {
     expect(player.hand.some((card) => card.type === "copper")).toBe(true);
   });
 
-  it("ingot counts as three bronze for bronze trades", () => {
+  it("ingot counts as three bronze for bronze trades when chosen", () => {
     const state = makeMintedState();
     const player = current(state);
     player.archive = [
@@ -479,14 +479,16 @@ describe("rules", () => {
     ];
     player.deck = [createCard("silver", mintedRuleset)];
 
-    const result = performTrade(state, player, "trade_bronze");
+    const result = performTrade(state, player, "trade_bronze", {
+      useEfficiency: true,
+    });
 
     expect(result.success).toBe(true);
     expect(player.hand.some((card) => card.type === "silver")).toBe(true);
     expect(player.discard.filter((card) => card.type === "ingot")).toHaveLength(1);
   });
 
-  it("sterling and ledger count toward silver trades", () => {
+  it("sterling and ledger count toward silver trades when chosen", () => {
     const state = makeMintedState();
     const player = current(state);
     player.archive = [
@@ -497,11 +499,29 @@ describe("rules", () => {
     ];
     player.deck = [createCard("gold", mintedRuleset)];
 
-    const result = performTrade(state, player, "trade_silver");
+    const result = performTrade(state, player, "trade_silver", {
+      useEfficiency: true,
+    });
 
     expect(result.success).toBe(true);
     expect(player.hand.some((card) => card.type === "gold")).toBe(true);
     expect(player.discard.filter((card) => card.type === "sterling")).toHaveLength(1);
+  });
+
+  it("does not auto-use efficiency cards without selection", () => {
+    const state = makeMintedState();
+    const player = current(state);
+    player.archive = [
+      createCard("ingot", mintedRuleset),
+      createCard("bronze", mintedRuleset),
+      createCard("bronze", mintedRuleset),
+    ];
+    player.deck = [createCard("silver", mintedRuleset)];
+
+    expect(canTradeWithOptions(state, player, "trade_bronze")).toBe(false);
+    expect(
+      canTradeWithOptions(state, player, "trade_bronze", { useEfficiency: true })
+    ).toBe(true);
   });
 
   it("mint trade restricts rewards to efficiency cards", () => {

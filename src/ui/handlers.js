@@ -460,6 +460,8 @@ export function createHandlers(state, elements, onWinner, options = {}) {
     resetGame,
     confirmWoodSubstitution: tradeFlow.confirmWoodSubstitution,
     cancelWoodSubstitution: tradeFlow.cancelWoodSubstitution,
+    confirmEfficiencyChoice: tradeFlow.confirmEfficiencyChoice,
+    cancelEfficiencyChoice: tradeFlow.cancelEfficiencyChoice,
     confirmGemTutor: tradeFlow.confirmGemTutor,
     cancelGemTutor: tradeFlow.cancelGemTutor,
     confirmChoiceCost: tradeFlow.confirmChoiceCost,

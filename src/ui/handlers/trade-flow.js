@@ -1,6 +1,7 @@
 import {
   ActionTypes,
   canInitiateTrade,
+  canTradeWithOptions,
   getChoiceCostOptions,
   getWoodSubstitutionOptions,
 } from "../../game/rules.js";
@@ -12,6 +13,7 @@ export function createTradeFlow(options) {
     options;
   let pendingTrade = null;
   let pendingWoodChoice = null;
+  let pendingEfficiencyChoice = null;
   let pendingGemChoice = null;
   let pendingChoiceSelection = null;
   let pendingPoolSelection = null;
@@ -21,6 +23,7 @@ export function createTradeFlow(options) {
   function resetPending() {
     pendingTrade = null;
     pendingWoodChoice = null;
+    pendingEfficiencyChoice = null;
     pendingGemChoice = null;
     pendingChoiceSelection = null;
     pendingPoolSelection = null;
@@ -30,6 +33,7 @@ export function createTradeFlow(options) {
 
   function hideOverlays() {
     if (elements.woodOverlay) elements.woodOverlay.hidden = true;
+    if (elements.efficiencyOverlay) elements.efficiencyOverlay.hidden = true;
     if (elements.gemTutorOverlay) elements.gemTutorOverlay.hidden = true;
     if (elements.choiceCostOverlay) elements.choiceCostOverlay.hidden = true;
     if (elements.poolCostOverlay) elements.poolCostOverlay.hidden = true;
@@ -45,6 +49,7 @@ export function createTradeFlow(options) {
       recipeId,
       useWood: false,
       substituteType: null,
+      useEfficiency: false,
       rewardType: null,
       choiceType: null,
       poolTypes: null,
@@ -59,6 +64,10 @@ export function createTradeFlow(options) {
       Object.entries(baseCost).every(
         ([type, amount]) => (archiveCounts[type] ?? 0) >= amount
       );
+    if (recipe && shouldOfferEfficiencyChoice(recipe, archiveCounts)) {
+      openEfficiencyOverlay(canPayBase);
+      return null;
+    }
     if (woodOptions.length > 0 && elements.woodOverlay) {
       openWoodOverlay(woodOptions, canPayBase);
       return null;
@@ -92,6 +101,7 @@ export function createTradeFlow(options) {
       recipeId: pendingTrade.recipeId,
       useWood: pendingTrade.useWood,
       substituteType: pendingTrade.substituteType,
+      useEfficiency: pendingTrade.useEfficiency,
       rewardType: pendingTrade.rewardType,
       choiceType: pendingTrade.choiceType,
       poolTypes: pendingTrade.poolTypes,
@@ -146,6 +156,109 @@ export function createTradeFlow(options) {
     });
     if (elements.woodConfirm) elements.woodConfirm.disabled = true;
     elements.woodOverlay.hidden = false;
+  }
+
+  function shouldOfferEfficiencyChoice(recipe, archiveCounts) {
+    if (!recipe?.cost) return false;
+    if ((archiveCounts.ingot ?? 0) === 0 && (archiveCounts.sterling ?? 0) === 0 && (archiveCounts.ledger ?? 0) === 0) {
+      return false;
+    }
+    return (recipe.cost.bronze ?? 0) > 0 || (recipe.cost.silver ?? 0) > 0;
+  }
+
+  function openEfficiencyOverlay(canPayBase) {
+    if (!elements.efficiencyOverlay || !elements.efficiencyOptions) return;
+    pendingEfficiencyChoice = null;
+    elements.efficiencyOptions.innerHTML = "";
+    const player = getLocalPlayer();
+    const regularAllowed = canTradeWithOptions(state, player, pendingTrade.recipeId, {
+      useWood: pendingTrade.useWood,
+      substituteType: pendingTrade.substituteType,
+      useEfficiency: false,
+    });
+    const efficiencyAllowed = canTradeWithOptions(state, player, pendingTrade.recipeId, {
+      useWood: pendingTrade.useWood,
+      substituteType: pendingTrade.substituteType,
+      useEfficiency: true,
+    });
+    const choices = [
+      { id: "regular", label: "Use regular cards", enabled: regularAllowed || canPayBase },
+      { id: "efficiency", label: "Use ingot/sterling/ledger", enabled: efficiencyAllowed },
+    ];
+    choices.forEach((choice) => {
+      const button = document.createElement("button");
+      button.className = "ghost option-button";
+      button.textContent = choice.label;
+      button.dataset.choice = choice.id;
+      button.disabled = !choice.enabled;
+      if (choice.enabled) {
+        button.addEventListener("click", () => selectEfficiencyChoice(choice.id));
+      }
+      elements.efficiencyOptions.appendChild(button);
+    });
+    if (elements.efficiencyConfirm) elements.efficiencyConfirm.disabled = true;
+    if (elements.efficiencyMessage) {
+      elements.efficiencyMessage.textContent =
+        "Choose whether to use efficiency cards for this trade.";
+    }
+    elements.efficiencyOverlay.hidden = false;
+  }
+
+  function selectEfficiencyChoice(choice) {
+    pendingEfficiencyChoice = choice;
+    if (elements.efficiencyOptions) {
+      Array.from(elements.efficiencyOptions.children).forEach((child) => {
+        child.classList.toggle("active", child.dataset.choice === choice);
+      });
+    }
+    if (elements.efficiencyConfirm) elements.efficiencyConfirm.disabled = false;
+  }
+
+  function confirmEfficiencyChoice() {
+    if (!pendingTrade || !pendingEfficiencyChoice) return;
+    pendingTrade.useEfficiency = pendingEfficiencyChoice === "efficiency";
+    if (elements.efficiencyOverlay) elements.efficiencyOverlay.hidden = true;
+    pendingEfficiencyChoice = null;
+    const player = getLocalPlayer();
+    const recipe = state.ruleset.tradeRecipes?.[pendingTrade.recipeId];
+    const baseCost = recipe?.cost ?? {};
+    const archiveCounts = countCards(player.archive);
+    const canPayBase =
+      recipe &&
+      Object.entries(baseCost).every(
+        ([type, amount]) => (archiveCounts[type] ?? 0) >= amount
+      );
+    const woodOptions = getWoodSubstitutionOptions(state, player, pendingTrade.recipeId);
+    if (woodOptions.length > 0 && elements.woodOverlay) {
+      openWoodOverlay(woodOptions, canPayBase);
+      return;
+    }
+    if (recipe?.choiceCost) {
+      openChoiceCostOverlay();
+      return;
+    }
+    if (recipe?.poolCost) {
+      openPoolCostOverlay();
+      return;
+    }
+    if (recipe?.reward === "any" && elements.gemTutorOverlay) {
+      openGemTutorOverlay(recipe);
+      return;
+    }
+    if (recipe?.reward?.type === "archive_hand" && elements.handArchiveOverlay) {
+      openHandArchiveOverlay();
+      return;
+    }
+    if (recipe?.reward?.type === "archive" && elements.archiveTutorOverlay) {
+      openArchiveTutorOverlay();
+      return;
+    }
+    finalizeTrade();
+  }
+
+  function cancelEfficiencyChoice() {
+    resetPending();
+    if (elements.efficiencyOverlay) elements.efficiencyOverlay.hidden = true;
   }
 
   function selectWoodChoice(choice) {
@@ -254,6 +367,7 @@ export function createTradeFlow(options) {
     const options = getChoiceCostOptions(state, player, pendingTrade.recipeId, {
       useWood: pendingTrade.useWood,
       substituteType: pendingTrade.substituteType,
+      useEfficiency: pendingTrade.useEfficiency,
     });
     pendingChoiceSelection = null;
     elements.choiceCostOptions.innerHTML = "";
@@ -594,6 +708,8 @@ export function createTradeFlow(options) {
     trade,
     confirmWoodSubstitution,
     cancelWoodSubstitution,
+    confirmEfficiencyChoice,
+    cancelEfficiencyChoice,
     confirmGemTutor,
     cancelGemTutor,
     confirmChoiceCost,

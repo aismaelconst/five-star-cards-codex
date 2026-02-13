@@ -88,6 +88,12 @@ export function wireEvents(elements, handlers) {
   if (elements.woodCancel) {
     elements.woodCancel.addEventListener("click", handlers.cancelWoodSubstitution);
   }
+  if (elements.efficiencyConfirm) {
+    elements.efficiencyConfirm.addEventListener("click", handlers.confirmEfficiencyChoice);
+  }
+  if (elements.efficiencyCancel) {
+    elements.efficiencyCancel.addEventListener("click", handlers.cancelEfficiencyChoice);
+  }
   if (elements.gemTutorConfirm) {
     elements.gemTutorConfirm.addEventListener("click", handlers.confirmGemTutor);
   }

@@ -150,13 +150,15 @@ function getChoicePoolTypes(ruleset, pool, exclude = []) {
   return types;
 }
 
-function getChoiceCostOptionsForCost(ruleset, recipe, counts, baseCost) {
+function getChoiceCostOptionsForCost(ruleset, recipe, counts, baseCost, useEfficiency) {
   if (!recipe.choiceCost) return [];
   const pool = getChoicePoolTypes(ruleset, recipe.choiceCost.pool, recipe.choiceCost.exclude);
   return pool.filter((type) => {
     const combined = { ...baseCost };
     combined[type] = (combined[type] ?? 0) + recipe.choiceCost.count;
-    return canPayCostWithEfficiency(counts, combined);
+    return useEfficiency
+      ? canPayCostWithEfficiency(counts, combined)
+      : canPayCost(counts, combined);
   });
 }
 
@@ -260,7 +262,13 @@ export function getChoiceCostOptions(state, player, recipeId, options = {}) {
     if (recipeId === "trade_platinum" && options.substituteType === "platinum") return [];
     baseCost = buildCostWithWood(baseCost, options.substituteType);
   }
-  return getChoiceCostOptionsForCost(state.ruleset, recipe, counts, baseCost);
+  return getChoiceCostOptionsForCost(
+    state.ruleset,
+    recipe,
+    counts,
+    baseCost,
+    options.useEfficiency
+  );
 }
 
 function getTradeCost(state, player, recipeId, options = {}) {
@@ -310,7 +318,7 @@ function getTradeCost(state, player, recipeId, options = {}) {
   if (usedCopperForPool) {
     cost.copper = (cost.copper ?? 0) + 1;
   }
-  if (!canPayCost(counts, cost)) {
+  if (!canPayCost(counts, cost) && options.useEfficiency) {
     const efficiencyAdjusted = applyEfficiencySubstitution(counts, cost);
     if (efficiencyAdjusted) {
       cost = efficiencyAdjusted;
@@ -352,9 +360,10 @@ export function canInitiateTrade(state, player, recipeId) {
   if (state.tradesThisTurn >= state.ruleset.maxTrades) return false;
   const counts = countCards(player.archive);
   const baseCost = recipe.cost ?? {};
-  const canPayWithCost = (cost) => {
+  const canPayWithCost = (cost, useEfficiency) => {
     let effectiveCost = cost;
     if (!canPayCost(counts, cost)) {
+      if (!useEfficiency) return false;
       const adjusted = applyEfficiencySubstitution(counts, cost);
       if (!adjusted || !canPayCost(counts, adjusted)) return false;
       effectiveCost = adjusted;
@@ -364,7 +373,10 @@ export function canInitiateTrade(state, player, recipeId) {
       remaining[type] = (remaining[type] ?? 0) - amount;
     });
     if (recipe.choiceCost) {
-      if (getChoiceCostOptionsForCost(state.ruleset, recipe, counts, cost).length === 0) {
+      if (
+        getChoiceCostOptionsForCost(state.ruleset, recipe, counts, cost, useEfficiency)
+          .length === 0
+      ) {
         return false;
       }
     }
@@ -373,14 +385,28 @@ export function canInitiateTrade(state, player, recipeId) {
     }
     return true;
   };
-  let canPay = canPayWithCost(baseCost);
+  let canPay = canPayWithCost(baseCost, false);
   if (!canPay) {
     const woodOptions = getWoodSubstitutionOptions(state, player, recipeId);
     for (const substituteType of woodOptions) {
       const adjusted = buildCostWithWood(baseCost, substituteType);
-      if (canPayWithCost(adjusted)) {
+      if (canPayWithCost(adjusted, false)) {
         canPay = true;
         break;
+      }
+    }
+  }
+  if (!canPay) {
+    if (canPayWithCost(baseCost, true)) {
+      canPay = true;
+    } else {
+      const woodOptions = getWoodSubstitutionOptions(state, player, recipeId);
+      for (const substituteType of woodOptions) {
+        const adjusted = buildCostWithWood(baseCost, substituteType);
+        if (canPayWithCost(adjusted, true)) {
+          canPay = true;
+          break;
+        }
       }
     }
   }
