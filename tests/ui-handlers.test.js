@@ -33,7 +33,6 @@ function makeElements() {
     formatCore: document.createElement("button"),
     formatExpanded: document.createElement("button"),
     formatAncient: document.createElement("button"),
-    formatAncientExpanded: document.createElement("button"),
     cpuEasy: document.createElement("button"),
     cpuMedium: document.createElement("button"),
     cpuHard: document.createElement("button"),
@@ -43,7 +42,6 @@ function makeElements() {
     hostFormatCore: document.createElement("button"),
     hostFormatExpanded: document.createElement("button"),
     hostFormatAncient: document.createElement("button"),
-    hostFormatAncientExpanded: document.createElement("button"),
     cpuMode: document.createElement("button"),
     playerNameInput: Object.assign(document.createElement("input"), { value: "" }),
     roomCodeInput: Object.assign(document.createElement("input"), { value: "" }),
@@ -202,30 +200,38 @@ describe("ui/handlers", () => {
   });
 
   it("opens hand archive overlay for electrum trade and archives from hand", () => {
-    state = createInitialState({ mode: "offline", format: "ancient_expanded" });
+    state = createInitialState({ mode: "offline", format: "ancient" });
     elements = makeElements();
     const handlers = createHandlers(state, elements, onWinner);
     const player = state.players[0];
-    player.archive = ["electrum", "bronze", "silver"];
-    player.hand = ["bronze", "wood", "ruby"];
+    player.archive = ["electrum", "copper"];
+    player.hand = ["bronze", "copper", "turquoise"];
 
     handlers.trade("trade_electrum_draw");
+
+    expect(elements.choiceCostOverlay.hidden).toBe(false);
+    const choiceButtons = Array.from(elements.choiceCostOptions.querySelectorAll("button"));
+    const copperChoice = choiceButtons.find((button) => button.dataset.choice === "copper");
+    copperChoice.click();
+    handlers.confirmChoiceCost();
 
     expect(elements.handArchiveOverlay.hidden).toBe(false);
     const rows = Array.from(elements.handArchiveOptions.querySelectorAll(".hand-archive-row"));
     const bronzeRow = rows.find((row) => row.dataset.type === "bronze");
-    const woodRow = rows.find((row) => row.dataset.type === "wood");
-    const rubyRow = rows.find((row) => row.dataset.type === "ruby");
+    const copperRow = rows.find((row) => row.dataset.type === "copper");
+    const turquoiseRow = rows.find((row) => row.dataset.type === "turquoise");
     const silverRow = rows.find((row) => row.dataset.type === "silver");
     bronzeRow.querySelector(".hand-archive-plus").click();
-    woodRow.querySelector(".hand-archive-plus").click();
-    rubyRow.querySelector(".hand-archive-plus").click();
+    copperRow.querySelector(".hand-archive-plus").click();
     handlers.confirmHandArchive();
 
     expect(silverRow).toBeUndefined();
     expect(state.tradesThisTurn).toBe(1);
-    expect(player.discard.length).toBe(3);
-    expect(player.hand.length).toBe(0);
+    expect(player.discard.length).toBe(2);
+    expect(player.hand.length).toBe(2);
+    expect(
+      player.hand.some((card) => (typeof card === "string" ? card : card.type) === "copper")
+    ).toBe(true);
   });
 
   it("prepares archive on endTurn", () => {
@@ -286,14 +292,14 @@ describe("ui/handlers", () => {
     expect(state.turnCount).toBe(1);
   });
 
-  it("selects ancient expanded format in offline mode", () => {
+  it("selects ancient format in offline mode", () => {
     const handlers = createHandlers(state, elements, onWinner);
     handlers.selectOfflineMode();
 
-    handlers.selectAncientExpandedFormat();
+    handlers.selectAncientFormat();
 
-    expect(state.format).toBe("ancient_expanded");
-    expect(state.players[0].deck.length + state.players[0].hand.length).toBe(200);
+    expect(state.format).toBe("ancient");
+    expect(state.players[0].deck.length + state.players[0].hand.length).toBe(180);
   });
 
   it("selects online mode and shows the online choice overlay", () => {
@@ -356,8 +362,6 @@ describe("ui/handlers", () => {
     expect(state.format).toBe("expanded");
     handlers.selectHostFormatAncient();
     expect(state.format).toBe("ancient");
-    handlers.selectHostFormatAncientExpanded();
-    expect(state.format).toBe("ancient_expanded");
   });
 
   it("returns to choice overlay", () => {

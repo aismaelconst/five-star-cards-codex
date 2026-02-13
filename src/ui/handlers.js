@@ -137,7 +137,7 @@ export function createHandlers(state, elements, onWinner, options = {}) {
 
   function selectExpandedFormat() {
     if (state.mode === "cpu") {
-    state.format = "expanded";
+      state.format = "expanded";
       updateFormatButtons(state, elements);
       if (elements.formatOverlay) {
         elements.formatOverlay.hidden = true;
@@ -152,7 +152,7 @@ export function createHandlers(state, elements, onWinner, options = {}) {
 
   function selectAncientFormat() {
     if (state.mode === "cpu") {
-    state.format = "ancient";
+      state.format = "ancient";
       updateFormatButtons(state, elements);
       if (elements.formatOverlay) {
         elements.formatOverlay.hidden = true;
@@ -163,21 +163,6 @@ export function createHandlers(state, elements, onWinner, options = {}) {
       return;
     }
     startOfflineGame("ancient");
-  }
-
-  function selectAncientExpandedFormat() {
-    if (state.mode === "cpu") {
-    state.format = "ancient_expanded";
-      updateFormatButtons(state, elements);
-      if (elements.formatOverlay) {
-        elements.formatOverlay.hidden = true;
-      }
-      if (elements.cpuOverlay) {
-        elements.cpuOverlay.hidden = false;
-      }
-      return;
-    }
-    startOfflineGame("ancient_expanded");
   }
 
   function selectCpuEasy() {
@@ -204,11 +189,6 @@ export function createHandlers(state, elements, onWinner, options = {}) {
 
   function selectHostFormatAncient() {
     state.format = "ancient";
-    updateFormatButtons(state, elements);
-  }
-
-  function selectHostFormatAncientExpanded() {
-    state.format = "ancient_expanded";
     updateFormatButtons(state, elements);
   }
 
@@ -434,14 +414,12 @@ export function createHandlers(state, elements, onWinner, options = {}) {
     selectCoreFormat,
     selectExpandedFormat,
     selectAncientFormat,
-    selectAncientExpandedFormat,
     selectCpuEasy,
     selectCpuMedium,
     selectCpuHard,
     selectHostFormatCore,
     selectHostFormatExpanded,
     selectHostFormatAncient,
-    selectHostFormatAncientExpanded,
     createRoom: onlineFlow.createRoom,
     joinRoom: onlineFlow.joinRoom,
     backToChoice: onlineFlow.backToChoice,

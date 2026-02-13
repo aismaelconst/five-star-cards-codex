@@ -49,21 +49,7 @@ const ANCIENT_DISPLAY_ORDER = [
   "lapis_lazuli",
   "carnelian",
   "electrum",
-];
-
-const ANCIENT_EXPANDED_DISPLAY_ORDER = [
-  "bronze",
-  "silver",
-  "gold",
-  "wood",
-  "ruby",
-  "emerald",
-  "sapphire",
-  "platinum",
-  "turquoise",
-  "lapis_lazuli",
-  "carnelian",
-  "electrum",
+  "copper",
 ];
 
 function getNonGoldAllowed(displayOrder) {
@@ -148,11 +134,12 @@ export const ancientRuleset = {
       reward: { type: "archive" },
     },
     trade_electrum_draw: {
-      cost: { electrum: 1, bronze: 1, silver: 1 },
+      cost: { electrum: 1 },
+      choiceCost: { count: 1, pool: "non_gold" },
       reward: {
         type: "archive_hand",
         min: 1,
-        max: 5,
+        max: 2,
         allowed: getNonGoldAllowed(ANCIENT_DISPLAY_ORDER),
       },
     },
@@ -175,6 +162,10 @@ export const ancientRuleset = {
       tier: "electrum",
       draw: 0,
     },
+    copper: {
+      tier: "copper",
+      draw: 0,
+    },
   },
   deckCounts: {
     ...baseRuleset.deckCounts,
@@ -182,52 +173,6 @@ export const ancientRuleset = {
     lapis_lazuli: 5,
     carnelian: 5,
     electrum: 5,
-  },
-};
-
-export const ancientExpandedRuleset = {
-  ...expandedRuleset,
-  displayOrder: ANCIENT_EXPANDED_DISPLAY_ORDER,
-  tradeRecipes: {
-    ...expandedRuleset.tradeRecipes,
-    trade_ancients_archive: {
-      poolCost: { min: 2, max: 2, distinct: true, pool: "ancient" },
-      reward: { type: "archive" },
-    },
-    trade_electrum_draw: {
-      cost: { electrum: 1, bronze: 1, silver: 1 },
-      reward: {
-        type: "archive_hand",
-        min: 1,
-        max: 5,
-        allowed: getNonGoldAllowed(ANCIENT_EXPANDED_DISPLAY_ORDER),
-      },
-    },
-  },
-  cardTypes: {
-    ...expandedRuleset.cardTypes,
-    turquoise: {
-      tier: "turquoise",
-      draw: 0,
-    },
-    lapis_lazuli: {
-      tier: "lapis_lazuli",
-      draw: 0,
-    },
-    carnelian: {
-      tier: "carnelian",
-      draw: 0,
-    },
-    electrum: {
-      tier: "electrum",
-      draw: 0,
-    },
-  },
-  deckCounts: {
-    ...expandedRuleset.deckCounts,
-    turquoise: 5,
-    lapis_lazuli: 5,
-    carnelian: 5,
-    electrum: 5,
+    copper: 5,
   },
 };

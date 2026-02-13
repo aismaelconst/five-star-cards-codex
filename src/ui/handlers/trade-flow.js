@@ -245,6 +245,7 @@ export function createTradeFlow(options) {
   function openChoiceCostOverlay() {
     if (!pendingTrade || !elements.choiceCostOptions || !elements.choiceCostOverlay) return;
     const player = getLocalPlayer();
+    const recipe = state.ruleset.tradeRecipes?.[pendingTrade.recipeId];
     const archiveCounts = countCards(player.archive);
     const options = getChoiceCostOptions(state, player, pendingTrade.recipeId, {
       useWood: pendingTrade.useWood,
@@ -263,8 +264,13 @@ export function createTradeFlow(options) {
     });
     if (elements.choiceCostConfirm) elements.choiceCostConfirm.disabled = true;
     if (elements.choiceCostMessage) {
-      elements.choiceCostMessage.textContent =
-        "Choose the additional non-gem, non-wood cost card.";
+      let message = "Choose the additional cost card.";
+      if (recipe?.choiceCost?.pool === "non_gem_non_wood") {
+        message = "Choose the additional non-gem, non-wood cost card.";
+      } else if (recipe?.choiceCost?.pool === "non_gold") {
+        message = "Choose the additional non-gold cost card.";
+      }
+      elements.choiceCostMessage.textContent = message;
     }
     elements.choiceCostOverlay.hidden = false;
   }
@@ -317,10 +323,15 @@ export function createTradeFlow(options) {
     const displayOrder = state.ruleset.displayOrder ?? ["bronze", "silver", "gold"];
     const archiveCounts = countCards(player.archive, displayOrder);
     const options = resolvePoolTypes(recipe.poolCost.pool, displayOrder);
+    const hasCopper = (archiveCounts.copper ?? 0) > 0;
+    const baseMin = recipe.poolCost.min ?? 0;
+    const baseMax = recipe.poolCost.max ?? baseMin;
+    const allowCopper =
+      hasCopper && baseMin === 2 && baseMax === 2 && recipe.poolCost.distinct;
     pendingPoolSelection = {
       selected: [],
-      min: recipe.poolCost.min ?? 0,
-      max: recipe.poolCost.max ?? recipe.poolCost.min ?? 0,
+      min: allowCopper ? 1 : baseMin,
+      max: baseMax,
       distinct: recipe.poolCost.distinct ?? false,
     };
     elements.poolCostOptions.innerHTML = "";
@@ -342,7 +353,8 @@ export function createTradeFlow(options) {
       const range = min === max ? `${min}` : `${min}-${max}`;
       const distinct = pendingPoolSelection.distinct ? "distinct " : "";
       const label = formatPoolLabel(recipe.poolCost.pool, displayOrder);
-      elements.poolCostMessage.textContent = `Select ${range} ${distinct}${label}.`;
+      const copperNote = allowCopper ? " (Copper can fill one slot)" : "";
+      elements.poolCostMessage.textContent = `Select ${range} ${distinct}${label}.${copperNote}`;
     }
     if (elements.poolCostConfirm) elements.poolCostConfirm.disabled = true;
     elements.poolCostOverlay.hidden = false;

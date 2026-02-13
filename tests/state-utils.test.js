@@ -5,7 +5,6 @@ import {
   baseRuleset,
   expandedRuleset,
   ancientRuleset,
-  ancientExpandedRuleset,
 } from "../src/game/ruleset.js";
 import { countCards, generateRoomCode, shuffle } from "../src/shared/utils.js";
 
@@ -52,13 +51,7 @@ describe("state", () => {
   it("creates an ancient state with ancients expansion", () => {
     const state = createInitialState({ format: "ancient" });
     expect(state.format).toBe("ancient");
-    expect(state.players[0].deck.length).toBe(175);
-  });
-
-  it("creates an ancient expanded state with ancients plus gems/platinum", () => {
-    const state = createInitialState({ format: "ancient_expanded" });
-    expect(state.format).toBe("ancient_expanded");
-    expect(state.players[0].deck.length).toBe(200);
+    expect(state.players[0].deck.length).toBe(180);
   });
 });
 
@@ -100,22 +93,12 @@ describe("utils", () => {
   it("createDeck builds ancient counts", () => {
     const deck = createDeck(ancientRuleset);
     const counts = countCards(deck, ancientRuleset.displayOrder);
-    expect(deck.length).toBe(175);
+    expect(deck.length).toBe(180);
     expect(counts.turquoise).toBe(5);
     expect(counts.lapis_lazuli).toBe(5);
     expect(counts.carnelian).toBe(5);
     expect(counts.electrum).toBe(5);
-  });
-
-  it("createDeck builds ancient expanded counts", () => {
-    const deck = createDeck(ancientExpandedRuleset);
-    const counts = countCards(deck, ancientExpandedRuleset.displayOrder);
-    expect(deck.length).toBe(200);
-    expect(counts.turquoise).toBe(5);
-    expect(counts.lapis_lazuli).toBe(5);
-    expect(counts.carnelian).toBe(5);
-    expect(counts.electrum).toBe(5);
-    expect(counts.platinum).toBe(5);
+    expect(counts.copper).toBe(5);
   });
 
   it("countCards tallies correctly", () => {

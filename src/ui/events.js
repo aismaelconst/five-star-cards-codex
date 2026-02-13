@@ -13,9 +13,6 @@ export function wireEvents(elements, handlers) {
   if (elements.formatAncient) {
     elements.formatAncient.addEventListener("click", handlers.selectAncientFormat);
   }
-  if (elements.formatAncientExpanded) {
-    elements.formatAncientExpanded.addEventListener("click", handlers.selectAncientExpandedFormat);
-  }
   if (elements.cpuEasy) {
     elements.cpuEasy.addEventListener("click", handlers.selectCpuEasy);
   }
@@ -33,12 +30,6 @@ export function wireEvents(elements, handlers) {
   }
   if (elements.hostFormatAncient) {
     elements.hostFormatAncient.addEventListener("click", handlers.selectHostFormatAncient);
-  }
-  if (elements.hostFormatAncientExpanded) {
-    elements.hostFormatAncientExpanded.addEventListener(
-      "click",
-      handlers.selectHostFormatAncientExpanded
-    );
   }
   elements.chooseCreate.addEventListener("click", handlers.chooseCreate);
   elements.chooseJoin.addEventListener("click", handlers.chooseJoin);

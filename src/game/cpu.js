@@ -31,6 +31,7 @@ const MEDIUM_PLAY_PRIORITY = [
   "silver",
   "bronze",
   "electrum",
+  "copper",
   "turquoise",
   "lapis_lazuli",
   "carnelian",
@@ -47,6 +48,7 @@ const CARD_VALUE = {
   silver: 30,
   bronze: 10,
   electrum: 18,
+  copper: 6,
   turquoise: 14,
   lapis_lazuli: 14,
   carnelian: 14,
@@ -209,7 +211,12 @@ function choosePoolTypesForRecipe(state, player, recipe) {
   });
   const min = recipe.poolCost.min ?? 0;
   const max = recipe.poolCost.max ?? min;
-  if (sorted.length < min) return null;
+  if (sorted.length < min) {
+    if (min === 2 && max === 2 && (archiveCounts.copper ?? 0) > 0 && sorted.length >= 1) {
+      return [sorted[0]];
+    }
+    return null;
+  }
   if (recipe.reward?.type === "draw" && recipe.reward.count === undefined) {
     let best = sorted.slice(0, min);
     let bestScore = -Infinity;

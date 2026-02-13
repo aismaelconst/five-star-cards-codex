@@ -33,8 +33,12 @@ function formatTradeBullet(recipe, type, ruleset) {
     parts.push(formatCost(recipe.cost, false));
   }
   if (recipe.choiceCost) {
-    const poolLabel =
-      recipe.choiceCost.pool === "non_gem_non_wood" ? "non-gem/non-wood" : "choice";
+    let poolLabel = "choice";
+    if (recipe.choiceCost.pool === "non_gem_non_wood") {
+      poolLabel = "non-gem/non-wood";
+    } else if (recipe.choiceCost.pool === "non_gold") {
+      poolLabel = "non-gold";
+    }
     parts.push(`${recipe.choiceCost.count} ${poolLabel}`);
   }
   if (recipe.poolCost) {
@@ -118,6 +122,10 @@ export function getCardTooltip(type, ruleset) {
 
   if (type === "wood") {
     lines.push("• Can replace one required card in trades costing 3+ (max 1 per trade).");
+  }
+  if (type === "copper") {
+    lines.push("• Can replace one required card in 2-card trades.");
+    lines.push("• When traded, tutor a copper to hand (shuffle).");
   }
   if (type === "gold") {
     lines.push("• Counts toward win condition (5 gold in archive).");

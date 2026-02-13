@@ -194,6 +194,11 @@ h3 {
   color: #6b5530;
 }
 
+.chip.copper {
+  background: rgba(181, 108, 72, 0.25);
+  color: #6a3a22;
+}
+
 .play {
   display: flex;
   flex-direction: column;
@@ -432,6 +437,11 @@ h3 {
 .card.electrum {
   border-color: rgba(210, 186, 102, 0.6);
   background-image: url(/assets/cards/electrum-star.svg);
+}
+
+.card.copper {
+  border-color: rgba(181, 108, 72, 0.6);
+  background-image: url(/assets/cards/copper-star.svg);
 }
 
 .actions-panel {

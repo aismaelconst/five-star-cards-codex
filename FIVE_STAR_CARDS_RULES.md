@@ -8,12 +8,10 @@ Choose one format before starting the game:
 
 - **Core (155 cards)**
   - 125 bronze, 25 silver, 5 gold
-- **Gemstone + Platinum (180 cards)**
+- **Gilded Gems (180 cards)**
   - Core + 5 each: wood, ruby, emerald, sapphire, platinum
-- **Ancient (175 cards)**
-  - Core + 5 each: turquoise, lapis lazuli, carnelian, electrum
-- **Ancient + Gemstone + Platinum (200 cards)**
-  - Gemstone + Platinum + Ancients
+- **Ancient (180 cards)**
+  - Core + 5 each: turquoise, lapis lazuli, carnelian, electrum, copper
 
 All non-core cards have **draw 0** (they do not draw cards at end of turn).
 
@@ -49,7 +47,7 @@ You may trade **before and/or after** playing cards. You may **not** trade after
 - **5 bronze → tutor 1 silver**
 - **5 silver → tutor 1 gold**
 
-### Gemstone + Platinum Trades (Gemstone + Platinum, Ancient + Gemstone + Platinum)
+### Gilded Gems Trades (Gilded Gems)
 
 - **Ruby + Emerald + Sapphire → tutor any card**
   - Choose any card type from your deck and put it into your hand.
@@ -57,17 +55,20 @@ You may trade **before and/or after** playing cards. You may **not** trade after
   - Reveal cards from the top of your deck until you hit a **non‑bronze/silver** card.
   - Discard the revealed bronze/silver cards, add the first non‑bronze/silver card to your hand.
 
-**Wood substitution (Gemstone + Platinum formats only)**
+**Wood substitution (Gilded Gems only)**
 - Wood can replace **one required card** in a trade whose base cost is **3+ cards**.
 - Max **one wood per trade**.
 - Wood **cannot** replace platinum in the platinum trade.
 
-### Ancients Trades (Ancient, Ancient + Gemstone + Platinum)
+### Ancients Trades (Ancient)
 
 - **Any two distinct ancients (turquoise, lapis lazuli, carnelian) → archive 1 non‑gold from deck**
   - Choose a non‑gold card from your deck and place it directly into your Archive, then shuffle.
-- **Electrum + Bronze + Silver → archive 1–5 non-gold cards from hand**
-  - Choose 1–5 non-gold cards from your hand and move them directly to Archive.
+- **Electrum + any non‑gold → archive 1–2 non‑gold cards from hand**
+  - Choose 1–2 non‑gold cards from your hand and move them directly to Archive.
+- **Copper**
+  - Can replace one required card in 2-card trades.
+  - When traded, tutor a copper to hand (shuffle).
 
 ## 2. Play Cards (Optional)
 
@@ -103,7 +104,7 @@ Core Trades:
 - 5 bronze → 1 silver (tutor, shuffle)
 - 5 silver → 1 gold (tutor, shuffle)
 
-Gemstone + Platinum Trades:
+Gilded Gems Trades:
 
 - Ruby + Emerald + Sapphire → tutor any card (shuffle)
 - Platinum + Bronze + Silver → dig for non‑bronze/silver
@@ -111,4 +112,5 @@ Gemstone + Platinum Trades:
 Ancients Trades:
 
 - 2 distinct ancients → archive 1 non‑gold from deck (shuffle)
-- Electrum + Bronze + Silver → archive 1–5 non-gold cards from hand
+- Electrum + any non‑gold → archive 1–2 non‑gold cards from hand
+- Copper: can replace one required card in 2-card trades; when traded, tutor a copper (shuffle)

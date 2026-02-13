@@ -4,7 +4,6 @@ import {
   baseRuleset,
   expandedRuleset,
   ancientRuleset,
-  ancientExpandedRuleset,
 } from "./ruleset.js";
 
 export function createPlayerState(ruleset, playerId, name) {
@@ -27,9 +26,7 @@ export function createInitialState(options = {}) {
       ? expandedRuleset
       : format === "ancient"
         ? ancientRuleset
-        : format === "ancient_expanded"
-          ? ancientExpandedRuleset
-          : baseRuleset);
+        : baseRuleset);
   const gameId = options.gameId ?? `game-${Date.now()}`;
   const playerIds = options.playerIds ?? ["player-1", "player-2"];
   const playerNames = options.playerNames ?? ["Player 1", "Player 2"];

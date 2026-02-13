@@ -56,6 +56,9 @@ function getChoicePoolTypes(ruleset, pool, exclude = []) {
   if (pool === "non_gem_non_wood") {
     types = displayOrder.filter((type) => type !== "wood" && !GEM_TYPES.has(type));
   }
+  if (pool === "non_gold") {
+    types = displayOrder.filter((type) => type !== "gold");
+  }
   if (exclude.length > 0) {
     types = types.filter((type) => !exclude.includes(type));
   }
@@ -101,14 +104,58 @@ function getPoolCostCounts(state, recipe, options) {
   return { valid: true, counts: buildPoolCostCounts(poolTypes), poolTypes };
 }
 
+function canUseCopperForPool(state, recipe, options, counts) {
+  if (!recipe?.poolCost) return false;
+  const poolTypes = Array.isArray(options.poolTypes) ? options.poolTypes : null;
+  if (!poolTypes || poolTypes.length !== 1) return false;
+  const min = recipe.poolCost.min ?? 0;
+  const max = recipe.poolCost.max ?? min;
+  if (!recipe.poolCost.distinct || min !== 2 || max !== 2) return false;
+  if ((counts.copper ?? 0) < 1) return false;
+  if ((counts[poolTypes[0]] ?? 0) < 1) return false;
+  const allowed = resolvePoolTypes(state.ruleset, recipe.poolCost.pool);
+  if (poolTypes.some((type) => !allowed.includes(type))) return false;
+  return true;
+}
+
+function applyCopperSubstitution(recipeId, counts, cost) {
+  if ((counts.copper ?? 0) < 1) return null;
+  if (cost.copper) return null;
+  if (sumCost(cost) !== 2) return null;
+  let missingType = null;
+  let deficitTotal = 0;
+  Object.entries(cost).forEach(([type, amount]) => {
+    const have = counts[type] ?? 0;
+    if (amount > have) {
+      deficitTotal += amount - have;
+      if (!missingType) missingType = type;
+    }
+  });
+  if (deficitTotal !== 1 || !missingType) return null;
+  if (recipeId === "trade_electrum_draw" && missingType === "electrum") return null;
+  const adjusted = { ...cost };
+  adjusted[missingType] = (adjusted[missingType] ?? 0) - 1;
+  if (adjusted[missingType] <= 0) {
+    delete adjusted[missingType];
+  }
+  adjusted.copper = 1;
+  if (!canPayCost(counts, adjusted)) return null;
+  return adjusted;
+}
+
 function canSatisfyPoolCost(counts, poolCost, ruleset) {
   if (!poolCost) return true;
   const allowed = resolvePoolTypes(ruleset, poolCost.pool);
   if (allowed.length === 0) return false;
   const min = poolCost.min ?? poolCost.max ?? 0;
+  const max = poolCost.max ?? min;
   if (poolCost.distinct) {
     const available = allowed.filter((type) => (counts[type] ?? 0) > 0).length;
-    return available >= min;
+    if (available >= min) return true;
+    if (min === 2 && max === 2 && (counts.copper ?? 0) > 0 && available >= 1) {
+      return true;
+    }
+    return false;
   }
   const total = allowed.reduce((sum, type) => sum + (counts[type] ?? 0), 0);
   return total >= min;
@@ -158,7 +205,16 @@ function getTradeCost(state, player, recipeId, options = {}) {
       [options.choiceType]: (cost[options.choiceType] ?? 0) + recipe.choiceCost.count,
     };
   }
-  const poolCost = getPoolCostCounts(state, recipe, options);
+  let poolCost = getPoolCostCounts(state, recipe, options);
+  let usedCopperForPool = false;
+  if (!poolCost.valid && canUseCopperForPool(state, recipe, options, counts)) {
+    poolCost = {
+      valid: true,
+      counts: buildPoolCostCounts(options.poolTypes ?? []),
+      poolTypes: options.poolTypes ?? [],
+    };
+    usedCopperForPool = true;
+  }
   if (!poolCost.valid) return null;
   Object.entries(poolCost.counts).forEach(([type, amount]) => {
     cost = {
@@ -166,7 +222,14 @@ function getTradeCost(state, player, recipeId, options = {}) {
       [type]: (cost[type] ?? 0) + amount,
     };
   });
-  if (!canPayCost(counts, cost)) return null;
+  if (usedCopperForPool) {
+    cost.copper = (cost.copper ?? 0) + 1;
+  }
+  if (!canPayCost(counts, cost)) {
+    const substituted = applyCopperSubstitution(recipeId, counts, cost);
+    if (!substituted) return null;
+    cost = substituted;
+  }
   return cost;
 }
 
@@ -454,6 +517,16 @@ export function performTrade(state, player, recipeId, options = {}) {
       }
     });
     detail.handArchive = { ...handArchive };
+  }
+
+  if ((cost.copper ?? 0) > 0) {
+    const rewardIndex = player.deck.findIndex((card) => getCardType(card) === "copper");
+    if (rewardIndex !== -1) {
+      const [reward] = player.deck.splice(rewardIndex, 1);
+      player.hand.push(reward);
+      player.deck = shuffle(player.deck);
+      detail.copperTutored = true;
+    }
   }
   state.tradesThisTurn += 1;
   return { success: true, detail };

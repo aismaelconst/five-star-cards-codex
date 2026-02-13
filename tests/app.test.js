@@ -51,7 +51,6 @@ function setupDom() {
     <button id="formatCore"></button>
     <button id="formatExpanded"></button>
     <button id="formatAncient"></button>
-    <button id="formatAncientExpanded"></button>
     <div id="cpuOverlay"></div>
     <button id="cpuEasy"></button>
     <button id="cpuMedium"></button>
@@ -62,7 +61,6 @@ function setupDom() {
     <button id="hostFormatCore"></button>
     <button id="hostFormatExpanded"></button>
     <button id="hostFormatAncient"></button>
-    <button id="hostFormatAncientExpanded"></button>
     <input id="playerNameInput" />
     <input id="roomCodeInput" />
     <button id="createRoom"></button>

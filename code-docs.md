@@ -31,7 +31,7 @@ Player state (created in `src/game/state.js`):
 
 Game state (created in `src/game/state.js`):
 - `players` array
-- `ruleset`, `format` (`core`, `expanded`, `ancient`, `ancient_expanded`)
+- `ruleset`, `format` (`core`, `expanded`, `ancient`)
 - `mode` (`offline`, `cpu`, `online`)
 - `currentPlayer`, `tradesThisTurn`, `turnCount`
 - `phase` (`main`, `confirm`, `between`)
@@ -120,7 +120,7 @@ Trade selection overlays and pool-cost handling are implemented in `src/ui/handl
 Online lobby/WebSocket handling lives in `src/ui/handlers/online-flow.js`, CPU turn summaries in `src/ui/handlers/cpu-flow.js`, and format button labeling/toggling in `src/ui/handlers/format-utils.js`.
 
 Key responsibilities:
-- Mode selection (offline, CPU, online) and format selection (core/gemstone+platinum/ancient/ancient+gemstone+platinum).
+- Mode selection (offline, CPU, online) and format selection (core/gilded gems/ancient).
 - Calling `startGame()` and initializing CPU or online state.
 - Managing overlays (confirm archive, turn overlay, wood substitution, gem tutor, choice cost, pool cost, archive tutor, CPU summary).
 - Converting UI actions into `applyAction()` calls or online `action` messages.
@@ -130,9 +130,13 @@ Trade overlays:
 - If the trade requires an additional cost, the choice cost overlay is shown.
 - If the trade requires a pool selection (`poolCost`), the pool cost overlay is shown.
 - If the trade reward is `any`, the gem tutor overlay is shown to pick a target type.
-- If the trade reward is `archive_hand`, the hand archive overlay is shown to pick card counts from hand (Electrum allows archiving 1–5 non-gold cards).
+- If the trade reward is `archive_hand`, the hand archive overlay is shown to pick card counts from hand (Electrum allows archiving 1–2 non-gold cards).
 - If the trade reward is `archive`, the archive tutor overlay is shown to pick a non-gold target type.
 - After the overlays resolve, the trade is finalized and applied.
+
+Copper rules:
+- Copper can substitute for one required card in 2-card trades.
+- When copper is spent in a trade, the player tutors one copper to hand (shuffle).
 
 CPU flow:
 - `maybeRunCpuTurn()` runs after the human completes their archive in CPU mode.

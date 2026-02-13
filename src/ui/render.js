@@ -69,8 +69,8 @@ function updateHowToPlay(state, elements) {
     elements.rulesList.innerHTML = baseRules.map((rule) => `<li>${rule}</li>`).join("");
   }
 
-  const isExpanded = state.format === "expanded" || state.format === "ancient_expanded";
-  const isAncient = state.format === "ancient" || state.format === "ancient_expanded";
+  const isExpanded = state.format === "expanded";
+  const isAncient = state.format === "ancient";
   const expansionRules = [];
   if (isExpanded) {
     expansionRules.push("Gems: Ruby + Emerald + Sapphire → tutor any card (shuffle).");
@@ -86,7 +86,10 @@ function updateHowToPlay(state, elements) {
       "Ancients: 2 distinct ancients → archive 1 non-gold from deck (shuffle)."
     );
     expansionRules.push(
-      "Electrum: Electrum + Bronze + Silver → archive 1–5 non-gold cards from hand."
+      "Electrum: Electrum + any non-gold → archive 1–2 non-gold cards from hand."
+    );
+    expansionRules.push(
+      "Copper: can substitute for one card in 2-card trades; when spent, tutor a copper to hand (shuffle)."
     );
   }
 
@@ -111,7 +114,7 @@ function updateHowToPlay(state, elements) {
       legendTypes.push("wood", "ruby", "emerald", "sapphire", "platinum");
     }
     if (isAncient) {
-      legendTypes.push("turquoise", "lapis_lazuli", "carnelian", "electrum");
+      legendTypes.push("turquoise", "lapis_lazuli", "carnelian", "electrum", "copper");
     }
     elements.cardLegend.innerHTML = "";
     legendTypes.forEach((type) => {
@@ -214,8 +217,8 @@ export function renderApp(state, elements, handlers) {
     !inMainPhase || !turnGate || !canInitiateTrade(state, player, "trade_bronze");
   elements.tradeSilver.disabled =
     !inMainPhase || !turnGate || !canInitiateTrade(state, player, "trade_silver");
-  const isExpanded = state.format === "expanded" || state.format === "ancient_expanded";
-  const isAncient = state.format === "ancient" || state.format === "ancient_expanded";
+  const isExpanded = state.format === "expanded";
+  const isAncient = state.format === "ancient";
   if (elements.tradeGems) {
     elements.tradeGems.hidden = !isExpanded;
     elements.tradeGems.disabled =

@@ -178,7 +178,6 @@ wss.on("connection", (ws) => {
       const format =
         message.format === "expanded" ||
         message.format === "ancient" ||
-        message.format === "ancient_expanded" ||
         message.format === "core"
           ? message.format
           : "core";

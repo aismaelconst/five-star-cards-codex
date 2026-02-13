@@ -3,7 +3,6 @@ import {
   baseRuleset,
   expandedRuleset,
   ancientRuleset,
-  ancientExpandedRuleset,
 } from "../src/game/ruleset.js";
 import { createCard } from "../src/game/cards.js";
 import {
@@ -348,22 +347,22 @@ describe("rules", () => {
     const player = current(state);
     player.archive = [
       createCard("electrum", ancientRuleset),
-      createCard("bronze", ancientRuleset),
-      createCard("silver", ancientRuleset),
+      createCard("copper", ancientRuleset),
     ];
     player.hand = [
       createCard("turquoise", ancientRuleset),
       createCard("bronze", ancientRuleset),
-      createCard("silver", ancientRuleset),
+      createCard("copper", ancientRuleset),
     ];
 
     const result = performTrade(state, player, "trade_electrum_draw", {
-      handArchive: { turquoise: 1, bronze: 1, silver: 1 },
+      choiceType: "copper",
+      handArchive: { turquoise: 1, bronze: 1 },
     });
     expect(result.success).toBe(true);
-    expect(player.hand.length).toBe(0);
-    expect(player.archive.length).toBe(3);
-    expect(result.detail.handArchive).toEqual({ turquoise: 1, bronze: 1, silver: 1 });
+    expect(player.hand.length).toBe(1);
+    expect(player.archive.length).toBe(2);
+    expect(result.detail.handArchive).toEqual({ turquoise: 1, bronze: 1 });
   });
 
   it("rejects electrum trade with invalid hand archive selection", () => {
@@ -371,14 +370,31 @@ describe("rules", () => {
     const player = current(state);
     player.archive = [
       createCard("electrum", ancientRuleset),
-      createCard("bronze", ancientRuleset),
-      createCard("silver", ancientRuleset),
+      createCard("copper", ancientRuleset),
     ];
     player.hand = [createCard("bronze", ancientRuleset)];
 
     expect(
       canTradeWithOptions(state, player, "trade_electrum_draw", {
+        choiceType: "copper",
         handArchive: { bronze: 2 },
+      })
+    ).toBe(false);
+  });
+
+  it("does not allow copper to replace electrum cost", () => {
+    const state = makeAncientState();
+    const player = current(state);
+    player.archive = [
+      createCard("copper", ancientRuleset),
+      createCard("bronze", ancientRuleset),
+    ];
+    player.hand = [createCard("bronze", ancientRuleset)];
+
+    expect(
+      canTradeWithOptions(state, player, "trade_electrum_draw", {
+        choiceType: "bronze",
+        handArchive: { bronze: 1 },
       })
     ).toBe(false);
   });
@@ -388,38 +404,39 @@ describe("rules", () => {
     const player = current(state);
     player.archive = [
       createCard("electrum", ancientRuleset),
-      createCard("bronze", ancientRuleset),
-      createCard("silver", ancientRuleset),
+      createCard("copper", ancientRuleset),
     ];
     player.hand = [createCard("gold", ancientRuleset)];
 
     expect(
       canTradeWithOptions(state, player, "trade_electrum_draw", {
+        choiceType: "copper",
         handArchive: { gold: 1 },
       })
     ).toBe(false);
   });
 
-  it("does not allow wood to replace electrum in electrum trade", () => {
+  it("allows copper to substitute in the ancients trade", () => {
     const state = makeAncientState();
-    state.ruleset = ancientExpandedRuleset;
-    state.format = "ancient_expanded";
     const player = current(state);
     player.archive = [
-      createCard("electrum", ancientExpandedRuleset),
-      createCard("bronze", ancientExpandedRuleset),
-      createCard("silver", ancientExpandedRuleset),
-      createCard("wood", ancientExpandedRuleset),
+      createCard("turquoise", ancientRuleset),
+      createCard("copper", ancientRuleset),
     ];
-    player.hand = [createCard("bronze", ancientExpandedRuleset)];
+    player.deck = [
+      createCard("copper", ancientRuleset),
+      createCard("silver", ancientRuleset),
+    ];
 
-    expect(
-      canTradeWithOptions(state, player, "trade_electrum_draw", {
-        useWood: true,
-        substituteType: "electrum",
-        handArchive: { bronze: 1 },
-      })
-    ).toBe(false);
+    const result = performTrade(state, player, "trade_ancients_archive", {
+      poolTypes: ["turquoise"],
+      rewardType: "silver",
+    });
+
+    expect(result.success).toBe(true);
+    expect(player.discard.length).toBe(2);
+    expect(player.archive.some((card) => card.type === "silver")).toBe(true);
+    expect(player.hand.some((card) => card.type === "copper")).toBe(true);
   });
 
   it("prepareArchive creates pending archive and draw count", () => {

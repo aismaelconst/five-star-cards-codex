@@ -169,6 +169,7 @@ describe("ui/render", () => {
     expect(elements.expansionRules.textContent).toContain("Ancients");
     expect(elements.expansionRules.textContent).toContain("Electrum");
     expect(elements.cardLegend.querySelector(".chip.turquoise")).not.toBeNull();
+    expect(elements.cardLegend.querySelector(".chip.copper")).not.toBeNull();
     expect(elements.cardLegend.querySelector(".chip.ruby")).toBeNull();
   });
 

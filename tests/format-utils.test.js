@@ -3,9 +3,8 @@ import { formatLabel, updateFormatButtons } from "../src/ui/handlers/format-util
 
 describe("format-utils", () => {
   it("formats labels for formats", () => {
-    expect(formatLabel("expanded")).toBe("GEMSTONE + PLATINUM");
+    expect(formatLabel("expanded")).toBe("GILDED GEMS");
     expect(formatLabel("ancient")).toBe("ANCIENT");
-    expect(formatLabel("ancient_expanded")).toBe("ANCIENT + GEMSTONE + PLATINUM");
     expect(formatLabel("core")).toBe("CORE");
   });
 
@@ -15,11 +14,9 @@ describe("format-utils", () => {
       formatCore: makeButton(),
       formatExpanded: makeButton(),
       formatAncient: makeButton(),
-      formatAncientExpanded: makeButton(),
       hostFormatCore: makeButton(),
       hostFormatExpanded: makeButton(),
       hostFormatAncient: makeButton(),
-      hostFormatAncientExpanded: makeButton(),
     };
     const state = { format: "ancient" };
 
