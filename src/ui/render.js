@@ -17,8 +17,13 @@ function renderCards(container, cards, clickHandler, ruleset) {
     const el = document.createElement("div");
     el.className = `card ${type}`;
     el.dataset.cardType = type;
+    el.dataset.cardName = titleCase(type);
     applyCardTooltip(el, type, ruleset);
     el.innerHTML = ``;
+    const label = document.createElement("span");
+    label.className = "card-label";
+    label.textContent = titleCase(type);
+    el.appendChild(label);
     if (clickHandler) {
       el.addEventListener("click", () => clickHandler(index));
     }
@@ -40,8 +45,13 @@ function renderHand(state, player, elements, handlers) {
     const el = document.createElement("div");
     el.className = `card ${type} pile`;
     el.dataset.cardType = type;
+    el.dataset.cardName = titleCase(type);
     applyCardTooltip(el, type, state.ruleset);
     el.innerHTML = `<div class="pile-count">x ${counts[type]}</div>`;
+    const label = document.createElement("span");
+    label.className = "card-label";
+    label.textContent = titleCase(type);
+    el.appendChild(label);
     if (handlers.playCardByType) {
       el.addEventListener("click", () => handlers.playCardByType(type));
     }

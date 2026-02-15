@@ -1,4 +1,10 @@
 export function wireEvents(elements, handlers) {
+  if (elements.themeClassic) {
+    elements.themeClassic.addEventListener("click", handlers.selectClassicTheme);
+  }
+  if (elements.themePixel) {
+    elements.themePixel.addEventListener("click", handlers.selectPixelTheme);
+  }
   elements.offlineMode.addEventListener("click", handlers.selectOfflineMode);
   if (elements.cpuMode) {
     elements.cpuMode.addEventListener("click", handlers.selectCpuMode);

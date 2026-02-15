@@ -16,6 +16,8 @@ function setupDom() {
     <div id="tradeInfo"></div>
     <div id="deckInfo"></div>
     <div id="discardInfo"></div>
+    <button id="themeClassic"></button>
+    <button id="themePixel"></button>
     <button id="tradeBronze"></button>
     <button id="tradeSilver"></button>
     <button id="tradeGems"></button>

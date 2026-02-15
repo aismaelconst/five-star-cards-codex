@@ -13,6 +13,8 @@ describe("ui/events", () => {
       offlineMode: makeButton("offlineMode"),
       cpuMode: makeButton("cpuMode"),
       onlineMode: makeButton("onlineMode"),
+      themeClassic: makeButton("themeClassic"),
+      themePixel: makeButton("themePixel"),
       formatCore: makeButton("formatCore"),
       formatExpanded: makeButton("formatExpanded"),
       formatAncient: makeButton("formatAncient"),
@@ -69,6 +71,8 @@ describe("ui/events", () => {
       selectOfflineMode: vi.fn(),
       selectCpuMode: vi.fn(),
       selectOnlineMode: vi.fn(),
+      selectClassicTheme: vi.fn(),
+      selectPixelTheme: vi.fn(),
       selectCoreFormat: vi.fn(),
       selectExpandedFormat: vi.fn(),
       selectAncientFormat: vi.fn(),
@@ -116,6 +120,8 @@ describe("ui/events", () => {
     elements.offlineMode.click();
     elements.cpuMode.click();
     elements.onlineMode.click();
+    elements.themeClassic.click();
+    elements.themePixel.click();
     elements.formatCore.click();
     elements.formatExpanded.click();
     elements.formatAncient.click();
@@ -170,6 +176,8 @@ describe("ui/events", () => {
     expect(handlers.selectOfflineMode).toHaveBeenCalled();
     expect(handlers.selectCpuMode).toHaveBeenCalled();
     expect(handlers.selectOnlineMode).toHaveBeenCalled();
+    expect(handlers.selectClassicTheme).toHaveBeenCalled();
+    expect(handlers.selectPixelTheme).toHaveBeenCalled();
     expect(handlers.selectCoreFormat).toHaveBeenCalled();
     expect(handlers.selectExpandedFormat).toHaveBeenCalled();
     expect(handlers.selectAncientFormat).toHaveBeenCalled();

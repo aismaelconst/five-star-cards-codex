@@ -21,6 +21,8 @@ const elements = {
   tradeInfo: document.getElementById("tradeInfo"),
   deckInfo: document.getElementById("deckInfo"),
   discardInfo: document.getElementById("discardInfo"),
+  themeClassic: document.getElementById("themeClassic"),
+  themePixel: document.getElementById("themePixel"),
   tradeBronze: document.getElementById("tradeBronze"),
   tradeSilver: document.getElementById("tradeSilver"),
   tradeGems: document.getElementById("tradeGems"),

@@ -121,7 +121,8 @@ Trade selection overlays and pool-cost handling are implemented in `src/ui/handl
 Online lobby/WebSocket handling lives in `src/ui/handlers/online-flow.js`, CPU turn summaries in `src/ui/handlers/cpu-flow.js`, and format button labeling/toggling in `src/ui/handlers/format-utils.js`.
 
 Key responsibilities:
-- Mode selection (offline, CPU, online) and format selection (core/gilded gems/ancient).
+- Mode selection (offline, CPU, online) and format selection (core/gilded gems/ancient/minted).
+- Theme selection (classic vs. pixel) with persistence in local storage.
 - Calling `startGame()` and initializing CPU or online state.
 - Managing overlays (confirm archive, turn overlay, wood substitution, gem tutor, choice cost, pool cost, archive tutor, CPU summary).
 - Converting UI actions into `applyAction()` calls or online `action` messages.

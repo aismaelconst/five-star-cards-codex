@@ -12,6 +12,8 @@ import { createCpuFlow } from "./handlers/cpu-flow.js";
 import { createOnlineFlow } from "./handlers/online-flow.js";
 import { formatLabel, updateFormatButtons } from "./handlers/format-utils.js";
 
+const THEME_STORAGE_KEY = "fsc_theme";
+
 export function createHandlers(state, elements, onWinner, options = {}) {
   const socketUrl = options.socketUrl ?? null;
   const clientFactory = options.clientFactory ?? createOnlineClient;
@@ -19,6 +21,46 @@ export function createHandlers(state, elements, onWinner, options = {}) {
   let handlers = null;
   let onlineFlow = null;
   let cpuFlow = null;
+  let currentTheme = "classic";
+
+  function readStoredTheme() {
+    try {
+      return localStorage.getItem(THEME_STORAGE_KEY);
+    } catch {
+      return null;
+    }
+  }
+
+  function storeTheme(theme) {
+    try {
+      localStorage.setItem(THEME_STORAGE_KEY, theme);
+    } catch {
+      // ignore storage errors (private mode, blocked, etc.)
+    }
+  }
+
+  function updateThemeButtons(theme) {
+    if (!elements.themeClassic || !elements.themePixel) return;
+    elements.themeClassic.classList.toggle("active", theme === "classic");
+    elements.themePixel.classList.toggle("active", theme === "pixel");
+  }
+
+  function applyTheme(theme, { persist = true } = {}) {
+    const nextTheme = theme === "pixel" ? "pixel" : "classic";
+    currentTheme = nextTheme;
+    if (document?.body) {
+      document.body.classList.toggle("theme-pixel", nextTheme === "pixel");
+    }
+    updateThemeButtons(nextTheme);
+    if (persist) {
+      storeTheme(nextTheme);
+    }
+  }
+
+  function initTheme() {
+    const stored = readStoredTheme();
+    applyTheme(stored === "pixel" ? "pixel" : "classic", { persist: false });
+  }
 
   function hideActionToast() {
     if (!elements.actionToast) return;
@@ -41,6 +83,14 @@ export function createHandlers(state, elements, onWinner, options = {}) {
     toastTimer = setTimeout(() => {
       hideActionToast();
     }, 2000);
+  }
+
+  function selectClassicTheme() {
+    applyTheme("classic");
+  }
+
+  function selectPixelTheme() {
+    applyTheme("pixel");
   }
   function showModePicker() {
     elements.modeOverlay.hidden = false;
@@ -428,6 +478,8 @@ export function createHandlers(state, elements, onWinner, options = {}) {
 
   handlers = {
     showModePicker,
+    selectClassicTheme,
+    selectPixelTheme,
     selectOfflineMode,
     selectCpuMode,
     selectOnlineMode: onlineFlow.selectOnlineMode,
@@ -476,5 +528,6 @@ export function createHandlers(state, elements, onWinner, options = {}) {
     closeCpuSummary: cpuFlow.closeCpuSummary,
   };
 
+  initTheme();
   return handlers;
 }

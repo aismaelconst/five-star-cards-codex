@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Fraunces:wght@500;700&family=Space+Grotesk:wght@400;500;600&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Fraunces:wght@500;700&family=Space+Grotesk:wght@400;500;600&family=Press+Start+2P&display=swap");
 
 :root {
   color-scheme: only light;
@@ -41,6 +41,17 @@ body {
   justify-content: space-between;
   align-items: center;
   gap: 16px;
+  flex-wrap: wrap;
+}
+
+.theme-toggle {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.theme-toggle .toggle-group {
+  gap: 8px;
 }
 
 .play-header {
@@ -400,6 +411,11 @@ h3 {
   text-transform: capitalize;
 }
 
+.card-label {
+  display: none;
+  pointer-events: none;
+}
+
 .card .stars {
   display: none;
 }
@@ -492,6 +508,101 @@ h3 {
 .card.hallmark {
   border-color: rgba(200, 120, 108, 0.6);
   background-image: url(/assets/cards/hallmark-star.svg);
+}
+
+body.theme-pixel .card.bronze {
+  --pixel-card-bg: #c7855a;
+  --pixel-card-border: #8b5633;
+}
+
+body.theme-pixel .card.silver {
+  --pixel-card-bg: #b2b8bf;
+  --pixel-card-border: #7a8088;
+}
+
+body.theme-pixel .card.gold {
+  --pixel-card-bg: #e2b33f;
+  --pixel-card-border: #8f6b12;
+}
+
+body.theme-pixel .card.wood {
+  --pixel-card-bg: #9b6c3f;
+  --pixel-card-border: #6a4527;
+}
+
+body.theme-pixel .card.ruby {
+  --pixel-card-bg: #a43b4c;
+  --pixel-card-border: #6d1f2a;
+}
+
+body.theme-pixel .card.emerald {
+  --pixel-card-bg: #2f7f58;
+  --pixel-card-border: #1b5137;
+}
+
+body.theme-pixel .card.sapphire {
+  --pixel-card-bg: #2f5fa6;
+  --pixel-card-border: #1a3762;
+}
+
+body.theme-pixel .card.platinum {
+  --pixel-card-bg: #b6bcc5;
+  --pixel-card-border: #7b8088;
+}
+
+body.theme-pixel .card.turquoise {
+  --pixel-card-bg: #3bb0aa;
+  --pixel-card-border: #1f6f6b;
+}
+
+body.theme-pixel .card.lapis_lazuli {
+  --pixel-card-bg: #2f62b0;
+  --pixel-card-border: #1a3a6d;
+}
+
+body.theme-pixel .card.carnelian {
+  --pixel-card-bg: #c55c3b;
+  --pixel-card-border: #7a2f1c;
+}
+
+body.theme-pixel .card.electrum {
+  --pixel-card-bg: #d7bf6b;
+  --pixel-card-border: #8f7a3f;
+}
+
+body.theme-pixel .card.copper {
+  --pixel-card-bg: #c97953;
+  --pixel-card-border: #8a4f33;
+}
+
+body.theme-pixel .card.ingot {
+  --pixel-card-bg: #d08a5d;
+  --pixel-card-border: #8a4f2c;
+}
+
+body.theme-pixel .card.sterling {
+  --pixel-card-bg: #bcc6d4;
+  --pixel-card-border: #778191;
+}
+
+body.theme-pixel .card.ledger {
+  --pixel-card-bg: #d7c9a1;
+  --pixel-card-border: #8f825c;
+}
+
+body.theme-pixel .card.mint {
+  --pixel-card-bg: #72c7a1;
+  --pixel-card-border: #3a7b61;
+}
+
+body.theme-pixel .card.hallmark {
+  --pixel-card-bg: #d08a7a;
+  --pixel-card-border: #864c42;
+}
+
+body.theme-pixel .card.unknown {
+  --pixel-card-bg: #d4c8b4;
+  --pixel-card-border: #8b7d68;
 }
 
 .actions-panel {
@@ -614,6 +725,152 @@ button:not(:disabled):hover {
   display: flex;
   flex-direction: column;
   gap: 12px;
+}
+
+body.theme-pixel {
+  font-family: "Press Start 2P", monospace;
+  font-size: 12px;
+  line-height: 1.4;
+  background: repeating-linear-gradient(
+    135deg,
+    #f6e8c8,
+    #f6e8c8 12px,
+    #f2ddb4 12px,
+    #f2ddb4 24px
+  );
+}
+
+body.theme-pixel h1,
+body.theme-pixel h2,
+body.theme-pixel h3 {
+  font-family: "Press Start 2P", monospace;
+  letter-spacing: 0.02em;
+}
+
+body.theme-pixel button,
+body.theme-pixel input,
+body.theme-pixel select,
+body.theme-pixel textarea {
+  font-family: inherit;
+}
+
+body.theme-pixel .panel,
+body.theme-pixel .turn,
+body.theme-pixel .trade-box,
+body.theme-pixel .overlay-card,
+body.theme-pixel .results,
+body.theme-pixel .zone {
+  border-radius: 0;
+  border: 3px solid rgba(20, 15, 10, 0.65);
+  box-shadow: 6px 6px 0 rgba(20, 15, 10, 0.25);
+}
+
+body.theme-pixel .chip {
+  border-radius: 0;
+  border: 2px solid rgba(20, 15, 10, 0.35);
+  font-size: 0.7rem;
+}
+
+body.theme-pixel .pile-count,
+body.theme-pixel .winner-stats span,
+body.theme-pixel .summary-chips span {
+  border-radius: 0;
+  border: 2px solid rgba(20, 15, 10, 0.35);
+}
+
+body.theme-pixel .player-summary,
+body.theme-pixel .action-toast {
+  border-radius: 0;
+  border: 3px solid rgba(20, 15, 10, 0.65);
+  box-shadow: 4px 4px 0 rgba(20, 15, 10, 0.25);
+}
+
+body.theme-pixel .field input {
+  border-radius: 0;
+  border: 3px solid rgba(20, 15, 10, 0.65);
+  background: #fff3dd;
+  font-family: inherit;
+}
+
+body.theme-pixel button {
+  border-radius: 0;
+  border: 3px solid rgba(20, 15, 10, 0.7);
+  box-shadow: 4px 4px 0 rgba(20, 15, 10, 0.25);
+  font-size: 0.75rem;
+}
+
+body.theme-pixel button:not(:disabled):hover {
+  transform: translateY(-1px);
+  box-shadow: 5px 5px 0 rgba(20, 15, 10, 0.25);
+}
+
+body.theme-pixel .card {
+  border-radius: 0;
+  border: 3px solid var(--pixel-card-border, rgba(20, 15, 10, 0.65));
+  box-shadow: 4px 4px 0 rgba(20, 15, 10, 0.25);
+  background-color: var(--pixel-card-bg, #f5e1bd);
+  background-image: none;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  image-rendering: pixelated;
+  padding: 8px;
+}
+
+body.theme-pixel .card.pile::after {
+  border-radius: 0;
+  border: 2px solid rgba(20, 15, 10, 0.3);
+  transform: translate(4px, 4px);
+}
+
+body.theme-pixel .card-label {
+  display: block;
+  position: absolute;
+  bottom: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.55rem;
+  line-height: 1.2;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  background: rgba(60, 42, 25, 0.8);
+  color: #f7e6c4;
+  padding: 4px 6px;
+  border: 2px solid rgba(20, 15, 10, 0.55);
+  max-width: 90%;
+  text-align: center;
+  pointer-events: none;
+}
+
+body.theme-pixel .card.pile .card-label {
+  bottom: 8px;
+}
+
+body.theme-pixel .card[data-tooltip]:hover::after {
+  border-radius: 0;
+  border: 2px solid rgba(20, 15, 10, 0.65);
+  font-size: 0.65rem;
+}
+
+body.theme-pixel .card[data-tooltip]:hover::before {
+  border-radius: 0;
+}
+
+body.theme-pixel .primary {
+  background: #d09b1e;
+  color: #2a1604;
+}
+
+body.theme-pixel .ghost {
+  border-style: solid;
+  color: #3a2b1c;
+}
+
+body.theme-pixel .toggle-group .active,
+body.theme-pixel .option-button.active {
+  border: 3px solid rgba(20, 15, 10, 0.7);
+  background: #f9e8c8;
+  color: #1f1306;
 }
 
 .winner-stats {
