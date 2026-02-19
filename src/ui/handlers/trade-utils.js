@@ -10,6 +10,75 @@ export function formatPlatinumMessage(prefix, event) {
   return `${prefix}${woodNote}.${discarded}${reward}`;
 }
 
+function titleCase(type) {
+  if (!type) return "";
+  return type
+    .split("_")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+}
+
+function formatWoodNote(event) {
+  if (!event?.useWood || !event?.substituteType) return "";
+  return ` (wood replaced ${event.substituteType})`;
+}
+
+export function formatTradeToast(recipeId, recipe, event = {}) {
+  if (recipeId === "trade_platinum") {
+    return formatPlatinumMessage("Platinum dig", event);
+  }
+  const woodNote = formatWoodNote(event);
+  if (recipeId === "trade_gem_set") {
+    const target = event.rewardType ? titleCase(event.rewardType) : "no card";
+    return `Gem tutor${woodNote}: gained ${target}.`;
+  }
+
+  const reward = recipe?.reward;
+  if (reward?.type === "archive_hand") {
+    const entries = Object.entries(event.handArchive ?? {}).filter(([, amount]) => amount > 0);
+    const total = entries.reduce((sum, [, amount]) => sum + amount, 0);
+    const detail = entries
+      .map(([type, amount]) => `${amount} ${titleCase(type)}`)
+      .join(", ");
+    if (total > 0) {
+      return `Trade complete${woodNote}: archived ${detail} from hand.`;
+    }
+    return `Trade complete${woodNote}: archived cards from hand.`;
+  }
+  if (reward?.type === "archive") {
+    const archived = event.rewardType ? titleCase(event.rewardType) : "a card";
+    return `Trade complete${woodNote}: archived ${archived} from deck.`;
+  }
+  if (reward?.type === "archive_cards") {
+    const cards =
+      Array.isArray(event.rewardCards) && event.rewardCards.length > 0
+        ? event.rewardCards
+        : recipe.reward.cards ?? [];
+    const list = cards.map((type) => titleCase(type)).join(", ");
+    return list
+      ? `Trade complete${woodNote}: archived ${list}.`
+      : `Trade complete${woodNote}: archived cards.`;
+  }
+  if (reward?.type === "cards") {
+    const count = event.rewardCount ?? reward.count ?? 0;
+    return `Trade complete${woodNote}: gained ${count} ${titleCase(reward.card)}.`;
+  }
+  if (reward?.type === "draw") {
+    const count = event.drawCount ?? reward.count ?? 0;
+    return `Trade complete${woodNote}: drew ${count} card(s).`;
+  }
+  if (typeof reward === "string") {
+    const rewardType = event.rewardType ?? reward;
+    return `Trade complete${woodNote}: gained ${titleCase(rewardType)}.`;
+  }
+  if (reward === "any") {
+    const rewardType = event.rewardType ? titleCase(event.rewardType) : "a card";
+    return `Trade complete${woodNote}: tutored ${rewardType}.`;
+  }
+
+  return `Trade complete${woodNote}.`;
+}
+
 export function formatPoolLabel(pool, displayOrder) {
   if (pool === "ancient") return "ancients";
   if (pool === "non_gold_non_electrum") return "non-gold/non-electrum";

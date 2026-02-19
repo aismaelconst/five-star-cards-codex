@@ -126,6 +126,7 @@ Key responsibilities:
 - Calling `startGame()` and initializing CPU or online state.
 - Managing overlays (confirm archive, turn overlay, wood substitution, gem tutor, choice cost, pool cost, archive tutor, CPU summary).
 - Converting UI actions into `applyAction()` calls or online `action` messages.
+- Showing short action toasts for local card movement and successful local/online self trade effects.
 
 Trade overlays:
 - If a trade can use wood, the wood overlay is shown first.

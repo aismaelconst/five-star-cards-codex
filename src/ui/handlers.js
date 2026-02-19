@@ -4,10 +4,14 @@ import { createInitialState } from "../game/state.js";
 import { createOnlineClient } from "../online/client.js";
 import { startGame } from "../game/lifecycle.js";
 import { isMyTurn } from "../game/multiplayer.js";
-import { countCards } from "../shared/utils.js";
+import { countCards, getCardType } from "../shared/utils.js";
 import { executeCpuTurn } from "../game/cpu.js";
 import { createTradeFlow } from "./handlers/trade-flow.js";
-import { formatPlatinumMessage, formatPoolCostLine } from "./handlers/trade-utils.js";
+import {
+  formatPlatinumMessage,
+  formatPoolCostLine,
+  formatTradeToast,
+} from "./handlers/trade-utils.js";
 import { createCpuFlow } from "./handlers/cpu-flow.js";
 import { createOnlineFlow } from "./handlers/online-flow.js";
 import { formatLabel, updateFormatButtons } from "./handlers/format-utils.js";
@@ -83,6 +87,14 @@ export function createHandlers(state, elements, onWinner, options = {}) {
     toastTimer = setTimeout(() => {
       hideActionToast();
     }, 2000);
+  }
+
+  function formatCardName(type) {
+    if (!type) return "";
+    return type
+      .split("_")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" ");
   }
 
   function selectClassicTheme() {
@@ -293,32 +305,56 @@ export function createHandlers(state, elements, onWinner, options = {}) {
   });
 
   function playCard(index) {
+    const player = state.mode !== "online" ? getLocalPlayer() : null;
+    const card = player?.hand?.[index];
+    const cardType = card ? getCardType(card) : null;
+    const activeBefore = player?.active?.length ?? 0;
     const result = sendOrApply({ type: ActionTypes.PLAY_CARD, payload: { index } });
     if (state.mode !== "online") {
+      if ((player?.active?.length ?? 0) > activeBefore && cardType) {
+        showActionToast(`Played ${formatCardName(cardType)}.`);
+      }
       renderApp(state, elements, handlers);
     }
     return result;
   }
 
   function playCardByType(type) {
+    const player = state.mode !== "online" ? getLocalPlayer() : null;
+    const activeBefore = player?.active?.length ?? 0;
     const result = sendOrApply({ type: ActionTypes.PLAY_CARD_BY_TYPE, payload: { type } });
     if (state.mode !== "online") {
+      if ((player?.active?.length ?? 0) > activeBefore) {
+        showActionToast(`Played ${formatCardName(type)}.`);
+      }
       renderApp(state, elements, handlers);
     }
     return result;
   }
 
   function returnCard(index) {
+    const player = state.mode !== "online" ? getLocalPlayer() : null;
+    const card = player?.active?.[index];
+    const cardType = card ? getCardType(card) : null;
+    const activeBefore = player?.active?.length ?? 0;
     const result = sendOrApply({ type: ActionTypes.RETURN_CARD, payload: { index } });
     if (state.mode !== "online") {
+      if ((player?.active?.length ?? 0) < activeBefore && cardType) {
+        showActionToast(`Returned ${formatCardName(cardType)} to hand.`);
+      }
       renderApp(state, elements, handlers);
     }
     return result;
   }
 
   function returnAllCards() {
+    const player = state.mode !== "online" ? getLocalPlayer() : null;
+    const moved = player?.active?.length ?? 0;
     const result = sendOrApply({ type: ActionTypes.RETURN_ALL });
     if (state.mode !== "online") {
+      if (moved > 0 && (player?.active?.length ?? 0) === 0) {
+        showActionToast(`Returned ${moved} card(s) to hand.`);
+      }
       renderApp(state, elements, handlers);
     }
     return result;
@@ -458,6 +494,7 @@ export function createHandlers(state, elements, onWinner, options = {}) {
     updateFormatButtons,
     formatPoolCostLine,
     formatPlatinumMessage,
+    formatTradeToast,
     onWinner,
     showActionToast,
     returnToModeSelect,

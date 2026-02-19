@@ -6,7 +6,11 @@ import {
   getWoodSubstitutionOptions,
 } from "../../game/rules.js";
 import { countCards } from "../../shared/utils.js";
-import { formatPlatinumMessage, formatPoolLabel, resolvePoolTypes } from "./trade-utils.js";
+import {
+  formatPoolLabel,
+  formatTradeToast,
+  resolvePoolTypes,
+} from "./trade-utils.js";
 
 export function createTradeFlow(options) {
   const { state, elements, sendOrApply, getLocalPlayer, renderApp, showActionToast } =
@@ -109,19 +113,13 @@ export function createTradeFlow(options) {
     };
     const result = sendOrApply({ type: ActionTypes.TRADE, payload });
     resetPending();
-    if (
-      state.mode !== "online" &&
-      payload.recipeId === "trade_platinum" &&
-      result?.event?.success
-    ) {
-      showActionToast(
-        formatPlatinumMessage("Platinum dig", {
-          useWood: payload.useWood,
-          substituteType: payload.substituteType,
-          rewardType: result.event.detail?.rewardType,
-          digDiscardedCount: result.event.detail?.digDiscardedCount,
-        })
-      );
+    if (state.mode !== "online" && result?.event?.success) {
+      const recipe = state.ruleset.tradeRecipes?.[payload.recipeId];
+      const tradeEvent = {
+        ...payload,
+        ...(result.event.detail ?? {}),
+      };
+      showActionToast(formatTradeToast(payload.recipeId, recipe, tradeEvent));
     }
     if (state.mode !== "online") {
       renderApp();

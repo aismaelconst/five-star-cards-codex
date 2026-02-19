@@ -33,6 +33,7 @@ describe("online-flow", () => {
       updateFormatButtons: vi.fn(),
       formatPoolCostLine: vi.fn(),
       formatPlatinumMessage: vi.fn(),
+      formatTradeToast: vi.fn(),
       onWinner: vi.fn(),
       showActionToast: vi.fn(),
       returnToModeSelect: vi.fn(),

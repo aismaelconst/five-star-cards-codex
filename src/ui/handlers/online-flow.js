@@ -10,6 +10,7 @@ export function createOnlineFlow({
   updateFormatButtons,
   formatPoolCostLine,
   formatPlatinumMessage,
+  formatTradeToast,
   onWinner,
   showActionToast,
   returnToModeSelect,
@@ -167,17 +168,18 @@ export function createOnlineFlow({
     }
   }
 
-  function handleSelfPlatinumToast(message) {
+  function handleSelfTradeToast(message) {
     const event = message.lastEvent;
-    if (!event || event.type !== "trade" || event.recipeId !== "trade_platinum") return;
+    if (!event || event.type !== "trade") return;
     const selfId = message.playerId ?? state.online.playerId;
     if (!selfId || event.playerId !== selfId) return;
-    showActionToast(formatPlatinumMessage("Platinum dig", event));
+    const recipe = state.ruleset.tradeRecipes?.[event.recipeId];
+    showActionToast(formatTradeToast(event.recipeId, recipe, event));
   }
 
   function handleServerMessage(message) {
     updateDebug(message);
-    handleSelfPlatinumToast(message);
+    handleSelfTradeToast(message);
     handleOpponentEvent(message);
     if (message.type === "state_update") {
       applyServerState(message);

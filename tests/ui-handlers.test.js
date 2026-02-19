@@ -128,6 +128,17 @@ describe("ui/handlers", () => {
     expect(player.hand.length).toBe(1);
   });
 
+  it("shows toast when playing a card offline", () => {
+    const handlers = createHandlers(state, elements, onWinner);
+    const player = state.players[0];
+    player.hand = ["bronze"];
+
+    handlers.playCard(0);
+
+    expect(elements.actionToast.hidden).toBe(false);
+    expect(elements.actionToastText.textContent).toContain("Played Bronze");
+  });
+
   it("returns a card from active to hand", () => {
     const handlers = createHandlers(state, elements, onWinner);
     const player = state.players[0];
@@ -150,6 +161,17 @@ describe("ui/handlers", () => {
     expect(player.active.length).toBe(0);
   });
 
+  it("shows toast when returning all cards", () => {
+    const handlers = createHandlers(state, elements, onWinner);
+    const player = state.players[0];
+    player.active = ["bronze", "silver"];
+
+    handlers.returnAllCards();
+
+    expect(elements.actionToast.hidden).toBe(false);
+    expect(elements.actionToastText.textContent).toContain("Returned 2 card(s) to hand");
+  });
+
   it("handles trades and updates state", () => {
     const handlers = createHandlers(state, elements, onWinner);
     const player = state.players[0];
@@ -161,6 +183,8 @@ describe("ui/handlers", () => {
     expect(state.tradesThisTurn).toBe(1);
     expect(player.hand).toContain("silver");
     expect(player.discard.length).toBe(5);
+    expect(elements.actionToast.hidden).toBe(false);
+    expect(elements.actionToastText.textContent).toContain("gained Silver");
   });
 
   it("opens pool cost overlay for ancients trade", () => {
