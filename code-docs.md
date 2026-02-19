@@ -157,7 +157,7 @@ The browser WebSocket wrapper in `src/online/client.js`:
 
 ## Online Server
 
-`server/index.js` serves static files and hosts WebSocket gameplay.
+`server/index.js` now exposes testable server factory utilities and still serves static files + WebSocket gameplay in runtime.
 
 Server responsibilities:
 - Serve `index.html`, `app.js`, `styles.css`, and assets.
@@ -166,6 +166,17 @@ Server responsibilities:
 - Apply actions using the same `applyAction()` rules as the client.
 - Broadcast sanitized state updates to each player after every action.
 - Validate trade payloads on the server via `canTradeWithOptions()` before applying actions.
+- Track per-room `lastEvent` so clients can render opponent and self trade/archive summaries.
+
+Exported server helpers:
+- `createGameServer(options)` builds the HTTP + WebSocket server with injectable dependencies (`http`, `ws`, logger, rule helpers) for deterministic unit tests.
+- `createStaticRequestHandler({ rootDir, fsImpl })` is the static asset responder used by the HTTP server.
+- `resolveRequestedFormat(format)` centralizes format allow-listing (`core`, `expanded`, `ancient`, `minted`).
+- `DEFAULT_PORT` / `DEFAULT_ROOT_DIR` are exported constants for startup wiring.
+
+Runtime startup behavior:
+- The module only auto-starts when executed directly (`node server/index.js`).
+- Importing `server/index.js` in tests no longer binds a network port automatically.
 
 Key message types:
 - `create_room`, `join_room`, `ready_up`
