@@ -67,13 +67,13 @@ export function formatTradeToast(recipeId, recipe, event = {}) {
     const count = event.drawCount ?? reward.count ?? 0;
     return `Trade complete${woodNote}: drew ${count} card(s).`;
   }
-  if (typeof reward === "string") {
-    const rewardType = event.rewardType ?? reward;
-    return `Trade complete${woodNote}: gained ${titleCase(rewardType)}.`;
-  }
   if (reward === "any") {
     const rewardType = event.rewardType ? titleCase(event.rewardType) : "a card";
     return `Trade complete${woodNote}: tutored ${rewardType}.`;
+  }
+  if (typeof reward === "string") {
+    const rewardType = event.rewardType ?? reward;
+    return `Trade complete${woodNote}: gained ${titleCase(rewardType)}.`;
   }
 
   return `Trade complete${woodNote}.`;

@@ -119,6 +119,7 @@ Event wiring is centralized in `src/ui/events.js` and binds UI controls to handl
 The handler orchestration lives in `src/ui/handlers.js`.
 Trade selection overlays and pool-cost handling are implemented in `src/ui/handlers/trade-flow.js`, with shared formatting helpers in `src/ui/handlers/trade-utils.js`.
 Online lobby/WebSocket handling lives in `src/ui/handlers/online-flow.js`, CPU turn summaries in `src/ui/handlers/cpu-flow.js`, and format button labeling/toggling in `src/ui/handlers/format-utils.js`.
+Trade success toast formatting is centralized in `src/ui/handlers/trade-utils.js` (`formatTradeToast`), including reward variants like tutor, draw, archive, and archive-from-hand.
 
 Key responsibilities:
 - Mode selection (offline, CPU, online) and format selection (core/gilded gems/ancient/minted).
