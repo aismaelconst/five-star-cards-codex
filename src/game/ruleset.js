@@ -48,8 +48,8 @@ const ANCIENT_DISPLAY_ORDER = [
   "turquoise",
   "lapis_lazuli",
   "carnelian",
-  "electrum",
-  "copper",
+  "ingot",
+  "sterling",
 ];
 const MINTED_DISPLAY_ORDER = [
   "bronze",
@@ -143,16 +143,6 @@ export const ancientRuleset = {
       poolCost: { min: 2, max: 2, distinct: true, pool: "ancient" },
       reward: { type: "archive" },
     },
-    trade_electrum_draw: {
-      cost: { electrum: 1 },
-      choiceCost: { count: 1, pool: "non_gold" },
-      reward: {
-        type: "archive_hand",
-        min: 1,
-        max: 2,
-        allowed: getNonGoldAllowed(ANCIENT_DISPLAY_ORDER),
-      },
-    },
   },
   cardTypes: {
     ...baseRuleset.cardTypes,
@@ -168,12 +158,12 @@ export const ancientRuleset = {
       tier: "carnelian",
       draw: 0,
     },
-    electrum: {
-      tier: "electrum",
+    ingot: {
+      tier: "ingot",
       draw: 0,
     },
-    copper: {
-      tier: "copper",
+    sterling: {
+      tier: "sterling",
       draw: 0,
     },
   },
@@ -182,8 +172,20 @@ export const ancientRuleset = {
     turquoise: 5,
     lapis_lazuli: 5,
     carnelian: 5,
-    electrum: 5,
-    copper: 5,
+    ingot: 5,
+    sterling: 5,
+  },
+};
+
+// Kept in code for future use, but not currently part of any selectable format.
+export const shelvedCardTypes = {
+  electrum: {
+    tier: "electrum",
+    draw: 0,
+  },
+  copper: {
+    tier: "copper",
+    draw: 0,
   },
 };
 

@@ -55,10 +55,10 @@ describe("state", () => {
     expect(state.players[0].deck.length).toBe(180);
   });
 
-  it("creates a minted state with minted expansion", () => {
+  it("falls back to core when requesting shelved minted format", () => {
     const state = createInitialState({ format: "minted" });
-    expect(state.format).toBe("minted");
-    expect(state.players[0].deck.length).toBe(180);
+    expect(state.format).toBe("core");
+    expect(state.players[0].deck.length).toBe(155);
   });
 });
 
@@ -104,8 +104,8 @@ describe("utils", () => {
     expect(counts.turquoise).toBe(5);
     expect(counts.lapis_lazuli).toBe(5);
     expect(counts.carnelian).toBe(5);
-    expect(counts.electrum).toBe(5);
-    expect(counts.copper).toBe(5);
+    expect(counts.ingot).toBe(5);
+    expect(counts.sterling).toBe(5);
   });
 
   it("createDeck builds minted counts", () => {

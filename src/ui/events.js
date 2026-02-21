@@ -19,9 +19,6 @@ export function wireEvents(elements, handlers) {
   if (elements.formatAncient) {
     elements.formatAncient.addEventListener("click", handlers.selectAncientFormat);
   }
-  if (elements.formatMinted) {
-    elements.formatMinted.addEventListener("click", handlers.selectMintedFormat);
-  }
   if (elements.cpuEasy) {
     elements.cpuEasy.addEventListener("click", handlers.selectCpuEasy);
   }
@@ -39,9 +36,6 @@ export function wireEvents(elements, handlers) {
   }
   if (elements.hostFormatAncient) {
     elements.hostFormatAncient.addEventListener("click", handlers.selectHostFormatAncient);
-  }
-  if (elements.hostFormatMinted) {
-    elements.hostFormatMinted.addEventListener("click", handlers.selectHostFormatMinted);
   }
   elements.chooseCreate.addEventListener("click", handlers.chooseCreate);
   elements.chooseJoin.addEventListener("click", handlers.chooseJoin);
@@ -65,18 +59,6 @@ export function wireEvents(elements, handlers) {
       "click",
       () => handlers.trade("trade_ancients_archive")
     );
-  }
-  if (elements.tradeElectrumDraw) {
-    elements.tradeElectrumDraw.addEventListener(
-      "click",
-      () => handlers.trade("trade_electrum_draw")
-    );
-  }
-  if (elements.tradeMint) {
-    elements.tradeMint.addEventListener("click", () => handlers.trade("trade_mint"));
-  }
-  if (elements.tradeHallmark) {
-    elements.tradeHallmark.addEventListener("click", () => handlers.trade("trade_hallmark"));
   }
   elements.endTurn.addEventListener("click", handlers.endTurn);
   elements.undoPlays.addEventListener("click", handlers.returnAllCards);

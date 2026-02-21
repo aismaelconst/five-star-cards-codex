@@ -228,31 +228,8 @@ describe("ui/handlers", () => {
     expect(player.discard.length).toBe(2);
   });
 
-  it("limits mint tutor options to efficiency cards", () => {
-    state = createInitialState({ mode: "offline", format: "minted" });
-    elements = makeElements();
-    const handlers = createHandlers(state, elements, onWinner);
-    const player = state.players[0];
-    player.archive = ["mint", "bronze"];
-    player.deck = ["ingot", "sterling", "ledger", "bronze"];
-
-    handlers.trade("trade_mint");
-
-    expect(elements.choiceCostOverlay.hidden).toBe(false);
-    const choiceButtons = Array.from(elements.choiceCostOptions.querySelectorAll("button"));
-    const bronzeButton = choiceButtons.find((button) => button.dataset.choice === "bronze");
-    bronzeButton.click();
-    handlers.confirmChoiceCost();
-
-    expect(elements.gemTutorOverlay.hidden).toBe(false);
-    const tutorOptions = Array.from(elements.gemTutorOptions.querySelectorAll("button")).map(
-      (button) => button.dataset.choice
-    );
-    expect(tutorOptions).toEqual(["ingot", "sterling", "ledger"]);
-  });
-
-  it("opens efficiency overlay for bronze trade in minted format", () => {
-    state = createInitialState({ mode: "offline", format: "minted" });
+  it("opens efficiency overlay for bronze trade in ancient format", () => {
+    state = createInitialState({ mode: "offline", format: "ancient" });
     elements = makeElements();
     const handlers = createHandlers(state, elements, onWinner);
     const player = state.players[0];
@@ -264,39 +241,19 @@ describe("ui/handlers", () => {
     expect(elements.efficiencyOverlay.hidden).toBe(false);
   });
 
-  it("opens hand archive overlay for electrum trade and archives from hand", () => {
+  it("does not open electrum trade flow in ancient format", () => {
     state = createInitialState({ mode: "offline", format: "ancient" });
     elements = makeElements();
     const handlers = createHandlers(state, elements, onWinner);
     const player = state.players[0];
-    player.archive = ["electrum", "copper"];
-    player.hand = ["bronze", "copper", "turquoise"];
+    player.archive = ["bronze", "silver", "gold", "turquoise", "lapis_lazuli"];
 
     handlers.trade("trade_electrum_draw");
 
-    expect(elements.choiceCostOverlay.hidden).toBe(false);
-    const choiceButtons = Array.from(elements.choiceCostOptions.querySelectorAll("button"));
-    const copperChoice = choiceButtons.find((button) => button.dataset.choice === "copper");
-    copperChoice.click();
-    handlers.confirmChoiceCost();
-
-    expect(elements.handArchiveOverlay.hidden).toBe(false);
-    const rows = Array.from(elements.handArchiveOptions.querySelectorAll(".hand-archive-row"));
-    const bronzeRow = rows.find((row) => row.dataset.type === "bronze");
-    const copperRow = rows.find((row) => row.dataset.type === "copper");
-    const turquoiseRow = rows.find((row) => row.dataset.type === "turquoise");
-    const silverRow = rows.find((row) => row.dataset.type === "silver");
-    bronzeRow.querySelector(".hand-archive-plus").click();
-    copperRow.querySelector(".hand-archive-plus").click();
-    handlers.confirmHandArchive();
-
-    expect(silverRow).toBeUndefined();
-    expect(state.tradesThisTurn).toBe(1);
-    expect(player.discard.length).toBe(2);
-    expect(player.hand.length).toBe(2);
-    expect(
-      player.hand.some((card) => (typeof card === "string" ? card : card.type) === "copper")
-    ).toBe(true);
+    expect(elements.choiceCostOverlay.hidden).toBe(true);
+    expect(elements.handArchiveOverlay.hidden).toBe(true);
+    expect(state.tradesThisTurn).toBe(0);
+    expect(player.discard.length).toBe(0);
   });
 
   it("prepares archive on endTurn", () => {

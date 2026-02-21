@@ -134,7 +134,7 @@ describe("server/index", () => {
     expect(resolveRequestedFormat("core")).toBe("core");
     expect(resolveRequestedFormat("expanded")).toBe("expanded");
     expect(resolveRequestedFormat("ancient")).toBe("ancient");
-    expect(resolveRequestedFormat("minted")).toBe("minted");
+    expect(resolveRequestedFormat("minted")).toBe("core");
     expect(resolveRequestedFormat("unknown")).toBe("core");
   });
 

@@ -5,6 +5,7 @@ import {
   expandedRuleset,
   ancientRuleset,
   mintedRuleset,
+  shelvedCardTypes,
 } from "../src/game/ruleset.js";
 
 describe("card tooltips", () => {
@@ -34,17 +35,23 @@ describe("card tooltips", () => {
     expect(tooltip).toContain("archive 1 non-gold");
   });
 
-  it("includes electrum hand archive trade", () => {
+  it("does not expose shelved electrum in ancient format", () => {
     const tooltip = getCardTooltip("electrum", ancientRuleset);
-    expect(tooltip).toContain("Electrum");
-    expect(tooltip).toContain("archive 1-2 non-gold cards");
+    expect(tooltip).toBeNull();
   });
 
-  it("includes copper substitution note", () => {
-    const tooltip = getCardTooltip("copper", ancientRuleset);
+  it("keeps tooltip copy for shelved copper/electrum card types", () => {
+    const shelvedRuleset = {
+      displayOrder: ["electrum", "copper"],
+      cardTypes: { ...shelvedCardTypes },
+      tradeRecipes: {},
+    };
+    const tooltip = getCardTooltip("copper", shelvedRuleset);
     expect(tooltip).toContain("Copper");
     expect(tooltip).toContain("2-card trades");
     expect(tooltip).toContain("tutor a copper");
+    const electrumTooltip = getCardTooltip("electrum", shelvedRuleset);
+    expect(electrumTooltip).toContain("Electrum");
   });
 
   it("formats lapis lazuli name", () => {

@@ -372,101 +372,24 @@ describe("rules", () => {
     ).toBe(false);
   });
 
-  it("electrum trade archives cards from hand", () => {
+  it("rejects shelved electrum trade in ancient format", () => {
     const state = makeAncientState();
     const player = current(state);
     player.archive = [
       createCard("electrum", ancientRuleset),
       createCard("copper", ancientRuleset),
     ];
-    player.hand = [
-      createCard("turquoise", ancientRuleset),
-      createCard("bronze", ancientRuleset),
-      createCard("copper", ancientRuleset),
-    ];
+    player.hand = [createCard("bronze", ancientRuleset)];
 
     const result = performTrade(state, player, "trade_electrum_draw", {
       choiceType: "copper",
-      handArchive: { turquoise: 1, bronze: 1 },
+      handArchive: { bronze: 1 },
     });
-    expect(result.success).toBe(true);
-    expect(player.hand.length).toBe(1);
-    expect(player.archive.length).toBe(2);
-    expect(result.detail.handArchive).toEqual({ turquoise: 1, bronze: 1 });
-  });
-
-  it("rejects electrum trade with invalid hand archive selection", () => {
-    const state = makeAncientState();
-    const player = current(state);
-    player.archive = [
-      createCard("electrum", ancientRuleset),
-      createCard("copper", ancientRuleset),
-    ];
-    player.hand = [createCard("bronze", ancientRuleset)];
-
-    expect(
-      canTradeWithOptions(state, player, "trade_electrum_draw", {
-        choiceType: "copper",
-        handArchive: { bronze: 2 },
-      })
-    ).toBe(false);
-  });
-
-  it("does not allow copper to replace electrum cost", () => {
-    const state = makeAncientState();
-    const player = current(state);
-    player.archive = [
-      createCard("copper", ancientRuleset),
-      createCard("bronze", ancientRuleset),
-    ];
-    player.hand = [createCard("bronze", ancientRuleset)];
-
-    expect(
-      canTradeWithOptions(state, player, "trade_electrum_draw", {
-        choiceType: "bronze",
-        handArchive: { bronze: 1 },
-      })
-    ).toBe(false);
-  });
-
-  it("rejects electrum trade when hand archive includes gold", () => {
-    const state = makeAncientState();
-    const player = current(state);
-    player.archive = [
-      createCard("electrum", ancientRuleset),
-      createCard("copper", ancientRuleset),
-    ];
-    player.hand = [createCard("gold", ancientRuleset)];
-
-    expect(
-      canTradeWithOptions(state, player, "trade_electrum_draw", {
-        choiceType: "copper",
-        handArchive: { gold: 1 },
-      })
-    ).toBe(false);
-  });
-
-  it("allows copper to substitute in the ancients trade", () => {
-    const state = makeAncientState();
-    const player = current(state);
-    player.archive = [
-      createCard("turquoise", ancientRuleset),
-      createCard("copper", ancientRuleset),
-    ];
-    player.deck = [
-      createCard("copper", ancientRuleset),
-      createCard("silver", ancientRuleset),
-    ];
-
-    const result = performTrade(state, player, "trade_ancients_archive", {
-      poolTypes: ["turquoise"],
-      rewardType: "silver",
-    });
-
-    expect(result.success).toBe(true);
-    expect(player.discard.length).toBe(2);
-    expect(player.archive.some((card) => card.type === "silver")).toBe(true);
-    expect(player.hand.some((card) => card.type === "copper")).toBe(true);
+    expect(canTradeWithOptions(state, player, "trade_electrum_draw", {
+      choiceType: "copper",
+      handArchive: { bronze: 1 },
+    })).toBe(false);
+    expect(result.success).toBe(false);
   });
 
   it("ingot counts as three bronze for bronze trades when chosen", () => {

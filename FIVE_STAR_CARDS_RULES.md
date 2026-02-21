@@ -11,11 +11,11 @@ Choose one format before starting the game:
 - **Gilded Gems (180 cards)**
   - Core + 5 each: wood, ruby, emerald, sapphire, platinum
 - **Ancient (180 cards)**
-  - Core + 5 each: turquoise, lapis lazuli, carnelian, electrum, copper
-- **Minted (180 cards)**
-  - Core + 5 each: ingot, sterling, ledger, mint, hallmark
+  - Core + 5 each: turquoise, lapis lazuli, carnelian, ingot, sterling
 
 All non-core cards have **draw 0** (they do not draw cards at end of turn).
+
+Note: `electrum`, `copper`, `ledger`, `mint`, and `hallmark` are currently shelved and not part of selectable formats.
 
 ## Zones
 
@@ -66,25 +66,11 @@ You may trade **before and/or after** playing cards. You may **not** trade after
 
 - **Any two distinct ancients (turquoise, lapis lazuli, carnelian) → archive 1 non‑gold from deck**
   - Choose a non‑gold card from your deck and place it directly into your Archive, then shuffle.
-- **Electrum + any non‑gold → archive 1–2 non‑gold cards from hand**
-  - Choose 1–2 non‑gold cards from your hand and move them directly to Archive.
-- **Copper**
-  - Can replace one required card in 2-card trades.
-  - When traded, tutor a copper to hand (shuffle).
-
-### Minted Trades (Minted)
-
 - **Ingot**
   - Counts as **3 bronze** when paying trade costs from the Archive.
 - **Sterling**
   - Counts as **2 silver** when paying trade costs from the Archive.
-- **Ledger**
-  - Counts as **1 bronze or 1 silver** when paying trade costs from the Archive.
 - You may choose whether to apply these efficiency counts or pay with regular bronze/silver.
-- **Mint + any non-gold → tutor ingot/sterling/ledger**
-  - Choose one of ingot, sterling, or ledger from your deck and put it into your hand, then shuffle.
-- **Hallmark + Bronze + Silver → archive ingot, sterling, mint**
-  - Move one ingot, one sterling, and one mint from your deck directly to your Archive, then shuffle.
 
 ## 2. Play Cards (Optional)
 
@@ -128,13 +114,5 @@ Gilded Gems Trades:
 Ancients Trades:
 
 - 2 distinct ancients → archive 1 non‑gold from deck (shuffle)
-- Electrum + any non‑gold → archive 1–2 non‑gold cards from hand
-- Copper: can replace one required card in 2-card trades; when traded, tutor a copper (shuffle)
-
-Minted Trades:
-
 - Ingot: counts as 3 bronze in archive trades
 - Sterling: counts as 2 silver in archive trades
-- Ledger: counts as 1 bronze or 1 silver in archive trades
-- Mint + any non‑gold → tutor ingot/sterling/ledger (shuffle)
-- Hallmark + Bronze + Silver → archive ingot, sterling, mint (shuffle)

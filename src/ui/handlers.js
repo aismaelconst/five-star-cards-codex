@@ -227,21 +227,6 @@ export function createHandlers(state, elements, onWinner, options = {}) {
     startOfflineGame("ancient");
   }
 
-  function selectMintedFormat() {
-    if (state.mode === "cpu") {
-      state.format = "minted";
-      updateFormatButtons(state, elements);
-      if (elements.formatOverlay) {
-        elements.formatOverlay.hidden = true;
-      }
-      if (elements.cpuOverlay) {
-        elements.cpuOverlay.hidden = false;
-      }
-      return;
-    }
-    startOfflineGame("minted");
-  }
-
   function selectCpuEasy() {
     startCpuGame(state.format ?? "core", "easy");
   }
@@ -266,11 +251,6 @@ export function createHandlers(state, elements, onWinner, options = {}) {
 
   function selectHostFormatAncient() {
     state.format = "ancient";
-    updateFormatButtons(state, elements);
-  }
-
-  function selectHostFormatMinted() {
-    state.format = "minted";
     updateFormatButtons(state, elements);
   }
 
@@ -523,14 +503,12 @@ export function createHandlers(state, elements, onWinner, options = {}) {
     selectCoreFormat,
     selectExpandedFormat,
     selectAncientFormat,
-    selectMintedFormat,
     selectCpuEasy,
     selectCpuMedium,
     selectCpuHard,
     selectHostFormatCore,
     selectHostFormatExpanded,
     selectHostFormatAncient,
-    selectHostFormatMinted,
     createRoom: onlineFlow.createRoom,
     joinRoom: onlineFlow.joinRoom,
     backToChoice: onlineFlow.backToChoice,

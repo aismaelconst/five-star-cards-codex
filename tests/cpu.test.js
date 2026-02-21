@@ -99,7 +99,7 @@ describe("cpu", () => {
     expect(summary.trades[0].rewardType).toBe("silver");
   });
 
-  it("cpu uses electrum to declutter a large hand", () => {
+  it("cpu does not attempt shelved electrum trade in ancient format", () => {
     const state = createInitialState({
       mode: "cpu",
       format: "ancient",
@@ -117,12 +117,10 @@ describe("cpu", () => {
 
     const summary = executeCpuTurn(state, { difficulty: "easy", cpuIndex: 1 });
 
-    expect(summary.trades[0].recipeId).toBe("trade_electrum_draw");
-    expect(summary.trades[0].handArchive.copper).toBe(1);
-    expect(summary.trades[0].handArchive.turquoise).toBe(1);
+    expect(summary.trades.some((trade) => trade.recipeId === "trade_electrum_draw")).toBe(false);
   });
 
-  it("cpu uses mint to tutor efficiency cards in minted format", () => {
+  it("cpu falls back to core when minted format is requested", () => {
     const state = createInitialState({
       mode: "cpu",
       format: "minted",
@@ -136,8 +134,8 @@ describe("cpu", () => {
 
     const summary = executeCpuTurn(state, { difficulty: "easy", cpuIndex: 1 });
 
-    expect(summary.trades[0].recipeId).toBe("trade_mint");
-    expect(cpu.hand).toContain("ingot");
+    expect(state.format).toBe("core");
+    expect(summary.trades.some((trade) => trade.recipeId === "trade_mint")).toBe(false);
   });
 
   it("cpu avoids playing the last zero-draw card when it would empty the hand", () => {

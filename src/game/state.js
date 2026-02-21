@@ -4,7 +4,6 @@ import {
   baseRuleset,
   expandedRuleset,
   ancientRuleset,
-  mintedRuleset,
 } from "./ruleset.js";
 
 export function createPlayerState(ruleset, playerId, name) {
@@ -20,16 +19,18 @@ export function createPlayerState(ruleset, playerId, name) {
 }
 
 export function createInitialState(options = {}) {
-  const format = options.format ?? "core";
+  const requestedFormat = options.format ?? "core";
+  const format =
+    requestedFormat === "expanded" || requestedFormat === "ancient" || requestedFormat === "core"
+      ? requestedFormat
+      : "core";
   const ruleset =
     options.ruleset ??
     (format === "expanded"
       ? expandedRuleset
       : format === "ancient"
         ? ancientRuleset
-        : format === "minted"
-          ? mintedRuleset
-          : baseRuleset);
+        : baseRuleset);
   const gameId = options.gameId ?? `game-${Date.now()}`;
   const playerIds = options.playerIds ?? ["player-1", "player-2"];
   const playerNames = options.playerNames ?? ["Player 1", "Player 2"];
