@@ -239,6 +239,39 @@ describe("ui/handlers", () => {
     handlers.trade("trade_bronze");
 
     expect(elements.efficiencyOverlay.hidden).toBe(false);
+    const labels = Array.from(elements.efficiencyOptions.querySelectorAll("button")).map(
+      (button) => button.textContent
+    );
+    expect(labels).toContain("Use ingot");
+    expect(labels.some((label) => label.includes("ledger"))).toBe(false);
+  });
+
+  it("does not offer efficiency for bronze trade when only sterling is present", () => {
+    state = createInitialState({ mode: "offline", format: "ancient" });
+    elements = makeElements();
+    const handlers = createHandlers(state, elements, onWinner);
+    const player = state.players[0];
+    player.archive = ["sterling", "bronze", "bronze", "bronze", "bronze", "bronze"];
+    player.deck = ["silver"];
+
+    handlers.trade("trade_bronze");
+
+    expect(elements.efficiencyOverlay.hidden).toBe(true);
+    expect(state.tradesThisTurn).toBe(1);
+  });
+
+  it("does not offer efficiency for silver trade when only ingot is present", () => {
+    state = createInitialState({ mode: "offline", format: "ancient" });
+    elements = makeElements();
+    const handlers = createHandlers(state, elements, onWinner);
+    const player = state.players[0];
+    player.archive = ["ingot", "silver", "silver", "silver", "silver", "silver"];
+    player.deck = ["gold"];
+
+    handlers.trade("trade_silver");
+
+    expect(elements.efficiencyOverlay.hidden).toBe(true);
+    expect(state.tradesThisTurn).toBe(1);
   });
 
   it("does not open electrum trade flow in ancient format", () => {

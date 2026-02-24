@@ -24,6 +24,20 @@ export function createTradeFlow(options) {
   let pendingArchiveTutorChoice = null;
   let pendingHandArchive = null;
 
+  function getEfficiencyTypesForRecipe(recipe) {
+    if (!recipe?.cost) return [];
+    const candidates = new Set();
+    if ((recipe.cost.bronze ?? 0) > 0) {
+      candidates.add("ingot");
+      candidates.add("ledger");
+    }
+    if ((recipe.cost.silver ?? 0) > 0) {
+      candidates.add("sterling");
+      candidates.add("ledger");
+    }
+    return Array.from(candidates).filter((type) => Boolean(state.ruleset.cardTypes?.[type]));
+  }
+
   function resetPending() {
     pendingTrade = null;
     pendingWoodChoice = null;
@@ -68,8 +82,9 @@ export function createTradeFlow(options) {
       Object.entries(baseCost).every(
         ([type, amount]) => (archiveCounts[type] ?? 0) >= amount
       );
-    if (recipe && shouldOfferEfficiencyChoice(recipe, archiveCounts)) {
-      openEfficiencyOverlay(canPayBase);
+    const efficiencyTypes = getEfficiencyTypesForRecipe(recipe);
+    if (recipe && shouldOfferEfficiencyChoice(efficiencyTypes, archiveCounts)) {
+      openEfficiencyOverlay(canPayBase, efficiencyTypes);
       return null;
     }
     if (woodOptions.length > 0 && elements.woodOverlay) {
@@ -156,15 +171,12 @@ export function createTradeFlow(options) {
     elements.woodOverlay.hidden = false;
   }
 
-  function shouldOfferEfficiencyChoice(recipe, archiveCounts) {
-    if (!recipe?.cost) return false;
-    if ((archiveCounts.ingot ?? 0) === 0 && (archiveCounts.sterling ?? 0) === 0 && (archiveCounts.ledger ?? 0) === 0) {
-      return false;
-    }
-    return (recipe.cost.bronze ?? 0) > 0 || (recipe.cost.silver ?? 0) > 0;
+  function shouldOfferEfficiencyChoice(efficiencyTypes, archiveCounts) {
+    if (!Array.isArray(efficiencyTypes) || efficiencyTypes.length === 0) return false;
+    return efficiencyTypes.some((type) => (archiveCounts[type] ?? 0) > 0);
   }
 
-  function openEfficiencyOverlay(canPayBase) {
+  function openEfficiencyOverlay(canPayBase, efficiencyTypes) {
     if (!elements.efficiencyOverlay || !elements.efficiencyOptions) return;
     pendingEfficiencyChoice = null;
     elements.efficiencyOptions.innerHTML = "";
@@ -181,7 +193,11 @@ export function createTradeFlow(options) {
     });
     const choices = [
       { id: "regular", label: "Use regular cards", enabled: regularAllowed || canPayBase },
-      { id: "efficiency", label: "Use ingot/sterling/ledger", enabled: efficiencyAllowed },
+      {
+        id: "efficiency",
+        label: `Use ${efficiencyTypes.join("/")}`,
+        enabled: efficiencyAllowed,
+      },
     ];
     choices.forEach((choice) => {
       const button = document.createElement("button");

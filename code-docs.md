@@ -133,6 +133,7 @@ Key responsibilities:
 
 Trade overlays:
 - If a trade can use wood, the wood overlay is shown first.
+- If efficiency cards are relevant for the requested bronze/silver trade and present in archive, an efficiency overlay is shown; labels are format-aware (e.g., Ancient shows only ingot/sterling, no ledger).
 - If the trade requires an additional cost, the choice cost overlay is shown.
 - If the trade requires a pool selection (`poolCost`), the pool cost overlay is shown.
 - If the trade reward is `any`, the gem tutor overlay is shown to pick a target type.
