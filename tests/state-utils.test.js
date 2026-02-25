@@ -5,6 +5,7 @@ import {
   baseRuleset,
   expandedRuleset,
   ancientRuleset,
+  mysticRuleset,
   mintedRuleset,
 } from "../src/game/ruleset.js";
 import { countCards, generateRoomCode, shuffle } from "../src/shared/utils.js";
@@ -53,6 +54,22 @@ describe("state", () => {
     const state = createInitialState({ format: "ancient" });
     expect(state.format).toBe("ancient");
     expect(state.players[0].deck.length).toBe(180);
+  });
+
+  it("creates a mystic state with mystics expansion", () => {
+    const state = createInitialState({ format: "mystic" });
+    expect(state.format).toBe("mystic");
+    expect(state.players[0].deck.length).toBe(180);
+  });
+
+  it("initializes turn effects for both players", () => {
+    const state = createInitialState({ format: "mystic" });
+    expect(state.turnEffects).toEqual({
+      currentPlayBonusByPlayer: [0, 0],
+      currentPlayPenaltyByPlayer: [0, 0],
+      nextTurnPlayPenaltyByPlayer: [0, 0],
+      usedTradeRecipesByPlayer: [{}, {}],
+    });
   });
 
   it("falls back to core when requesting shelved minted format", () => {
@@ -106,6 +123,17 @@ describe("utils", () => {
     expect(counts.carnelian).toBe(5);
     expect(counts.ingot).toBe(5);
     expect(counts.sterling).toBe(5);
+  });
+
+  it("createDeck builds mystic counts", () => {
+    const deck = createDeck(mysticRuleset);
+    const counts = countCards(deck, mysticRuleset.displayOrder);
+    expect(deck.length).toBe(180);
+    expect(counts.pearl).toBe(5);
+    expect(counts.obsidian).toBe(5);
+    expect(counts.amethyst).toBe(5);
+    expect(counts.ash).toBe(5);
+    expect(counts.ember).toBe(5);
   });
 
   it("createDeck builds minted counts", () => {

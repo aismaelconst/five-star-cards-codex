@@ -4,6 +4,7 @@ import {
   baseRuleset,
   expandedRuleset,
   ancientRuleset,
+  mysticRuleset,
 } from "../src/game/ruleset.js";
 
 function makeElements() {
@@ -23,6 +24,14 @@ function makeElements() {
     "discardInfo",
     "tradeBronze",
     "tradeSilver",
+    "tradeGems",
+    "tradePlatinum",
+    "tradeAncientsArchive",
+    "tradePearl",
+    "tradeObsidian",
+    "tradeAmethyst",
+    "tradeAsh",
+    "tradeEmber",
     "endTurn",
     "undoPlays",
     "confirmOverlay",
@@ -42,6 +51,14 @@ function makeElements() {
 
   elements.tradeBronze = document.createElement("button");
   elements.tradeSilver = document.createElement("button");
+  elements.tradeGems = document.createElement("button");
+  elements.tradePlatinum = document.createElement("button");
+  elements.tradeAncientsArchive = document.createElement("button");
+  elements.tradePearl = document.createElement("button");
+  elements.tradeObsidian = document.createElement("button");
+  elements.tradeAmethyst = document.createElement("button");
+  elements.tradeAsh = document.createElement("button");
+  elements.tradeEmber = document.createElement("button");
   elements.endTurn = document.createElement("button");
   elements.undoPlays = document.createElement("button");
 
@@ -176,6 +193,52 @@ describe("ui/render", () => {
     expect(elements.cardLegend.querySelector(".chip.turquoise")).not.toBeNull();
     expect(elements.cardLegend.querySelector(".chip.ingot")).not.toBeNull();
     expect(elements.cardLegend.querySelector(".chip.ruby")).toBeNull();
+  });
+
+  it("renders mystic expansion rules and mystic trade buttons", () => {
+    const state = makeState();
+    const elements = makeElements();
+    const handlers = {
+      playCard: vi.fn(),
+      playCardByType: vi.fn(),
+      returnCard: vi.fn(),
+    };
+    state.ruleset = mysticRuleset;
+    state.format = "mystic";
+
+    renderApp(state, elements, handlers);
+
+    expect(elements.expansionRules.textContent).toContain("Pearl");
+    expect(elements.expansionRules.textContent).toContain("Obsidian");
+    expect(elements.cardLegend.querySelector(".chip.pearl")).not.toBeNull();
+    expect(elements.tradePearl.hidden).toBe(false);
+    expect(elements.tradeObsidian.hidden).toBe(false);
+    expect(elements.tradeAmethyst.hidden).toBe(false);
+    expect(elements.tradeAsh.hidden).toBe(false);
+    expect(elements.tradeEmber.hidden).toBe(false);
+  });
+
+  it("shows dynamic play cap in trade info for mystic bonuses", () => {
+    const state = makeState();
+    const elements = makeElements();
+    const handlers = {
+      playCard: vi.fn(),
+      playCardByType: vi.fn(),
+      returnCard: vi.fn(),
+    };
+    state.ruleset = mysticRuleset;
+    state.format = "mystic";
+    state.turnEffects = {
+      currentPlayBonusByPlayer: [1, 0],
+      currentPlayPenaltyByPlayer: [0, 0],
+      nextTurnPlayPenaltyByPlayer: [0, 0],
+      usedTradeRecipesByPlayer: [{}, {}],
+    };
+    state.players[0].active = ["bronze", "silver"];
+
+    renderApp(state, elements, handlers);
+
+    expect(elements.tradeInfo.textContent).toContain("Plays used: 2/6");
   });
 
   it("disables actions when not your turn online", () => {

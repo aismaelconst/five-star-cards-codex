@@ -134,6 +134,7 @@ describe("server/index", () => {
     expect(resolveRequestedFormat("core")).toBe("core");
     expect(resolveRequestedFormat("expanded")).toBe("expanded");
     expect(resolveRequestedFormat("ancient")).toBe("ancient");
+    expect(resolveRequestedFormat("mystic")).toBe("mystic");
     expect(resolveRequestedFormat("minted")).toBe("core");
     expect(resolveRequestedFormat("unknown")).toBe("core");
   });
@@ -331,5 +332,69 @@ describe("server/index", () => {
 
     host.close();
     expect(app.rooms.has(roomId)).toBe(false);
+  });
+
+  it("rejects invalid mystic targetType and includes effect details for valid trade", () => {
+    const app = createGameServer({
+      httpImpl: { createServer: (handler) => new FakeHttpServer(handler) },
+      WebSocketServerImpl: FakeWebSocketServer,
+      logger: { log: vi.fn() },
+      rootDir: workspaceRoot,
+    });
+
+    const host = new FakeSocket();
+    const guest = new FakeSocket();
+    app.wss.emitConnection(host);
+    app.wss.emitConnection(guest);
+
+    emitMessage(host, { type: "create_room", playerName: "Host", format: "mystic" });
+    const roomCreated = takeMessage(host, (msg) => msg.type === "room_created");
+    const roomId = roomCreated.roomId;
+    const hostId = roomCreated.playerId;
+    emitMessage(guest, { type: "join_room", roomId, playerName: "Guest" });
+    const roomJoined = takeMessage(guest, (msg) => msg.type === "room_joined");
+    const guestId = roomJoined.playerId;
+
+    emitMessage(host, { type: "ready_up", roomId, playerId: hostId });
+    emitMessage(guest, { type: "ready_up", roomId, playerId: guestId });
+    takeMessage(host, (msg) => msg.type === "game_start");
+    takeMessage(guest, (msg) => msg.type === "game_start");
+    host.outbox = [];
+    guest.outbox = [];
+
+    const room = app.rooms.get(roomId);
+    room.state.players[0].archive = ["amethyst"];
+    room.state.players[1].archive = ["gold"];
+    room.state.players[1].deck = [];
+
+    emitMessage(host, {
+      type: "action",
+      roomId,
+      playerId: hostId,
+      action: {
+        type: "TRADE",
+        payload: { recipeId: "trade_amethyst", targetType: "bronze" },
+      },
+    });
+    const invalidTarget = takeMessage(host, (msg) => msg.type === "error");
+    expect(invalidTarget.message).toBe("Invalid trade.");
+
+    emitMessage(host, {
+      type: "action",
+      roomId,
+      playerId: hostId,
+      action: {
+        type: "TRADE",
+        payload: { recipeId: "trade_amethyst", targetType: "gold" },
+      },
+    });
+
+    const hostUpdate = takeMessage(host, (msg) => msg.type === "state_update");
+    expect(hostUpdate.lastEvent.type).toBe("trade");
+    expect(hostUpdate.lastEvent.recipeId).toBe("trade_amethyst");
+    expect(hostUpdate.lastEvent.targetType).toBe("gold");
+    expect(hostUpdate.lastEvent.effectId).toBe("amethyst_archive_to_deck");
+    expect(hostUpdate.lastEvent.movedTypes).toEqual(["gold"]);
+    expect(hostUpdate.lastEvent.movedCount).toBe(1);
   });
 });

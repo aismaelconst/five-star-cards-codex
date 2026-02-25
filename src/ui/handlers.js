@@ -172,6 +172,7 @@ export function createHandlers(state, elements, onWinner, options = {}) {
     state.winner = freshState.winner;
     state.turnCount = freshState.turnCount;
     state.pendingArchive = freshState.pendingArchive;
+    state.turnEffects = freshState.turnEffects;
     state.gameId = freshState.gameId;
     state.ruleset = freshState.ruleset;
     state.format = freshState.format;
@@ -227,6 +228,21 @@ export function createHandlers(state, elements, onWinner, options = {}) {
     startOfflineGame("ancient");
   }
 
+  function selectMysticFormat() {
+    if (state.mode === "cpu") {
+      state.format = "mystic";
+      updateFormatButtons(state, elements);
+      if (elements.formatOverlay) {
+        elements.formatOverlay.hidden = true;
+      }
+      if (elements.cpuOverlay) {
+        elements.cpuOverlay.hidden = false;
+      }
+      return;
+    }
+    startOfflineGame("mystic");
+  }
+
   function selectCpuEasy() {
     startCpuGame(state.format ?? "core", "easy");
   }
@@ -251,6 +267,11 @@ export function createHandlers(state, elements, onWinner, options = {}) {
 
   function selectHostFormatAncient() {
     state.format = "ancient";
+    updateFormatButtons(state, elements);
+  }
+
+  function selectHostFormatMystic() {
+    state.format = "mystic";
     updateFormatButtons(state, elements);
   }
 
@@ -406,6 +427,7 @@ export function createHandlers(state, elements, onWinner, options = {}) {
     state.winner = freshState.winner;
     state.turnCount = freshState.turnCount;
     state.pendingArchive = freshState.pendingArchive;
+    state.turnEffects = freshState.turnEffects;
     state.gameId = freshState.gameId;
     state.ruleset = freshState.ruleset;
     state.format = freshState.format;
@@ -433,6 +455,7 @@ export function createHandlers(state, elements, onWinner, options = {}) {
     state.winner = freshState.winner;
     state.turnCount = freshState.turnCount;
     state.pendingArchive = freshState.pendingArchive;
+    state.turnEffects = freshState.turnEffects;
     state.gameId = freshState.gameId;
     state.ruleset = freshState.ruleset;
     state.online = freshState.online;
@@ -503,12 +526,14 @@ export function createHandlers(state, elements, onWinner, options = {}) {
     selectCoreFormat,
     selectExpandedFormat,
     selectAncientFormat,
+    selectMysticFormat,
     selectCpuEasy,
     selectCpuMedium,
     selectCpuHard,
     selectHostFormatCore,
     selectHostFormatExpanded,
     selectHostFormatAncient,
+    selectHostFormatMystic,
     createRoom: onlineFlow.createRoom,
     joinRoom: onlineFlow.joinRoom,
     backToChoice: onlineFlow.backToChoice,

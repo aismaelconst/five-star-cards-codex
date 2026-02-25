@@ -18,12 +18,14 @@ describe("ui/events", () => {
       formatCore: makeButton("formatCore"),
       formatExpanded: makeButton("formatExpanded"),
       formatAncient: makeButton("formatAncient"),
+      formatMystic: makeButton("formatMystic"),
       cpuEasy: makeButton("cpuEasy"),
       cpuMedium: makeButton("cpuMedium"),
       cpuHard: makeButton("cpuHard"),
       hostFormatCore: makeButton("hostFormatCore"),
       hostFormatExpanded: makeButton("hostFormatExpanded"),
       hostFormatAncient: makeButton("hostFormatAncient"),
+      hostFormatMystic: makeButton("hostFormatMystic"),
       createRoom: makeButton("createRoom"),
       chooseCreate: makeButton("chooseCreate"),
       chooseJoin: makeButton("chooseJoin"),
@@ -38,6 +40,11 @@ describe("ui/events", () => {
       tradeGems: makeButton("tradeGems"),
       tradePlatinum: makeButton("tradePlatinum"),
       tradeAncientsArchive: makeButton("tradeAncientsArchive"),
+      tradePearl: makeButton("tradePearl"),
+      tradeObsidian: makeButton("tradeObsidian"),
+      tradeAmethyst: makeButton("tradeAmethyst"),
+      tradeAsh: makeButton("tradeAsh"),
+      tradeEmber: makeButton("tradeEmber"),
       endTurn: makeButton("endTurn"),
       undoPlays: makeButton("undoPlays"),
       restartGame: makeButton("restartGame"),
@@ -71,12 +78,14 @@ describe("ui/events", () => {
       selectCoreFormat: vi.fn(),
       selectExpandedFormat: vi.fn(),
       selectAncientFormat: vi.fn(),
+      selectMysticFormat: vi.fn(),
       selectCpuEasy: vi.fn(),
       selectCpuMedium: vi.fn(),
       selectCpuHard: vi.fn(),
       selectHostFormatCore: vi.fn(),
       selectHostFormatExpanded: vi.fn(),
       selectHostFormatAncient: vi.fn(),
+      selectHostFormatMystic: vi.fn(),
       chooseCreate: vi.fn(),
       chooseJoin: vi.fn(),
       backToChoice: vi.fn(),
@@ -118,12 +127,14 @@ describe("ui/events", () => {
     elements.formatCore.click();
     elements.formatExpanded.click();
     elements.formatAncient.click();
+    elements.formatMystic.click();
     elements.cpuEasy.click();
     elements.cpuMedium.click();
     elements.cpuHard.click();
     elements.hostFormatCore.click();
     elements.hostFormatExpanded.click();
     elements.hostFormatAncient.click();
+    elements.hostFormatMystic.click();
     elements.chooseCreate.click();
     elements.chooseJoin.click();
     elements.backToChoiceHost.click();
@@ -138,6 +149,11 @@ describe("ui/events", () => {
     elements.tradeGems.click();
     elements.tradePlatinum.click();
     elements.tradeAncientsArchive.click();
+    elements.tradePearl.click();
+    elements.tradeObsidian.click();
+    elements.tradeAmethyst.click();
+    elements.tradeAsh.click();
+    elements.tradeEmber.click();
     elements.endTurn.click();
     elements.undoPlays.click();
     elements.restartGame.click();
@@ -169,12 +185,14 @@ describe("ui/events", () => {
     expect(handlers.selectCoreFormat).toHaveBeenCalled();
     expect(handlers.selectExpandedFormat).toHaveBeenCalled();
     expect(handlers.selectAncientFormat).toHaveBeenCalled();
+    expect(handlers.selectMysticFormat).toHaveBeenCalled();
     expect(handlers.selectCpuEasy).toHaveBeenCalled();
     expect(handlers.selectCpuMedium).toHaveBeenCalled();
     expect(handlers.selectCpuHard).toHaveBeenCalled();
     expect(handlers.selectHostFormatCore).toHaveBeenCalled();
     expect(handlers.selectHostFormatExpanded).toHaveBeenCalled();
     expect(handlers.selectHostFormatAncient).toHaveBeenCalled();
+    expect(handlers.selectHostFormatMystic).toHaveBeenCalled();
     expect(handlers.chooseCreate).toHaveBeenCalled();
     expect(handlers.chooseJoin).toHaveBeenCalled();
     expect(handlers.backToChoice).toHaveBeenCalled();
@@ -187,6 +205,11 @@ describe("ui/events", () => {
     expect(handlers.trade).toHaveBeenCalledWith("trade_gem_set");
     expect(handlers.trade).toHaveBeenCalledWith("trade_platinum");
     expect(handlers.trade).toHaveBeenCalledWith("trade_ancients_archive");
+    expect(handlers.trade).toHaveBeenCalledWith("trade_pearl");
+    expect(handlers.trade).toHaveBeenCalledWith("trade_obsidian");
+    expect(handlers.trade).toHaveBeenCalledWith("trade_amethyst");
+    expect(handlers.trade).toHaveBeenCalledWith("trade_ash");
+    expect(handlers.trade).toHaveBeenCalledWith("trade_ember");
     expect(handlers.endTurn).toHaveBeenCalled();
     expect(handlers.returnAllCards).toHaveBeenCalled();
     expect(handlers.resetGame).toHaveBeenCalledTimes(2);

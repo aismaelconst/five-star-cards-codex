@@ -34,6 +34,11 @@
                 <button id="tradeGems">Trade Gems → Tutor</button>
                 <button id="tradePlatinum">Trade Platinum → Dig</button>
                 <button id="tradeAncientsArchive">Trade 2 Ancients → Archive non-gold</button>
+                <button id="tradePearl">Trade Pearl → +1 Play This Turn</button>
+                <button id="tradeObsidian">Trade Obsidian → Opponent -1 Play Next Turn</button>
+                <button id="tradeAmethyst">Trade Amethyst → Shuffle Opponent Archive Card</button>
+                <button id="tradeAsh">Trade Ash → Shuffle Random Opponent Hand Card</button>
+                <button id="tradeEmber">Trade Ember → Shuffle Up to 5 Opponent Discard</button>
               </div>
               <div class="trade-info" id="tradeInfo"></div>
             </div>
@@ -146,6 +151,7 @@
           <button class="primary" id="formatCore">CORE (155)</button>
           <button class="ghost" id="formatExpanded">GILDED GEMS (180)</button>
           <button class="ghost" id="formatAncient">ANCIENT (180)</button>
+          <button class="ghost" id="formatMystic">MYSTIC (180)</button>
         </div>
       </div>
     </div>
@@ -187,6 +193,7 @@
             <button class="ghost" id="hostFormatCore" type="button">CORE</button>
             <button class="ghost" id="hostFormatExpanded" type="button">GILDED GEMS</button>
             <button class="ghost" id="hostFormatAncient" type="button">ANCIENT</button>
+            <button class="ghost" id="hostFormatMystic" type="button">MYSTIC</button>
           </div>
         </label>
         <label class="field">
@@ -299,7 +306,7 @@
     <div class="overlay confirm-overlay" id="archiveTutorOverlay" hidden>
       <div class="overlay-card">
         <h2>Archive Tutor</h2>
-        <p>Select a non-gold card from your deck to archive.</p>
+        <p id="archiveTutorMessage">Select a non-gold card from your deck to archive.</p>
         <div class="confirm-cards" id="archiveTutorOptions"></div>
         <div class="confirm-actions">
           <button class="ghost" id="archiveTutorCancel">Cancel</button>

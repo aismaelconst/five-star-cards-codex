@@ -235,6 +235,31 @@ h3 {
   color: #7a3a32;
 }
 
+.chip.pearl {
+  background: rgba(214, 222, 232, 0.28);
+  color: #4e5e72;
+}
+
+.chip.obsidian {
+  background: rgba(55, 62, 74, 0.24);
+  color: #252d38;
+}
+
+.chip.amethyst {
+  background: rgba(154, 111, 188, 0.24);
+  color: #5b3d74;
+}
+
+.chip.ash {
+  background: rgba(151, 145, 136, 0.24);
+  color: #5a5248;
+}
+
+.chip.ember {
+  background: rgba(196, 96, 63, 0.24);
+  color: #7d321b;
+}
+
 .play {
   display: flex;
   flex-direction: column;
@@ -510,6 +535,31 @@ h3 {
   background-image: url(/assets/cards/hallmark-star.svg);
 }
 
+.card.pearl {
+  border-color: rgba(184, 197, 216, 0.6);
+  background-image: url(/assets/cards/pearl-star.svg);
+}
+
+.card.obsidian {
+  border-color: rgba(59, 67, 80, 0.65);
+  background-image: url(/assets/cards/obsidian-star.svg);
+}
+
+.card.amethyst {
+  border-color: rgba(145, 102, 177, 0.62);
+  background-image: url(/assets/cards/amethyst-star.svg);
+}
+
+.card.ash {
+  border-color: rgba(139, 132, 123, 0.62);
+  background-image: url(/assets/cards/ash-star.svg);
+}
+
+.card.ember {
+  border-color: rgba(188, 90, 58, 0.62);
+  background-image: url(/assets/cards/ember-star.svg);
+}
+
 body.theme-pixel .card.bronze {
   --pixel-card-bg: #c7855a;
   --pixel-card-border: #8b5633;
@@ -598,6 +648,31 @@ body.theme-pixel .card.mint {
 body.theme-pixel .card.hallmark {
   --pixel-card-bg: #d08a7a;
   --pixel-card-border: #864c42;
+}
+
+body.theme-pixel .card.pearl {
+  --pixel-card-bg: #cdd7e2;
+  --pixel-card-border: #6d7f95;
+}
+
+body.theme-pixel .card.obsidian {
+  --pixel-card-bg: #596370;
+  --pixel-card-border: #2f3640;
+}
+
+body.theme-pixel .card.amethyst {
+  --pixel-card-bg: #b58fd0;
+  --pixel-card-border: #6a4a84;
+}
+
+body.theme-pixel .card.ash {
+  --pixel-card-bg: #b1a89f;
+  --pixel-card-border: #655c54;
+}
+
+body.theme-pixel .card.ember {
+  --pixel-card-bg: #cf805f;
+  --pixel-card-border: #7e4027;
 }
 
 body.theme-pixel .card.unknown {

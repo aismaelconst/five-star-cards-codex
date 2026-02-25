@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { createInitialState } from "../src/game/state.js";
 import { executeCpuTurn } from "../src/game/cpu.js";
 import { countCards } from "../src/shared/utils.js";
@@ -118,6 +118,92 @@ describe("cpu", () => {
     const summary = executeCpuTurn(state, { difficulty: "easy", cpuIndex: 1 });
 
     expect(summary.trades.some((trade) => trade.recipeId === "trade_electrum_draw")).toBe(false);
+  });
+
+  it("cpu uses pearl in mystic format when hand exceeds play cap", () => {
+    const state = createInitialState({
+      mode: "cpu",
+      format: "mystic",
+      playerNames: ["You", "CPU"],
+    });
+    state.currentPlayer = 1;
+    state.cpu = { difficulty: "easy" };
+    const cpu = state.players[1];
+    const opponent = state.players[0];
+    cpu.archive = ["pearl"];
+    cpu.hand = ["bronze", "bronze", "bronze", "bronze", "bronze", "bronze"];
+    opponent.hand = ["bronze"];
+
+    const summary = executeCpuTurn(state, { difficulty: "easy", cpuIndex: 1 });
+
+    expect(summary.trades[0].recipeId).toBe("trade_pearl");
+    expect(summary.trades[0].effectId).toBe("pearl_extra_play");
+    expect(summary.trades[0].playLimit).toBe(6);
+  });
+
+  it("cpu amethyst picks gold first from opponent archive", () => {
+    const state = createInitialState({
+      mode: "cpu",
+      format: "mystic",
+      playerNames: ["You", "CPU"],
+    });
+    state.currentPlayer = 1;
+    state.cpu = { difficulty: "medium" };
+    const cpu = state.players[1];
+    const opponent = state.players[0];
+    cpu.archive = ["amethyst"];
+    opponent.archive = ["silver", "gold", "bronze"];
+    opponent.deck = [];
+
+    const summary = executeCpuTurn(state, { difficulty: "medium", cpuIndex: 1 });
+
+    expect(summary.trades[0].recipeId).toBe("trade_amethyst");
+    expect(summary.trades[0].targetType).toBe("gold");
+    expect(summary.trades[0].movedTypes).toEqual(["gold"]);
+  });
+
+  it("cpu skips ash when opponent hand is empty", () => {
+    const state = createInitialState({
+      mode: "cpu",
+      format: "mystic",
+      playerNames: ["You", "CPU"],
+    });
+    state.currentPlayer = 1;
+    state.cpu = { difficulty: "easy" };
+    const cpu = state.players[1];
+    const opponent = state.players[0];
+    cpu.archive = ["ash"];
+    opponent.hand = [];
+
+    const summary = executeCpuTurn(state, { difficulty: "easy", cpuIndex: 1 });
+
+    expect(summary.trades.some((trade) => trade.recipeId === "trade_ash")).toBe(false);
+  });
+
+  it("cpu uses ember when opponent discard has cards", () => {
+    const randomSpy = vi.spyOn(Math, "random").mockReturnValue(0);
+    try {
+      const state = createInitialState({
+        mode: "cpu",
+        format: "mystic",
+        playerNames: ["You", "CPU"],
+      });
+      state.currentPlayer = 1;
+      state.cpu = { difficulty: "easy" };
+      const cpu = state.players[1];
+      const opponent = state.players[0];
+      cpu.archive = ["ember"];
+      opponent.discard = ["gold", "silver"];
+      opponent.deck = [];
+
+      const summary = executeCpuTurn(state, { difficulty: "easy", cpuIndex: 1 });
+
+      expect(summary.trades[0].recipeId).toBe("trade_ember");
+      expect(summary.trades[0].movedCount).toBe(2);
+      expect(summary.trades[0].movedTypes).toHaveLength(2);
+    } finally {
+      randomSpy.mockRestore();
+    }
   });
 
   it("cpu falls back to core when minted format is requested", () => {

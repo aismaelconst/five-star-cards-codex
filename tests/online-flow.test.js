@@ -252,6 +252,26 @@ describe("online-flow", () => {
 
     expect(deps.formatPlatinumMessage).toHaveBeenCalled();
     expect(elements.opponentAlert.textContent).toContain("opponent platinum");
+
+    const mysticState = createInitialState({ mode: "online", format: "mystic" });
+    mysticState.phase = "main";
+    state.ruleset = mysticState.ruleset;
+    state.format = "mystic";
+    onMessage({
+      type: "state_update",
+      roomId: "ROOM1",
+      playerId: "self-1",
+      lastEvent: {
+        type: "trade",
+        recipeId: "trade_ash",
+        playerId: "opponent-2",
+        effectId: "ash_random_hand_to_deck",
+        movedTypes: ["gold"],
+        movedCount: 1,
+      },
+      state: mysticState,
+    });
+    expect(elements.opponentAlert.textContent).toContain("gold");
   });
 
   it("handles lobby, game_start, error, and game_over messages", () => {

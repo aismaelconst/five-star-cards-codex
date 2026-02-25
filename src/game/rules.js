@@ -120,6 +120,58 @@ function buildCostWithWood(cost, substituteType) {
 
 const GEM_TYPES = new Set(["ruby", "emerald", "sapphire"]);
 const ANCIENT_TYPES = ["turquoise", "lapis_lazuli", "carnelian"];
+const MYSTIC_EFFECT_IDS = new Set([
+  "pearl_extra_play",
+  "obsidian_next_turn_penalty",
+  "amethyst_archive_to_deck",
+  "ash_random_hand_to_deck",
+  "ember_random_discard_to_deck",
+]);
+
+function ensureTurnEffects(state) {
+  const playerCount = state.players?.length ?? 2;
+  if (!state.turnEffects) {
+    state.turnEffects = {
+      currentPlayBonusByPlayer: Array.from({ length: playerCount }, () => 0),
+      currentPlayPenaltyByPlayer: Array.from({ length: playerCount }, () => 0),
+      nextTurnPlayPenaltyByPlayer: Array.from({ length: playerCount }, () => 0),
+      usedTradeRecipesByPlayer: Array.from({ length: playerCount }, () => ({})),
+    };
+    return state.turnEffects;
+  }
+  const turnEffects = state.turnEffects;
+  const ensureArray = (key, makeDefault) => {
+    if (!Array.isArray(turnEffects[key])) {
+      turnEffects[key] = Array.from({ length: playerCount }, makeDefault);
+      return;
+    }
+    for (let i = turnEffects[key].length; i < playerCount; i += 1) {
+      turnEffects[key].push(makeDefault(i));
+    }
+  };
+  ensureArray("currentPlayBonusByPlayer", () => 0);
+  ensureArray("currentPlayPenaltyByPlayer", () => 0);
+  ensureArray("nextTurnPlayPenaltyByPlayer", () => 0);
+  ensureArray("usedTradeRecipesByPlayer", () => ({}));
+  return turnEffects;
+}
+
+function getPlayerIndex(state, player) {
+  return state.players.findIndex((entry) => entry === player);
+}
+
+function getOpponentIndex(playerIndex, playerCount) {
+  if (playerCount <= 1) return -1;
+  return playerIndex === 0 ? 1 : 0;
+}
+
+function getOpponentPlayer(state, player) {
+  const playerIndex = getPlayerIndex(state, player);
+  if (playerIndex === -1) return null;
+  const opponentIndex = getOpponentIndex(playerIndex, state.players.length);
+  if (opponentIndex === -1) return null;
+  return state.players[opponentIndex];
+}
 
 function resolvePoolTypes(ruleset, pool) {
   const displayOrder = ruleset.displayOrder ?? Object.keys(ruleset.cardTypes ?? {});
@@ -332,6 +384,27 @@ function getTradeCost(state, player, recipeId, options = {}) {
   return cost;
 }
 
+function hasEffectTargets(state, player, effectId, options = {}) {
+  if (!MYSTIC_EFFECT_IDS.has(effectId)) return true;
+  const opponent = getOpponentPlayer(state, player);
+  if (!opponent) return false;
+  if (effectId === "amethyst_archive_to_deck") {
+    if (!Array.isArray(opponent.archive) || opponent.archive.length === 0) return false;
+    if (options.requireTargetType) {
+      if (!options.targetType) return false;
+      return opponent.archive.some((card) => getCardType(card) === options.targetType);
+    }
+    return true;
+  }
+  if (effectId === "ash_random_hand_to_deck") {
+    return Array.isArray(opponent.hand) && opponent.hand.length > 0;
+  }
+  if (effectId === "ember_random_discard_to_deck") {
+    return Array.isArray(opponent.discard) && opponent.discard.length > 0;
+  }
+  return true;
+}
+
 export function getWoodSubstitutionOptions(state, player, recipeId) {
   const recipe = getTradeRecipe(state, recipeId);
   if (!recipe) return [];
@@ -358,6 +431,14 @@ export function canInitiateTrade(state, player, recipeId) {
   if (!recipe) return false;
   if (state.phase !== "main") return false;
   if (state.tradesThisTurn >= state.ruleset.maxTrades) return false;
+  const playerIndex = getPlayerIndex(state, player);
+  if (playerIndex === -1) return false;
+  if (recipe.oncePerTurn) {
+    const turnEffects = ensureTurnEffects(state);
+    if (turnEffects.usedTradeRecipesByPlayer?.[playerIndex]?.[recipeId]) {
+      return false;
+    }
+  }
   const counts = countCards(player.archive);
   const baseCost = recipe.cost ?? {};
   const canPayWithCost = (cost, useEfficiency) => {
@@ -411,6 +492,9 @@ export function canInitiateTrade(state, player, recipeId) {
     }
   }
   if (!canPay) return false;
+  if (recipe.reward?.type === "effect") {
+    return hasEffectTargets(state, player, recipe.reward.id);
+  }
   if (recipe.reward === "any") {
     if (Array.isArray(recipe.rewardOptions) && recipe.rewardOptions.length > 0) {
       const deckCounts = countCards(player.deck);
@@ -469,11 +553,27 @@ export function canTrade(state, player, recipeId) {
   return canTradeWithOptions(state, player, recipeId, {});
 }
 
+export function getPlayerPlayLimit(state, playerIndex) {
+  const base = state.ruleset.maxPlays ?? 5;
+  const turnEffects = state.turnEffects;
+  const bonus = turnEffects?.currentPlayBonusByPlayer?.[playerIndex] ?? 0;
+  const penalty = turnEffects?.currentPlayPenaltyByPlayer?.[playerIndex] ?? 0;
+  return Math.max(1, base + bonus - penalty);
+}
+
 export function canTradeWithOptions(state, player, recipeId, options = {}) {
   const recipe = getTradeRecipe(state, recipeId);
   if (!recipe) return false;
   if (state.phase !== "main") return false;
   if (state.tradesThisTurn >= state.ruleset.maxTrades) return false;
+  const playerIndex = getPlayerIndex(state, player);
+  if (playerIndex === -1) return false;
+  if (recipe.oncePerTurn) {
+    const turnEffects = ensureTurnEffects(state);
+    if (turnEffects.usedTradeRecipesByPlayer?.[playerIndex]?.[recipeId]) {
+      return false;
+    }
+  }
   const cost = getTradeCost(state, player, recipeId, options);
   if (!cost) return false;
   if (recipe.reward === "any") {
@@ -525,6 +625,13 @@ export function canTradeWithOptions(state, player, recipeId, options = {}) {
     const cards = recipe.reward.cards ?? [];
     return cards.some((type) => (deckCounts[type] ?? 0) > 0);
   }
+  if (recipe.reward?.type === "effect") {
+    if (!recipe.reward.id) return false;
+    return hasEffectTargets(state, player, recipe.reward.id, {
+      requireTargetType: recipe.reward.id === "amethyst_archive_to_deck",
+      targetType: options.targetType,
+    });
+  }
   return false;
 }
 
@@ -550,6 +657,18 @@ function removeCardsFromHand(player, type, count) {
     }
     return true;
   });
+}
+
+function removeRandomCards(cards, count) {
+  const moved = [];
+  const copy = [...cards];
+  const total = Math.min(count, copy.length);
+  for (let i = 0; i < total; i += 1) {
+    const index = Math.floor(Math.random() * copy.length);
+    const [card] = copy.splice(index, 1);
+    moved.push(card);
+  }
+  return { remaining: copy, moved };
 }
 
 export function performTrade(state, player, recipeId, options = {}) {
@@ -584,6 +703,13 @@ export function performTrade(state, player, recipeId, options = {}) {
     return moved;
   };
 
+  const playerIndex = getPlayerIndex(state, player);
+  if (playerIndex === -1) {
+    return { success: false };
+  }
+  const opponentIndex = getOpponentIndex(playerIndex, state.players.length);
+  const opponent = opponentIndex === -1 ? null : state.players[opponentIndex];
+  const turnEffects = ensureTurnEffects(state);
   let detail = {};
   if (recipe.reward === "any") {
     if (
@@ -682,6 +808,53 @@ export function performTrade(state, player, recipeId, options = {}) {
       }
     });
     detail.handArchive = { ...handArchive };
+  } else if (recipe.reward?.type === "effect") {
+    detail.effectId = recipe.reward.id;
+    if (recipe.reward.id === "pearl_extra_play") {
+      turnEffects.currentPlayBonusByPlayer[playerIndex] = 1;
+      detail.playLimit = getPlayerPlayLimit(state, playerIndex);
+    } else if (recipe.reward.id === "obsidian_next_turn_penalty") {
+      if (opponentIndex !== -1) {
+        turnEffects.nextTurnPlayPenaltyByPlayer[opponentIndex] = 1;
+      }
+    } else if (recipe.reward.id === "amethyst_archive_to_deck") {
+      const targetType = options.targetType;
+      if (targetType && opponent) {
+        const targetIndex = opponent.archive.findIndex(
+          (card) => getCardType(card) === targetType
+        );
+        if (targetIndex !== -1) {
+          const [movedCard] = opponent.archive.splice(targetIndex, 1);
+          opponent.deck.push(movedCard);
+          opponent.deck = shuffle(opponent.deck);
+          detail.targetType = targetType;
+          detail.movedTypes = [targetType];
+          detail.movedCount = 1;
+        }
+      }
+    } else if (recipe.reward.id === "ash_random_hand_to_deck") {
+      if (opponent && opponent.hand.length > 0) {
+        const { remaining, moved } = removeRandomCards(opponent.hand, 1);
+        opponent.hand = remaining;
+        moved.forEach((card) => opponent.deck.push(card));
+        if (moved.length > 0) {
+          opponent.deck = shuffle(opponent.deck);
+        }
+        detail.movedTypes = moved.map((card) => getCardType(card));
+        detail.movedCount = moved.length;
+      }
+    } else if (recipe.reward.id === "ember_random_discard_to_deck") {
+      if (opponent && opponent.discard.length > 0) {
+        const { remaining, moved } = removeRandomCards(opponent.discard, 5);
+        opponent.discard = remaining;
+        moved.forEach((card) => opponent.deck.push(card));
+        if (moved.length > 0) {
+          opponent.deck = shuffle(opponent.deck);
+        }
+        detail.movedTypes = moved.map((card) => getCardType(card));
+        detail.movedCount = moved.length;
+      }
+    }
   }
 
   if ((cost.copper ?? 0) > 0) {
@@ -693,13 +866,18 @@ export function performTrade(state, player, recipeId, options = {}) {
       detail.copperTutored = true;
     }
   }
+  if (recipe.oncePerTurn) {
+    turnEffects.usedTradeRecipesByPlayer[playerIndex][recipeId] = true;
+  }
   state.tradesThisTurn += 1;
   return { success: true, detail };
 }
 
 export function playCard(state, player, index) {
   if (state.phase !== "main") return false;
-  if (player.active.length >= state.ruleset.maxPlays) return false;
+  const playerIndex = getPlayerIndex(state, player);
+  if (playerIndex === -1) return false;
+  if (player.active.length >= getPlayerPlayLimit(state, playerIndex)) return false;
   const [card] = player.hand.splice(index, 1);
   if (!card) return false;
   player.active.push(card);
@@ -759,8 +937,24 @@ export function finalizeArchive(state, options = {}) {
     return { winnerIndex: pending.playerIndex };
   }
 
+  const outgoingIndex = pending.playerIndex;
+  const incomingIndex = getOpponentIndex(outgoingIndex, state.players.length);
+  const turnEffects = ensureTurnEffects(state);
+  if (outgoingIndex !== -1) {
+    turnEffects.currentPlayBonusByPlayer[outgoingIndex] = 0;
+    turnEffects.currentPlayPenaltyByPlayer[outgoingIndex] = 0;
+    turnEffects.usedTradeRecipesByPlayer[outgoingIndex] = {};
+  }
+  if (incomingIndex !== -1) {
+    turnEffects.currentPlayBonusByPlayer[incomingIndex] = 0;
+    turnEffects.currentPlayPenaltyByPlayer[incomingIndex] =
+      turnEffects.nextTurnPlayPenaltyByPlayer[incomingIndex] ?? 0;
+    turnEffects.nextTurnPlayPenaltyByPlayer[incomingIndex] = 0;
+    turnEffects.usedTradeRecipesByPlayer[incomingIndex] = {};
+  }
+
   state.tradesThisTurn = 0;
-  state.currentPlayer = pending.playerIndex === 0 ? 1 : 0;
+  state.currentPlayer = incomingIndex === -1 ? 0 : incomingIndex;
   state.turnCount += 1;
   state.phase = "between";
   return { winnerIndex: null };

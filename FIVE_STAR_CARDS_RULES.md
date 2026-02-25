@@ -12,6 +12,8 @@ Choose one format before starting the game:
   - Core + 5 each: wood, ruby, emerald, sapphire, platinum
 - **Ancient (180 cards)**
   - Core + 5 each: turquoise, lapis lazuli, carnelian, ingot, sterling
+- **Mystic (180 cards)**
+  - Core + 5 each: pearl, obsidian, amethyst, ash, ember
 
 All non-core cards have **draw 0** (they do not draw cards at end of turn).
 
@@ -72,9 +74,29 @@ You may trade **before and/or after** playing cards. You may **not** trade after
   - Counts as **2 silver** when paying trade costs from the Archive.
 - You may choose whether to apply these efficiency counts or pay with regular bronze/silver.
 
+### Mystic Trades (Mystic)
+
+Each mystic trade costs **only itself** from Archive and is usable **once per player turn per recipe**.
+
+- **Pearl → +1 play this turn**
+- **Obsidian → opponent plays 1 fewer card on their next turn** (non-stacking)
+- **Amethyst → choose 1 opponent archive card type, move one to opponent deck, then shuffle**
+- **Ash → move 1 random opponent hand card to opponent deck, then shuffle**
+- **Ember → move up to 5 random opponent discard cards to opponent deck, then shuffle once**
+
+Targeting / reveal rules:
+- If a target-based effect has no valid target, the trade is unavailable.
+- Gold can be targeted by mystic disruption effects.
+- Randomly moved card type(s) are revealed to both players.
+
 ## 2. Play Cards (Optional)
 
 You may play **up to 5 cards** from your hand into your **Active Cards** area. You may play fewer than 5.
+
+Play-cap modifiers can change this in Mystic games:
+- Pearl can raise your current-turn cap to 6.
+- Obsidian can reduce the opponent’s next-turn cap by 1.
+- Minimum playable cap is always 1 when you have at least one card in hand.
 
 ## 3. Archive & Draw (Mandatory)
 
@@ -116,3 +138,11 @@ Ancients Trades:
 - 2 distinct ancients → archive 1 non‑gold from deck (shuffle)
 - Ingot: counts as 3 bronze in archive trades
 - Sterling: counts as 2 silver in archive trades
+
+Mystic Trades (once per turn per recipe):
+
+- Pearl → +1 play this turn
+- Obsidian → opponent -1 play next turn
+- Amethyst → shuffle 1 chosen opponent archive card into deck
+- Ash → shuffle 1 random opponent hand card into deck
+- Ember → shuffle up to 5 random opponent discard cards into deck

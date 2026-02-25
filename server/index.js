@@ -30,7 +30,7 @@ const CONTENT_TYPES = {
 };
 
 export function resolveRequestedFormat(format) {
-  if (format === "expanded" || format === "ancient" || format === "core") {
+  if (format === "expanded" || format === "ancient" || format === "mystic" || format === "core") {
     return format;
   }
   return "core";
@@ -331,12 +331,18 @@ export function createGameServer(options = {}) {
           substituteType: message.action.payload?.substituteType ?? null,
           choiceType: message.action.payload?.choiceType ?? null,
           poolTypes: message.action.payload?.poolTypes ?? null,
+          targetType:
+            result.event.detail?.targetType ?? message.action.payload?.targetType ?? null,
           rewardType:
             result.event.detail?.rewardType ?? message.action.payload?.rewardType ?? null,
           rewardCards: result.event.detail?.rewardCards ?? null,
           rewardCount: result.event.detail?.rewardCount,
           drawCount: result.event.detail?.drawCount,
           digDiscardedCount: result.event.detail?.digDiscardedCount,
+          effectId: result.event.detail?.effectId ?? null,
+          movedTypes: result.event.detail?.movedTypes ?? null,
+          movedCount: result.event.detail?.movedCount,
+          playLimit: result.event.detail?.playLimit,
           handArchive:
             result.event.detail?.handArchive ?? message.action.payload?.handArchive ?? null,
         };

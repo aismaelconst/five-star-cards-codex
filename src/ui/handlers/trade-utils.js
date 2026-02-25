@@ -63,6 +63,33 @@ export function formatTradeToast(recipeId, recipe, event = {}) {
     const count = event.rewardCount ?? reward.count ?? 0;
     return `Trade complete${woodNote}: gained ${count} ${titleCase(reward.card)}.`;
   }
+  if (reward?.type === "effect") {
+    if (reward.id === "pearl_extra_play") {
+      const playLimit = event.playLimit ? ` (play limit ${event.playLimit})` : "";
+      return `Trade complete${woodNote}: +1 play this turn${playLimit}.`;
+    }
+    if (reward.id === "obsidian_next_turn_penalty") {
+      return `Trade complete${woodNote}: opponent plays 1 less card next turn.`;
+    }
+    if (reward.id === "amethyst_archive_to_deck") {
+      const target = event.targetType ? titleCase(event.targetType) : "1 card";
+      return `Trade complete${woodNote}: shuffled opponent archive ${target} into deck.`;
+    }
+    if (reward.id === "ash_random_hand_to_deck") {
+      const moved = Array.isArray(event.movedTypes) ? event.movedTypes : [];
+      const label = moved.length > 0 ? titleCase(moved[0]) : "a random card";
+      return `Trade complete${woodNote}: shuffled opponent hand ${label} into deck.`;
+    }
+    if (reward.id === "ember_random_discard_to_deck") {
+      const moved = Array.isArray(event.movedTypes) ? event.movedTypes : [];
+      const list = moved.map((type) => titleCase(type)).join(", ");
+      if (list) {
+        return `Trade complete${woodNote}: shuffled opponent discard ${list} into deck.`;
+      }
+      return `Trade complete${woodNote}: shuffled opponent discard cards into deck.`;
+    }
+    return `Trade complete${woodNote}: activated ${reward.id}.`;
+  }
   if (reward?.type === "draw") {
     const count = event.drawCount ?? reward.count ?? 0;
     return `Trade complete${woodNote}: drew ${count} card(s).`;

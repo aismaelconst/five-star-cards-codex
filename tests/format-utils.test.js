@@ -5,6 +5,7 @@ describe("format-utils", () => {
   it("formats labels for formats", () => {
     expect(formatLabel("expanded")).toBe("GILDED GEMS");
     expect(formatLabel("ancient")).toBe("ANCIENT");
+    expect(formatLabel("mystic")).toBe("MYSTIC");
     expect(formatLabel("core")).toBe("CORE");
   });
 
@@ -14,16 +15,18 @@ describe("format-utils", () => {
       formatCore: makeButton(),
       formatExpanded: makeButton(),
       formatAncient: makeButton(),
+      formatMystic: makeButton(),
       hostFormatCore: makeButton(),
       hostFormatExpanded: makeButton(),
       hostFormatAncient: makeButton(),
+      hostFormatMystic: makeButton(),
     };
-    const state = { format: "ancient" };
+    const state = { format: "mystic" };
 
     updateFormatButtons(state, elements);
 
-    expect(elements.formatAncient.classList.contains("active")).toBe(true);
+    expect(elements.formatMystic.classList.contains("active")).toBe(true);
     expect(elements.formatCore.classList.contains("active")).toBe(false);
-    expect(elements.hostFormatAncient.classList.contains("active")).toBe(true);
+    expect(elements.hostFormatMystic.classList.contains("active")).toBe(true);
   });
 });

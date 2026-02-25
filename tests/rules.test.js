@@ -1,17 +1,20 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import {
   baseRuleset,
   expandedRuleset,
   ancientRuleset,
+  mysticRuleset,
   mintedRuleset,
 } from "../src/game/ruleset.js";
 import { createCard } from "../src/game/cards.js";
 import {
   ActionTypes,
   applyAction,
+  canInitiateTrade,
   canTrade,
   canTradeWithOptions,
   finalizeArchive,
+  getPlayerPlayLimit,
   performTrade,
   playCard,
   playCardByType,
@@ -139,6 +142,41 @@ function makeMintedState() {
     winner: null,
     turnCount: 1,
     pendingArchive: null,
+  };
+}
+
+function makeMysticState() {
+  return {
+    players: [
+      {
+        deck: [],
+        hand: [],
+        active: [],
+        archive: [],
+        discard: [],
+      },
+      {
+        deck: [],
+        hand: [],
+        active: [],
+        archive: [],
+        discard: [],
+      },
+    ],
+    ruleset: mysticRuleset,
+    format: "mystic",
+    currentPlayer: 0,
+    tradesThisTurn: 0,
+    phase: "main",
+    winner: null,
+    turnCount: 1,
+    pendingArchive: null,
+    turnEffects: {
+      currentPlayBonusByPlayer: [0, 0],
+      currentPlayPenaltyByPlayer: [0, 0],
+      nextTurnPlayPenaltyByPlayer: [0, 0],
+      usedTradeRecipesByPlayer: [{}, {}],
+    },
   };
 }
 
@@ -390,6 +428,144 @@ describe("rules", () => {
       handArchive: { bronze: 1 },
     })).toBe(false);
     expect(result.success).toBe(false);
+  });
+
+  it("mystic pearl trade costs itself, raises play cap, and is once per turn", () => {
+    const state = makeMysticState();
+    const player = current(state);
+    player.archive = [createCard("pearl", mysticRuleset)];
+
+    expect(canTradeWithOptions(state, player, "trade_pearl", {})).toBe(true);
+    const result = performTrade(state, player, "trade_pearl", {});
+
+    expect(result.success).toBe(true);
+    expect(result.detail.effectId).toBe("pearl_extra_play");
+    expect(getPlayerPlayLimit(state, 0)).toBe(6);
+    expect(player.discard.filter((card) => card.type === "pearl")).toHaveLength(1);
+    expect(canInitiateTrade(state, player, "trade_pearl")).toBe(false);
+  });
+
+  it("obsidian applies next-turn play penalty with minimum floor of one playable card", () => {
+    const state = makeMysticState();
+    const player = current(state);
+    const opponent = state.players[1];
+    player.archive = [createCard("obsidian", mysticRuleset)];
+    opponent.hand = [createCard("bronze", mysticRuleset), createCard("silver", mysticRuleset)];
+
+    const trade = performTrade(state, player, "trade_obsidian");
+    expect(trade.success).toBe(true);
+    expect(state.turnEffects.nextTurnPlayPenaltyByPlayer[1]).toBe(1);
+
+    prepareArchive(state);
+    finalizeArchive(state);
+    applyAction(state, { type: ActionTypes.START_TURN });
+
+    expect(state.currentPlayer).toBe(1);
+    expect(getPlayerPlayLimit(state, 1)).toBe(4);
+
+    state.turnEffects.currentPlayPenaltyByPlayer[1] = 99;
+    expect(getPlayerPlayLimit(state, 1)).toBe(1);
+    expect(playCard(state, opponent, 0)).toBe(true);
+    expect(playCard(state, opponent, 0)).toBe(false);
+  });
+
+  it("amethyst requires valid targetType and can move gold from opponent archive", () => {
+    const state = makeMysticState();
+    const player = current(state);
+    const opponent = state.players[1];
+    player.archive = [createCard("amethyst", mysticRuleset)];
+    opponent.archive = [
+      createCard("gold", mysticRuleset),
+      createCard("silver", mysticRuleset),
+    ];
+    opponent.deck = [];
+
+    expect(canInitiateTrade(state, player, "trade_amethyst")).toBe(true);
+    expect(canTradeWithOptions(state, player, "trade_amethyst", {})).toBe(false);
+    expect(
+      canTradeWithOptions(state, player, "trade_amethyst", { targetType: "bronze" })
+    ).toBe(false);
+
+    const result = performTrade(state, player, "trade_amethyst", { targetType: "gold" });
+    expect(result.success).toBe(true);
+    expect(result.detail.effectId).toBe("amethyst_archive_to_deck");
+    expect(result.detail.targetType).toBe("gold");
+    expect(result.detail.movedCount).toBe(1);
+    expect(result.detail.movedTypes).toEqual(["gold"]);
+    expect(opponent.archive.some((card) => card.type === "gold")).toBe(false);
+    expect(opponent.deck.some((card) => card.type === "gold")).toBe(true);
+  });
+
+  it("ash moves one random opponent hand card to deck", () => {
+    const randomSpy = vi.spyOn(Math, "random").mockReturnValue(0);
+    try {
+      const state = makeMysticState();
+      const player = current(state);
+      const opponent = state.players[1];
+      player.archive = [createCard("ash", mysticRuleset)];
+      opponent.hand = [
+        createCard("gold", mysticRuleset),
+        createCard("silver", mysticRuleset),
+      ];
+      opponent.deck = [createCard("bronze", mysticRuleset)];
+
+      const result = performTrade(state, player, "trade_ash");
+      expect(result.success).toBe(true);
+      expect(result.detail.effectId).toBe("ash_random_hand_to_deck");
+      expect(result.detail.movedCount).toBe(1);
+      expect(result.detail.movedTypes).toEqual(["gold"]);
+      expect(opponent.hand).toHaveLength(1);
+      expect(opponent.deck).toHaveLength(2);
+      expect(opponent.deck.some((card) => card.type === "gold")).toBe(true);
+    } finally {
+      randomSpy.mockRestore();
+    }
+  });
+
+  it("ember moves up to five random opponent discard cards to deck", () => {
+    const randomSpy = vi.spyOn(Math, "random").mockReturnValue(0);
+    try {
+      const state = makeMysticState();
+      const player = current(state);
+      const opponent = state.players[1];
+      player.archive = [createCard("ember", mysticRuleset)];
+      opponent.discard = [
+        createCard("gold", mysticRuleset),
+        createCard("silver", mysticRuleset),
+        createCard("bronze", mysticRuleset),
+        createCard("bronze", mysticRuleset),
+        createCard("silver", mysticRuleset),
+        createCard("bronze", mysticRuleset),
+      ];
+      opponent.deck = [];
+
+      const result = performTrade(state, player, "trade_ember");
+      expect(result.success).toBe(true);
+      expect(result.detail.effectId).toBe("ember_random_discard_to_deck");
+      expect(result.detail.movedCount).toBe(5);
+      expect(result.detail.movedTypes).toHaveLength(5);
+      expect(opponent.discard).toHaveLength(1);
+      expect(opponent.deck).toHaveLength(5);
+    } finally {
+      randomSpy.mockRestore();
+    }
+  });
+
+  it("disables target-based mystic trades when no opponent targets exist", () => {
+    const state = makeMysticState();
+    const player = current(state);
+    player.archive = [
+      createCard("amethyst", mysticRuleset),
+      createCard("ash", mysticRuleset),
+      createCard("ember", mysticRuleset),
+    ];
+    state.players[1].archive = [];
+    state.players[1].hand = [];
+    state.players[1].discard = [];
+
+    expect(canInitiateTrade(state, player, "trade_amethyst")).toBe(false);
+    expect(canInitiateTrade(state, player, "trade_ash")).toBe(false);
+    expect(canInitiateTrade(state, player, "trade_ember")).toBe(false);
   });
 
   it("ingot counts as three bronze for bronze trades when chosen", () => {

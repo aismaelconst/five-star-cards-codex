@@ -46,6 +46,7 @@ function formatTradeBullet(recipe, type, ruleset) {
   }
   const cost = parts.join(" + ");
   let reward = recipe.reward;
+  const oncePerTurnSuffix = recipe.oncePerTurn ? " (once per turn)" : "";
   if (recipe.reward?.type === "cards") {
     reward = `${recipe.reward.count} ${recipe.reward.card}`;
   } else if (recipe.reward?.type === "draw") {
@@ -74,12 +75,26 @@ function formatTradeBullet(recipe, type, ruleset) {
   } else if (recipe.reward?.type === "archive_cards") {
     const cards = recipe.reward.cards ?? [];
     reward = cards.length ? `archive ${cards.join("/")}` : "archive cards";
+  } else if (recipe.reward?.type === "effect") {
+    if (recipe.reward.id === "pearl_extra_play") {
+      reward = "gain +1 play this turn";
+    } else if (recipe.reward.id === "obsidian_next_turn_penalty") {
+      reward = "opponent plays 1 less card next turn";
+    } else if (recipe.reward.id === "amethyst_archive_to_deck") {
+      reward = "shuffle 1 chosen opponent archive card into deck";
+    } else if (recipe.reward.id === "ash_random_hand_to_deck") {
+      reward = "shuffle 1 random opponent hand card into deck";
+    } else if (recipe.reward.id === "ember_random_discard_to_deck") {
+      reward = "shuffle up to 5 random opponent discard cards into deck";
+    } else {
+      reward = recipe.reward.id ?? "effect";
+    }
   } else if (recipe.reward === "any" && recipe.rewardOptions) {
     reward = `tutor ${recipe.rewardOptions.join("/")}`;
   } else if (typeof recipe.reward === "string") {
     reward = `1 ${recipe.reward}`;
   }
-  return `• Trade: ${cost} → ${reward}`;
+  return `• Trade: ${cost} → ${reward}${oncePerTurnSuffix}`;
 }
 
 function resolvePoolTypes(pool, displayOrder) {

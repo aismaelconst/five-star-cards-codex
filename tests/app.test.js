@@ -23,6 +23,11 @@ function setupDom() {
     <button id="tradeGems"></button>
     <button id="tradePlatinum"></button>
     <button id="tradeAncientsArchive"></button>
+    <button id="tradePearl"></button>
+    <button id="tradeObsidian"></button>
+    <button id="tradeAmethyst"></button>
+    <button id="tradeAsh"></button>
+    <button id="tradeEmber"></button>
     <button id="tradeElectrumDraw"></button>
     <button id="tradeMint"></button>
     <button id="tradeHallmark"></button>
@@ -55,6 +60,7 @@ function setupDom() {
     <button id="formatCore"></button>
     <button id="formatExpanded"></button>
     <button id="formatAncient"></button>
+    <button id="formatMystic"></button>
     <button id="formatMinted"></button>
     <div id="cpuOverlay"></div>
     <button id="cpuEasy"></button>
@@ -66,6 +72,7 @@ function setupDom() {
     <button id="hostFormatCore"></button>
     <button id="hostFormatExpanded"></button>
     <button id="hostFormatAncient"></button>
+    <button id="hostFormatMystic"></button>
     <button id="hostFormatMinted"></button>
     <input id="playerNameInput" />
     <input id="roomCodeInput" />
@@ -107,6 +114,7 @@ function setupDom() {
     <button id="poolCostConfirm"></button>
     <button id="poolCostCancel"></button>
     <div id="archiveTutorOverlay"></div>
+    <div id="archiveTutorMessage"></div>
     <div id="archiveTutorOptions"></div>
     <button id="archiveTutorConfirm"></button>
     <button id="archiveTutorCancel"></button>

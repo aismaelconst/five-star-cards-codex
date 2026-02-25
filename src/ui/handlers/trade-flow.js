@@ -22,6 +22,7 @@ export function createTradeFlow(options) {
   let pendingChoiceSelection = null;
   let pendingPoolSelection = null;
   let pendingArchiveTutorChoice = null;
+  let pendingArchiveTutorMode = null;
   let pendingHandArchive = null;
 
   function getEfficiencyTypesForRecipe(recipe) {
@@ -46,6 +47,7 @@ export function createTradeFlow(options) {
     pendingChoiceSelection = null;
     pendingPoolSelection = null;
     pendingArchiveTutorChoice = null;
+    pendingArchiveTutorMode = null;
     pendingHandArchive = null;
   }
 
@@ -72,6 +74,7 @@ export function createTradeFlow(options) {
       choiceType: null,
       poolTypes: null,
       handArchive: null,
+      targetType: null,
     };
     const woodOptions = getWoodSubstitutionOptions(state, player, recipeId);
     const recipe = state.ruleset.tradeRecipes?.[recipeId];
@@ -108,7 +111,11 @@ export function createTradeFlow(options) {
       return null;
     }
     if (recipe?.reward?.type === "archive" && elements.archiveTutorOverlay) {
-      openArchiveTutorOverlay();
+      openArchiveTutorOverlay("deck_archive");
+      return null;
+    }
+    if (recipe?.reward?.type === "effect" && recipe.reward.id === "amethyst_archive_to_deck") {
+      openArchiveTutorOverlay("opponent_archive");
       return null;
     }
     return finalizeTrade();
@@ -125,6 +132,7 @@ export function createTradeFlow(options) {
       choiceType: pendingTrade.choiceType,
       poolTypes: pendingTrade.poolTypes,
       handArchive: pendingTrade.handArchive,
+      targetType: pendingTrade.targetType,
     };
     const result = sendOrApply({ type: ActionTypes.TRADE, payload });
     resetPending();
@@ -264,7 +272,11 @@ export function createTradeFlow(options) {
       return;
     }
     if (recipe?.reward?.type === "archive" && elements.archiveTutorOverlay) {
-      openArchiveTutorOverlay();
+      openArchiveTutorOverlay("deck_archive");
+      return;
+    }
+    if (recipe?.reward?.type === "effect" && recipe.reward.id === "amethyst_archive_to_deck") {
+      openArchiveTutorOverlay("opponent_archive");
       return;
     }
     finalizeTrade();
@@ -311,7 +323,11 @@ export function createTradeFlow(options) {
       return;
     }
     if (recipe?.reward?.type === "archive" && elements.archiveTutorOverlay) {
-      openArchiveTutorOverlay();
+      openArchiveTutorOverlay("deck_archive");
+      return;
+    }
+    if (recipe?.reward?.type === "effect" && recipe.reward.id === "amethyst_archive_to_deck") {
+      openArchiveTutorOverlay("opponent_archive");
       return;
     }
     finalizeTrade();
@@ -436,7 +452,11 @@ export function createTradeFlow(options) {
       return;
     }
     if (recipe?.reward?.type === "archive" && elements.archiveTutorOverlay) {
-      openArchiveTutorOverlay();
+      openArchiveTutorOverlay("deck_archive");
+      return;
+    }
+    if (recipe?.reward?.type === "effect" && recipe.reward.id === "amethyst_archive_to_deck") {
+      openArchiveTutorOverlay("opponent_archive");
       return;
     }
     finalizeTrade();
@@ -671,26 +691,39 @@ export function createTradeFlow(options) {
     if (elements.handArchiveOverlay) elements.handArchiveOverlay.hidden = true;
   }
 
-  function openArchiveTutorOverlay() {
+  function openArchiveTutorOverlay(mode = "deck_archive") {
     if (!elements.archiveTutorOptions || !elements.archiveTutorOverlay) return;
     const player = getLocalPlayer();
+    const opponent =
+      state.players.find((entry) => entry.id !== player.id) ??
+      state.players[state.currentPlayer === 0 ? 1 : 0];
     const displayOrder = state.ruleset.displayOrder ?? ["bronze", "silver", "gold"];
-    const deckCounts = countCards(player.deck, displayOrder);
+    const sourceCounts =
+      mode === "opponent_archive"
+        ? countCards(opponent?.archive ?? [], displayOrder)
+        : countCards(player.deck, displayOrder);
     pendingArchiveTutorChoice = null;
+    pendingArchiveTutorMode = mode;
     elements.archiveTutorOptions.innerHTML = "";
     displayOrder.forEach((type) => {
-      if (type === "gold") return;
+      if (mode !== "opponent_archive" && type === "gold") return;
       const button = document.createElement("button");
       button.className = "ghost option-button";
-      button.textContent = type;
+      button.textContent = `${type} (${sourceCounts[type] ?? 0})`;
       button.dataset.choice = type;
-      if ((deckCounts[type] ?? 0) === 0) {
+      if ((sourceCounts[type] ?? 0) === 0) {
         button.disabled = true;
       } else {
         button.addEventListener("click", () => selectArchiveTutorChoice(type));
       }
       elements.archiveTutorOptions.appendChild(button);
     });
+    if (elements.archiveTutorMessage) {
+      elements.archiveTutorMessage.textContent =
+        mode === "opponent_archive"
+          ? "Select an opponent archive card type to shuffle into their deck."
+          : "Select a non-gold card from your deck to archive.";
+    }
     if (elements.archiveTutorConfirm) elements.archiveTutorConfirm.disabled = true;
     elements.archiveTutorOverlay.hidden = false;
   }
@@ -707,9 +740,14 @@ export function createTradeFlow(options) {
 
   function confirmArchiveTutor() {
     if (!pendingTrade || !pendingArchiveTutorChoice) return;
-    pendingTrade.rewardType = pendingArchiveTutorChoice;
+    if (pendingArchiveTutorMode === "opponent_archive") {
+      pendingTrade.targetType = pendingArchiveTutorChoice;
+    } else {
+      pendingTrade.rewardType = pendingArchiveTutorChoice;
+    }
     if (elements.archiveTutorOverlay) elements.archiveTutorOverlay.hidden = true;
     pendingArchiveTutorChoice = null;
+    pendingArchiveTutorMode = null;
     finalizeTrade();
   }
 

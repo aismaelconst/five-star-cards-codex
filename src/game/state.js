@@ -4,7 +4,17 @@ import {
   baseRuleset,
   expandedRuleset,
   ancientRuleset,
+  mysticRuleset,
 } from "./ruleset.js";
+
+function createTurnEffects(playerCount) {
+  return {
+    currentPlayBonusByPlayer: Array.from({ length: playerCount }, () => 0),
+    currentPlayPenaltyByPlayer: Array.from({ length: playerCount }, () => 0),
+    nextTurnPlayPenaltyByPlayer: Array.from({ length: playerCount }, () => 0),
+    usedTradeRecipesByPlayer: Array.from({ length: playerCount }, () => ({})),
+  };
+}
 
 export function createPlayerState(ruleset, playerId, name) {
   return {
@@ -21,7 +31,10 @@ export function createPlayerState(ruleset, playerId, name) {
 export function createInitialState(options = {}) {
   const requestedFormat = options.format ?? "core";
   const format =
-    requestedFormat === "expanded" || requestedFormat === "ancient" || requestedFormat === "core"
+    requestedFormat === "expanded" ||
+    requestedFormat === "ancient" ||
+    requestedFormat === "mystic" ||
+    requestedFormat === "core"
       ? requestedFormat
       : "core";
   const ruleset =
@@ -30,6 +43,8 @@ export function createInitialState(options = {}) {
       ? expandedRuleset
       : format === "ancient"
         ? ancientRuleset
+        : format === "mystic"
+          ? mysticRuleset
         : baseRuleset);
   const gameId = options.gameId ?? `game-${Date.now()}`;
   const playerIds = options.playerIds ?? ["player-1", "player-2"];
@@ -61,5 +76,6 @@ export function createInitialState(options = {}) {
     winner: null,
     turnCount: 1,
     pendingArchive: null,
+    turnEffects: createTurnEffects(playerIds.length),
   };
 }

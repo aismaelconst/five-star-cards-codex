@@ -19,6 +19,9 @@ export function wireEvents(elements, handlers) {
   if (elements.formatAncient) {
     elements.formatAncient.addEventListener("click", handlers.selectAncientFormat);
   }
+  if (elements.formatMystic) {
+    elements.formatMystic.addEventListener("click", handlers.selectMysticFormat);
+  }
   if (elements.cpuEasy) {
     elements.cpuEasy.addEventListener("click", handlers.selectCpuEasy);
   }
@@ -36,6 +39,9 @@ export function wireEvents(elements, handlers) {
   }
   if (elements.hostFormatAncient) {
     elements.hostFormatAncient.addEventListener("click", handlers.selectHostFormatAncient);
+  }
+  if (elements.hostFormatMystic) {
+    elements.hostFormatMystic.addEventListener("click", handlers.selectHostFormatMystic);
   }
   elements.chooseCreate.addEventListener("click", handlers.chooseCreate);
   elements.chooseJoin.addEventListener("click", handlers.chooseJoin);
@@ -59,6 +65,21 @@ export function wireEvents(elements, handlers) {
       "click",
       () => handlers.trade("trade_ancients_archive")
     );
+  }
+  if (elements.tradePearl) {
+    elements.tradePearl.addEventListener("click", () => handlers.trade("trade_pearl"));
+  }
+  if (elements.tradeObsidian) {
+    elements.tradeObsidian.addEventListener("click", () => handlers.trade("trade_obsidian"));
+  }
+  if (elements.tradeAmethyst) {
+    elements.tradeAmethyst.addEventListener("click", () => handlers.trade("trade_amethyst"));
+  }
+  if (elements.tradeAsh) {
+    elements.tradeAsh.addEventListener("click", () => handlers.trade("trade_ash"));
+  }
+  if (elements.tradeEmber) {
+    elements.tradeEmber.addEventListener("click", () => handlers.trade("trade_ember"));
   }
   elements.endTurn.addEventListener("click", handlers.endTurn);
   elements.undoPlays.addEventListener("click", handlers.returnAllCards);

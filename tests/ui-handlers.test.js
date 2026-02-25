@@ -33,6 +33,7 @@ function makeElements() {
     formatCore: document.createElement("button"),
     formatExpanded: document.createElement("button"),
     formatAncient: document.createElement("button"),
+    formatMystic: document.createElement("button"),
     cpuEasy: document.createElement("button"),
     cpuMedium: document.createElement("button"),
     cpuHard: document.createElement("button"),
@@ -42,6 +43,7 @@ function makeElements() {
     hostFormatCore: document.createElement("button"),
     hostFormatExpanded: document.createElement("button"),
     hostFormatAncient: document.createElement("button"),
+    hostFormatMystic: document.createElement("button"),
     cpuMode: document.createElement("button"),
     playerNameInput: Object.assign(document.createElement("input"), { value: "" }),
     roomCodeInput: Object.assign(document.createElement("input"), { value: "" }),
@@ -82,6 +84,7 @@ function makeElements() {
     poolCostConfirm: document.createElement("button"),
     poolCostCancel: document.createElement("button"),
     archiveTutorOverlay: Object.assign(document.createElement("div"), { hidden: true }),
+    archiveTutorMessage: document.createElement("div"),
     archiveTutorOptions: document.createElement("div"),
     archiveTutorConfirm: document.createElement("button"),
     archiveTutorCancel: document.createElement("button"),
@@ -357,6 +360,16 @@ describe("ui/handlers", () => {
     expect(state.players[0].deck.length + state.players[0].hand.length).toBe(180);
   });
 
+  it("selects mystic format in offline mode", () => {
+    const handlers = createHandlers(state, elements, onWinner);
+    handlers.selectOfflineMode();
+
+    handlers.selectMysticFormat();
+
+    expect(state.format).toBe("mystic");
+    expect(state.players[0].deck.length + state.players[0].hand.length).toBe(180);
+  });
+
   it("selects online mode and shows the online choice overlay", () => {
     const handlers = createHandlers(state, elements, onWinner);
     elements.modeOverlay.hidden = true;
@@ -417,6 +430,72 @@ describe("ui/handlers", () => {
     expect(state.format).toBe("expanded");
     handlers.selectHostFormatAncient();
     expect(state.format).toBe("ancient");
+    handlers.selectHostFormatMystic();
+    expect(state.format).toBe("mystic");
+  });
+
+  it("opens amethyst target overlay and confirms target selection", () => {
+    state = createInitialState({ mode: "offline", format: "mystic" });
+    elements = makeElements();
+    const handlers = createHandlers(state, elements, onWinner);
+    const player = state.players[0];
+    const opponent = state.players[1];
+    player.archive = ["amethyst"];
+    opponent.archive = ["gold"];
+    opponent.deck = [];
+    elements.archiveTutorOverlay.hidden = true;
+
+    handlers.trade("trade_amethyst");
+
+    expect(elements.archiveTutorOverlay.hidden).toBe(false);
+    expect(elements.archiveTutorMessage.textContent).toContain("opponent archive");
+    const target = Array.from(elements.archiveTutorOptions.querySelectorAll("button")).find(
+      (button) => button.dataset.choice === "gold"
+    );
+    target.click();
+    handlers.confirmArchiveTutor();
+
+    expect(state.tradesThisTurn).toBe(1);
+    expect(player.discard).toContain("amethyst");
+    expect(opponent.archive).not.toContain("gold");
+    expect(opponent.deck).toContain("gold");
+  });
+
+  it("cancels amethyst target overlay without trading", () => {
+    state = createInitialState({ mode: "offline", format: "mystic" });
+    elements = makeElements();
+    const handlers = createHandlers(state, elements, onWinner);
+    const player = state.players[0];
+    const opponent = state.players[1];
+    player.archive = ["amethyst"];
+    opponent.archive = ["silver"];
+
+    handlers.trade("trade_amethyst");
+    expect(elements.archiveTutorOverlay.hidden).toBe(false);
+
+    handlers.cancelArchiveTutor();
+
+    expect(elements.archiveTutorOverlay.hidden).toBe(true);
+    expect(state.tradesThisTurn).toBe(0);
+    expect(player.discard.length).toBe(0);
+    expect(opponent.archive).toContain("silver");
+  });
+
+  it("blocks amethyst trade when opponent archive has no target", () => {
+    state = createInitialState({ mode: "offline", format: "mystic" });
+    elements = makeElements();
+    const handlers = createHandlers(state, elements, onWinner);
+    const player = state.players[0];
+    const opponent = state.players[1];
+    player.archive = ["amethyst"];
+    opponent.archive = [];
+    elements.archiveTutorOverlay.hidden = true;
+
+    handlers.trade("trade_amethyst");
+
+    expect(elements.archiveTutorOverlay.hidden).toBe(true);
+    expect(state.tradesThisTurn).toBe(0);
+    expect(player.discard.length).toBe(0);
   });
 
   it("returns to choice overlay", () => {

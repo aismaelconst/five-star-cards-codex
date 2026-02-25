@@ -4,6 +4,7 @@ import {
   baseRuleset,
   expandedRuleset,
   ancientRuleset,
+  mysticRuleset,
   mintedRuleset,
   shelvedCardTypes,
 } from "../src/game/ruleset.js";
@@ -70,5 +71,13 @@ describe("card tooltips", () => {
     expect(mintTooltip).toContain("tutor ingot/sterling/ledger");
     const hallmarkTooltip = getCardTooltip("hallmark", mintedRuleset);
     expect(hallmarkTooltip).toContain("archive ingot/sterling/mint");
+  });
+
+  it("includes mystic effect text and once-per-turn note", () => {
+    const pearlTooltip = getCardTooltip("pearl", mysticRuleset);
+    expect(pearlTooltip).toContain("gain +1 play this turn");
+    expect(pearlTooltip).toContain("once per turn");
+    const emberTooltip = getCardTooltip("ember", mysticRuleset);
+    expect(emberTooltip).toContain("shuffle up to 5 random opponent discard cards");
   });
 });

@@ -51,6 +51,16 @@ const ANCIENT_DISPLAY_ORDER = [
   "ingot",
   "sterling",
 ];
+const MYSTIC_DISPLAY_ORDER = [
+  "bronze",
+  "silver",
+  "gold",
+  "pearl",
+  "obsidian",
+  "amethyst",
+  "ash",
+  "ember",
+];
 const MINTED_DISPLAY_ORDER = [
   "bronze",
   "silver",
@@ -61,10 +71,6 @@ const MINTED_DISPLAY_ORDER = [
   "mint",
   "hallmark",
 ];
-
-function getNonGoldAllowed(displayOrder) {
-  return displayOrder.filter((type) => type !== "gold");
-}
 
 export const expandedRuleset = {
   ...baseRuleset,
@@ -174,6 +180,70 @@ export const ancientRuleset = {
     carnelian: 5,
     ingot: 5,
     sterling: 5,
+  },
+};
+
+export const mysticRuleset = {
+  ...baseRuleset,
+  displayOrder: MYSTIC_DISPLAY_ORDER,
+  tradeRecipes: {
+    ...baseRuleset.tradeRecipes,
+    trade_pearl: {
+      cost: { pearl: 1 },
+      oncePerTurn: true,
+      reward: { type: "effect", id: "pearl_extra_play" },
+    },
+    trade_obsidian: {
+      cost: { obsidian: 1 },
+      oncePerTurn: true,
+      reward: { type: "effect", id: "obsidian_next_turn_penalty" },
+    },
+    trade_amethyst: {
+      cost: { amethyst: 1 },
+      oncePerTurn: true,
+      reward: { type: "effect", id: "amethyst_archive_to_deck" },
+    },
+    trade_ash: {
+      cost: { ash: 1 },
+      oncePerTurn: true,
+      reward: { type: "effect", id: "ash_random_hand_to_deck" },
+    },
+    trade_ember: {
+      cost: { ember: 1 },
+      oncePerTurn: true,
+      reward: { type: "effect", id: "ember_random_discard_to_deck" },
+    },
+  },
+  cardTypes: {
+    ...baseRuleset.cardTypes,
+    pearl: {
+      tier: "pearl",
+      draw: 0,
+    },
+    obsidian: {
+      tier: "obsidian",
+      draw: 0,
+    },
+    amethyst: {
+      tier: "amethyst",
+      draw: 0,
+    },
+    ash: {
+      tier: "ash",
+      draw: 0,
+    },
+    ember: {
+      tier: "ember",
+      draw: 0,
+    },
+  },
+  deckCounts: {
+    ...baseRuleset.deckCounts,
+    pearl: 5,
+    obsidian: 5,
+    amethyst: 5,
+    ash: 5,
+    ember: 5,
   },
 };
 

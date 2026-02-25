@@ -1,5 +1,5 @@
 import { countCards, getCardType } from "../shared/utils.js";
-import { canInitiateTrade, getCurrentPlayer } from "../game/rules.js";
+import { canInitiateTrade, getCurrentPlayer, getPlayerPlayLimit } from "../game/rules.js";
 import { isMyTurn } from "../game/multiplayer.js";
 import { getCardTooltip } from "./card-tooltips.js";
 
@@ -81,6 +81,7 @@ function updateHowToPlay(state, elements) {
 
   const isExpanded = state.format === "expanded";
   const isAncient = state.format === "ancient";
+  const isMystic = state.format === "mystic";
   const expansionRules = [];
   if (isExpanded) {
     expansionRules.push("Gems: Ruby + Emerald + Sapphire → tutor any card (shuffle).");
@@ -97,6 +98,21 @@ function updateHowToPlay(state, elements) {
     );
     expansionRules.push("Ingot: counts as 3 bronze in archive trades.");
     expansionRules.push("Sterling: counts as 2 silver in archive trades.");
+  }
+  if (isMystic) {
+    expansionRules.push("Pearl: trade itself to gain +1 play this turn (once per turn).");
+    expansionRules.push(
+      "Obsidian: trade itself to make opponent play 1 less card next turn (once per turn)."
+    );
+    expansionRules.push(
+      "Amethyst: trade itself to shuffle 1 chosen opponent archive card into their deck."
+    );
+    expansionRules.push(
+      "Ash: trade itself to shuffle 1 random opponent hand card into their deck."
+    );
+    expansionRules.push(
+      "Ember: trade itself to shuffle up to 5 random opponent discard cards into their deck."
+    );
   }
 
   if (elements.expansionRules) {
@@ -121,6 +137,9 @@ function updateHowToPlay(state, elements) {
     }
     if (isAncient) {
       legendTypes.push("turquoise", "lapis_lazuli", "carnelian", "ingot", "sterling");
+    }
+    if (isMystic) {
+      legendTypes.push("pearl", "obsidian", "amethyst", "ash", "ember");
     }
     elements.cardLegend.innerHTML = "";
     legendTypes.forEach((type) => {
@@ -148,6 +167,9 @@ export function renderApp(state, elements, handlers) {
       state.players[state.currentPlayer === 0 ? 1 : 0];
 
   const displayOrder = state.ruleset.displayOrder ?? ["bronze", "silver", "gold"];
+  const playerIndex = state.players.findIndex((entry) => entry.id === player.id);
+  const effectivePlayerIndex = playerIndex === -1 ? state.currentPlayer : playerIndex;
+  const playLimit = getPlayerPlayLimit(state, effectivePlayerIndex);
   const handCounts = countCards(player.hand, displayOrder);
   const archiveCounts = countCards(player.archive, displayOrder);
   const opponentArchive = countCards(opponent.archive, displayOrder);
@@ -187,7 +209,7 @@ export function renderApp(state, elements, handlers) {
 
   elements.deckInfo.textContent = `Deck: ${player.deck.length} cards`;
   elements.discardInfo.textContent = `Discard: ${player.discard.length} cards`;
-  elements.tradeInfo.textContent = `Trades used: ${state.tradesThisTurn}/${state.ruleset.maxTrades}`;
+  elements.tradeInfo.textContent = `Trades used: ${state.tradesThisTurn}/${state.ruleset.maxTrades} • Plays used: ${player.active.length}/${playLimit}`;
 
   const turnGate =
     state.mode === "online"
@@ -225,6 +247,7 @@ export function renderApp(state, elements, handlers) {
     !inMainPhase || !turnGate || !canInitiateTrade(state, player, "trade_silver");
   const isExpanded = state.format === "expanded";
   const isAncient = state.format === "ancient";
+  const isMystic = state.format === "mystic";
   if (elements.tradeGems) {
     elements.tradeGems.hidden = !isExpanded;
     elements.tradeGems.disabled =
@@ -248,6 +271,37 @@ export function renderApp(state, elements, handlers) {
       !inMainPhase ||
       !turnGate ||
       !canInitiateTrade(state, player, "trade_ancients_archive");
+  }
+  if (elements.tradePearl) {
+    elements.tradePearl.hidden = !isMystic;
+    elements.tradePearl.disabled =
+      !isMystic || !inMainPhase || !turnGate || !canInitiateTrade(state, player, "trade_pearl");
+  }
+  if (elements.tradeObsidian) {
+    elements.tradeObsidian.hidden = !isMystic;
+    elements.tradeObsidian.disabled =
+      !isMystic ||
+      !inMainPhase ||
+      !turnGate ||
+      !canInitiateTrade(state, player, "trade_obsidian");
+  }
+  if (elements.tradeAmethyst) {
+    elements.tradeAmethyst.hidden = !isMystic;
+    elements.tradeAmethyst.disabled =
+      !isMystic ||
+      !inMainPhase ||
+      !turnGate ||
+      !canInitiateTrade(state, player, "trade_amethyst");
+  }
+  if (elements.tradeAsh) {
+    elements.tradeAsh.hidden = !isMystic;
+    elements.tradeAsh.disabled =
+      !isMystic || !inMainPhase || !turnGate || !canInitiateTrade(state, player, "trade_ash");
+  }
+  if (elements.tradeEmber) {
+    elements.tradeEmber.hidden = !isMystic;
+    elements.tradeEmber.disabled =
+      !isMystic || !inMainPhase || !turnGate || !canInitiateTrade(state, player, "trade_ember");
   }
   elements.endTurn.disabled = state.phase !== "main" || !turnGate;
   elements.undoPlays.disabled = !inMainPhase || !turnGate || player.active.length === 0;

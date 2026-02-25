@@ -31,7 +31,7 @@ Player state (created in `src/game/state.js`):
 
 Game state (created in `src/game/state.js`):
 - `players` array
-- `ruleset`, `format` (`core`, `expanded`, `ancient`)
+- `ruleset`, `format` (`core`, `expanded`, `ancient`, `mystic`)
 - `mode` (`offline`, `cpu`, `online`)
 - `currentPlayer`, `tradesThisTurn`, `turnCount`
 - `phase` (`main`, `confirm`, `between`)
@@ -39,6 +39,11 @@ Game state (created in `src/game/state.js`):
 - `winner`
 - `online` metadata (room, role, connection)
 - `cpu` metadata (difficulty)
+- `turnEffects` turn modifiers:
+  - `currentPlayBonusByPlayer`
+  - `currentPlayPenaltyByPlayer`
+  - `nextTurnPlayPenaltyByPlayer`
+  - `usedTradeRecipesByPlayer` (once-per-turn recipe tracking)
 
 ## Rulesets & Deck Construction
 
@@ -48,6 +53,8 @@ Rulesets live in `src/game/ruleset.js`.
 - `expandedRuleset` extends core with `wood`, `ruby`, `emerald`, `sapphire`, and `platinum`, plus more trades and wood substitution rules.
 - `ancientRuleset` extends core with `turquoise`, `lapis_lazuli`, `carnelian`, `ingot`, and `sterling`.
 - `ancientRuleset` adds a pool-cost trade (`trade_ancients_archive`) that archives a chosen non-gold card directly from deck.
+- `mysticRuleset` extends core with `pearl`, `obsidian`, `amethyst`, `ash`, and `ember`.
+- `mysticRuleset` adds one-card effect trades (`reward: { type: "effect", id }`) and uses `oncePerTurn: true` per recipe.
 - `shelvedCardTypes` keeps non-active card defs (`electrum`, `copper`) in code for future reuse.
 - `mintedRuleset` is still defined in `ruleset.js` as shelved content, but it is no longer selectable via game format state/UI/server allow-lists.
 - Decks are created in `src/game/cards.js` using `ruleset.deckCounts` and shuffled in `src/game/state.js` via `shuffle()`.
@@ -62,13 +69,22 @@ Action types:
 Key behaviors:
 - `applyAction()` is the single entry for mutating state in response to actions.
 - Trades are validated by `canTradeWithOptions()` and executed by `performTrade()`. Trades can consume archive cards, grant cards from the deck (tutor + shuffle), draw cards, and increment `tradesThisTurn`.
+- Trade payload supports optional `targetType` for effect trades that choose an opponent target type (e.g., mystic amethyst).
 - Wood substitution is supported (expanded rules only) using `getWoodSubstitutionOptions()` and `buildCostWithWood()`.
 - Platinum trade (`trade_platinum`) “digs” by popping cards from the deck until a non bronze/silver is found, discarding the rest.
-- Trade recipes can include `choiceCost` (additional cost type), `poolCost` (distinct selections from a pool), `rewardOptions` (restricted tutor targets), and `reward` variants (`cards`, `draw`, `archive`, `archive_cards`, `archive_hand`).
+- Trade recipes can include `choiceCost` (additional cost type), `poolCost` (distinct selections from a pool), `rewardOptions` (restricted tutor targets), and `reward` variants (`cards`, `draw`, `archive`, `archive_cards`, `archive_hand`, `effect`).
 - Efficiency cards (`ingot`, `sterling`, `ledger`) can satisfy bronze/silver trade costs with an optional conversion step inside `getTradeCost()` and `canInitiateTrade()`, controlled by the `useEfficiency` trade payload flag.
+- `oncePerTurn` recipes are enforced through `turnEffects.usedTradeRecipesByPlayer`.
+- Dynamic play limits are enforced by `getPlayerPlayLimit()` and used by `playCard()`.
+- Mystic effect handlers in `performTrade()`:
+  - `pearl_extra_play`: +1 current turn play cap
+  - `obsidian_next_turn_penalty`: queue opponent next-turn -1 play (non-stacking)
+  - `amethyst_archive_to_deck`: targeted opponent archive card -> opponent deck + shuffle
+  - `ash_random_hand_to_deck`: random opponent hand card -> opponent deck + shuffle
+  - `ember_random_discard_to_deck`: up to 5 random opponent discard cards -> opponent deck + one shuffle
 - Playing a card moves it from hand to active; returning moves active cards back to hand.
 - `prepareArchive()` stages active cards into `pendingArchive` and switches phase to `confirm`.
-- `finalizeArchive()` moves pending cards to archive, draws cards based on total `draw`, checks win condition, advances turn, and sets phase to `between`.
+- `finalizeArchive()` moves pending cards to archive, draws cards based on total `draw`, checks win condition, advances turn, applies queued turn penalties, resets one-turn bonuses/flags, and sets phase to `between`.
 
 Phase model:
 - `main`: player can trade and play cards.
@@ -88,6 +104,7 @@ CPU logic is in `src/game/cpu.js`.
 
 - Uses weighted heuristics for trades and plays based on difficulty (`easy`, `medium`, `hard`).
 - Generates a list of trades (respecting `maxTrades`) and card plays (respecting `maxPlays`).
+- In mystic format, CPU applies deterministic effect heuristics (e.g., Pearl when hand exceeds cap, Amethyst targeting `gold` first).
 - Executes a full turn using the same `applyAction()` pipeline as humans, and returns a summary for UI display.
 
 ## Multiplayer Utilities
@@ -110,6 +127,8 @@ Rendering lives in `src/ui/render.js`.
 - The hand is rendered as individual cards for 10 or fewer cards; otherwise it collapses into pile counts per card type.
 - The "How To Play" panel is refreshed per format, showing only relevant expansion rules and legend chips.
 - Trade buttons are enabled only when the phase is `main`, it is the local player’s turn, and `canInitiateTrade()` is true.
+- Mystic-only trade buttons are rendered/enabled only in `mystic` format.
+- Trade info shows dynamic play usage (`Plays used: activeCount/playCap`) so Pearl/Obsidian effects are visible.
 - `showConfirmOverlay()` renders a summary of pending archive cards and draw count.
 
 Card tooltips are generated in `src/ui/card-tooltips.js` and include draw rules, trade recipes, and special notes (wood substitution, gold win condition).
@@ -121,10 +140,10 @@ Event wiring is centralized in `src/ui/events.js` and binds UI controls to handl
 The handler orchestration lives in `src/ui/handlers.js`.
 Trade selection overlays and pool-cost handling are implemented in `src/ui/handlers/trade-flow.js`, with shared formatting helpers in `src/ui/handlers/trade-utils.js`.
 Online lobby/WebSocket handling lives in `src/ui/handlers/online-flow.js`, CPU turn summaries in `src/ui/handlers/cpu-flow.js`, and format button labeling/toggling in `src/ui/handlers/format-utils.js`.
-Trade success toast formatting is centralized in `src/ui/handlers/trade-utils.js` (`formatTradeToast`), including reward variants like tutor, draw, archive, and archive-from-hand.
+Trade success toast formatting is centralized in `src/ui/handlers/trade-utils.js` (`formatTradeToast`), including tutor/draw/archive/archive-from-hand/effect reward variants.
 
 Key responsibilities:
-- Mode selection (offline, CPU, online) and format selection (core/gilded gems/ancient).
+- Mode selection (offline, CPU, online) and format selection (core/gilded gems/ancient/mystic).
 - Theme selection (classic vs. pixel) with persistence in local storage.
 - Calling `startGame()` and initializing CPU or online state.
 - Managing overlays (confirm archive, turn overlay, wood substitution, gem tutor, choice cost, pool cost, archive tutor, CPU summary).
@@ -138,6 +157,7 @@ Trade overlays:
 - If the trade requires a pool selection (`poolCost`), the pool cost overlay is shown.
 - If the trade reward is `any`, the gem tutor overlay is shown to pick a target type.
 - If the trade reward is `archive`, the archive tutor overlay is shown to pick a non-gold target type.
+- If a mystic amethyst effect trade is selected, the archive tutor overlay is reused in opponent-target mode to pick an opponent archive card type (`targetType`).
 - After the overlays resolve, the trade is finalized and applied.
 
 Shelved content:
@@ -172,7 +192,7 @@ Server responsibilities:
 Exported server helpers:
 - `createGameServer(options)` builds the HTTP + WebSocket server with injectable dependencies (`http`, `ws`, logger, rule helpers) for deterministic unit tests.
 - `createStaticRequestHandler({ rootDir, fsImpl })` is the static asset responder used by the HTTP server.
-- `resolveRequestedFormat(format)` centralizes format allow-listing (`core`, `expanded`, `ancient`).
+- `resolveRequestedFormat(format)` centralizes format allow-listing (`core`, `expanded`, `ancient`, `mystic`).
 - `DEFAULT_PORT` / `DEFAULT_ROOT_DIR` are exported constants for startup wiring.
 
 Runtime startup behavior:
@@ -187,6 +207,7 @@ Key message types:
 - `action` (client requests to mutate state)
 
 The server also tracks `lastEvent` (trade/archive summaries) so clients can display opponent activity toasts.
+For mystic effects this includes `effectId`, `targetType`, `movedTypes`, `movedCount`, and `playLimit` when relevant.
 
 ## End-to-End Flow
 

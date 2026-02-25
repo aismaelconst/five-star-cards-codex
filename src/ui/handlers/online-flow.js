@@ -66,6 +66,7 @@ export function createOnlineFlow({
     state.winner = payload.state.winner;
     state.turnCount = payload.state.turnCount;
     state.pendingArchive = payload.state.pendingArchive;
+    state.turnEffects = payload.state.turnEffects ?? state.turnEffects;
     state.gameId = payload.state.gameId;
     state.ruleset = payload.state.ruleset;
     state.format = payload.state.format;
@@ -150,6 +151,28 @@ export function createOnlineFlow({
           rewardLine = rewardCards.length
             ? `archive ${rewardCards.join(", ")}`
             : "archive cards";
+        } else if (recipe.reward?.type === "effect") {
+          if (recipe.reward.id === "pearl_extra_play") {
+            rewardLine = `gain +1 play (limit ${event.playLimit ?? "6"})`;
+          } else if (recipe.reward.id === "obsidian_next_turn_penalty") {
+            rewardLine = "opponent plays 1 less next turn";
+          } else if (recipe.reward.id === "amethyst_archive_to_deck") {
+            rewardLine = event.targetType
+              ? `shuffle opponent archive ${event.targetType} into deck`
+              : "shuffle opponent archive card into deck";
+          } else if (recipe.reward.id === "ash_random_hand_to_deck") {
+            const moved = Array.isArray(event.movedTypes) && event.movedTypes.length > 0
+              ? event.movedTypes[0]
+              : "card";
+            rewardLine = `shuffle opponent hand ${moved} into deck`;
+          } else if (recipe.reward.id === "ember_random_discard_to_deck") {
+            const moved = Array.isArray(event.movedTypes) ? event.movedTypes : [];
+            rewardLine = moved.length
+              ? `shuffle opponent discard ${moved.join(", ")} into deck`
+              : "shuffle opponent discard cards into deck";
+          } else {
+            rewardLine = recipe.reward.id ?? "effect";
+          }
         } else if (typeof recipe.reward === "string") {
           rewardLine = `1 ${recipe.reward}`;
         }

@@ -3,12 +3,18 @@ import {
   ActionTypes,
   applyAction,
   canTradeWithOptions,
+  getPlayerPlayLimit,
   getChoiceCostOptions,
   getWoodSubstitutionOptions,
 } from "./rules.js";
 
 const EASY_TRADE_PRIORITY = [
   "trade_silver",
+  "trade_pearl",
+  "trade_obsidian",
+  "trade_amethyst",
+  "trade_ash",
+  "trade_ember",
   "trade_bronze",
   "trade_hallmark",
   "trade_mint",
@@ -19,6 +25,11 @@ const EASY_TRADE_PRIORITY = [
 ];
 const MEDIUM_TRADE_PRIORITY = [
   "trade_silver",
+  "trade_pearl",
+  "trade_obsidian",
+  "trade_amethyst",
+  "trade_ash",
+  "trade_ember",
   "trade_gem_set",
   "trade_platinum",
   "trade_ancients_archive",
@@ -39,6 +50,11 @@ const MEDIUM_PLAY_PRIORITY = [
   "ledger",
   "ingot",
   "sterling",
+  "pearl",
+  "obsidian",
+  "amethyst",
+  "ash",
+  "ember",
   "electrum",
   "copper",
   "turquoise",
@@ -58,6 +74,11 @@ const CARD_VALUE = {
   bronze: 10,
   ingot: 22,
   sterling: 32,
+  pearl: 20,
+  obsidian: 20,
+  amethyst: 22,
+  ash: 16,
+  ember: 14,
   ledger: 18,
   mint: 16,
   hallmark: 24,
@@ -105,16 +126,21 @@ function getTutorPriority(state, difficulty, allowed) {
       "platinum",
       "hallmark",
       "mint",
-    "ledger",
-    "ingot",
-    "sterling",
-    "electrum",
-    "turquoise",
-    "lapis_lazuli",
-    "carnelian",
-    "sapphire",
-    "emerald",
-    "ruby",
+      "ledger",
+      "ingot",
+      "sterling",
+      "pearl",
+      "obsidian",
+      "amethyst",
+      "ash",
+      "ember",
+      "electrum",
+      "turquoise",
+      "lapis_lazuli",
+      "carnelian",
+      "sapphire",
+      "emerald",
+      "ruby",
       "wood",
       "bronze",
     ];
@@ -177,6 +203,73 @@ function getCardValue(type) {
 
 function countByType(cards, displayOrder) {
   return countCards(cards, displayOrder);
+}
+
+function getPlayerIndex(state, player) {
+  return state.players.findIndex((entry) => entry === player);
+}
+
+function getOpponent(state, player) {
+  const playerIndex = getPlayerIndex(state, player);
+  if (playerIndex === -1) return null;
+  return state.players[playerIndex === 0 ? 1 : 0] ?? null;
+}
+
+function averageValueFromCounts(counts) {
+  let totalCount = 0;
+  let totalValue = 0;
+  Object.entries(counts).forEach(([type, count]) => {
+    if (count <= 0) return;
+    totalCount += count;
+    totalValue += getCardValue(type) * count;
+  });
+  return totalCount > 0 ? totalValue / totalCount : 0;
+}
+
+function pickHighestValueType(counts) {
+  let bestType = null;
+  let bestValue = -Infinity;
+  Object.entries(counts).forEach(([type, count]) => {
+    if (count <= 0) return;
+    const value = getCardValue(type);
+    if (value > bestValue || (value === bestValue && (!bestType || type < bestType))) {
+      bestType = type;
+      bestValue = value;
+    }
+  });
+  return bestType;
+}
+
+function chooseAmethystTargetType(state, player) {
+  const opponent = getOpponent(state, player);
+  if (!opponent) return null;
+  const counts = countCards(opponent.archive, state.ruleset.displayOrder);
+  if ((counts.gold ?? 0) > 0) return "gold";
+  if ((counts.silver ?? 0) > 0) return "silver";
+  return pickHighestValueType(counts);
+}
+
+function shouldUseMysticEffect(state, player, recipeId) {
+  const opponent = getOpponent(state, player);
+  if (!opponent) return false;
+  const playerIndex = getPlayerIndex(state, player);
+  const playLimit = getPlayerPlayLimit(state, playerIndex === -1 ? state.currentPlayer : playerIndex);
+  if (recipeId === "trade_pearl") {
+    return player.hand.length > playLimit;
+  }
+  if (recipeId === "trade_obsidian") {
+    return opponent.hand.length >= 3;
+  }
+  if (recipeId === "trade_amethyst") {
+    return opponent.archive.length > 0;
+  }
+  if (recipeId === "trade_ash") {
+    return opponent.hand.length > 0;
+  }
+  if (recipeId === "trade_ember") {
+    return opponent.discard.length > 0;
+  }
+  return true;
 }
 
 function canPayBaseCost(recipe, counts) {
@@ -367,6 +460,37 @@ function scoreTradePayload(state, player, recipe, payload) {
       (sum, [type, amount]) => sum + getCardValue(type) * amount,
       0
     );
+  } else if (recipe.reward?.type === "effect") {
+    const opponent = getOpponent(state, player);
+    const playerIndex = getPlayerIndex(state, player);
+    if (recipe.reward.id === "pearl_extra_play") {
+      if (playerIndex !== -1 && player.hand.length > getPlayerPlayLimit(state, playerIndex)) {
+        const handCounts = countCards(player.hand, state.ruleset.displayOrder);
+        const bestPlayable = pickHighestValueType(handCounts);
+        rewardValue = bestPlayable ? getCardValue(bestPlayable) : DRAW_VALUE;
+      } else {
+        rewardValue = 0;
+      }
+    } else if (recipe.reward.id === "obsidian_next_turn_penalty") {
+      rewardValue = opponent ? Math.max(0, opponent.hand.length - 1) * 4 : 0;
+    } else if (recipe.reward.id === "amethyst_archive_to_deck") {
+      rewardValue = payload.targetType ? getCardValue(payload.targetType) : 0;
+    } else if (recipe.reward.id === "ash_random_hand_to_deck") {
+      if (opponent) {
+        const handCounts = countCards(opponent.hand, state.ruleset.displayOrder);
+        rewardValue = averageValueFromCounts(handCounts);
+      } else {
+        rewardValue = 0;
+      }
+    } else if (recipe.reward.id === "ember_random_discard_to_deck") {
+      if (opponent) {
+        const discardCounts = countCards(opponent.discard, state.ruleset.displayOrder);
+        const moved = Math.min(5, opponent.discard.length);
+        rewardValue = averageValueFromCounts(discardCounts) * moved * 0.35;
+      } else {
+        rewardValue = 0;
+      }
+    }
   }
   const cost = getPayloadCost(recipe, payload);
   const score = rewardValue - costValue(cost);
@@ -424,6 +548,11 @@ function finalizeTradePayload(state, player, recipeId, payload) {
     if (!selection) return null;
     finalized.handArchive = selection;
   }
+  if (recipe.reward?.type === "effect" && recipe.reward.id === "amethyst_archive_to_deck") {
+    const targetType = chooseAmethystTargetType(state, player);
+    if (!targetType) return null;
+    finalized.targetType = targetType;
+  }
   if (canTradeWithOptions(state, player, recipeId, finalized)) return finalized;
   return null;
 }
@@ -432,6 +561,9 @@ function buildTradePayload(state, player, recipeId, difficulty) {
   const recipe = state.ruleset.tradeRecipes?.[recipeId];
   if (!recipe) return null;
   if (recipe.reward?.type === "archive_hand" && player.hand.length <= HAND_DECLUTTER_THRESHOLD) {
+    return null;
+  }
+  if (recipe.reward?.type === "effect" && !shouldUseMysticEffect(state, player, recipeId)) {
     return null;
   }
   const counts = countCards(player.archive);
@@ -639,6 +771,11 @@ function scorePlay(state, player, type) {
 }
 
 export function chooseCpuPlays(state, player, difficulty) {
+  const playerIndex = getPlayerIndex(state, player);
+  const maxPlays = getPlayerPlayLimit(
+    state,
+    playerIndex === -1 ? state.currentPlayer : playerIndex
+  );
   if (difficulty === "hard") {
     const displayOrder = state.ruleset.displayOrder ?? HARD_PLAY_PRIORITY;
     const handCounts = countByType(player.hand, displayOrder);
@@ -653,14 +790,12 @@ export function chooseCpuPlays(state, player, difficulty) {
       if (b.score !== a.score) return b.score - a.score;
       return a.type.localeCompare(b.type);
     });
-    const maxPlays = state.ruleset.maxPlays ?? 5;
     const plays = entries.slice(0, maxPlays).map((entry) => entry.type);
     return applyEmptyHandGuard(state, player, plays);
   }
   const priority = getPlayPriority(difficulty);
   const counts = countCards(player.hand, priority);
   const plays = [];
-  const maxPlays = state.ruleset.maxPlays ?? 5;
   priority.forEach((type) => {
     let remaining = counts[type] ?? 0;
     while (remaining > 0 && plays.length < maxPlays) {
@@ -708,12 +843,17 @@ export function executeCpuTurn(state, options = {}) {
       substituteType: payload.substituteType,
       choiceType: payload.choiceType ?? null,
       poolTypes: payload.poolTypes ?? null,
+      targetType: result?.event?.detail?.targetType ?? payload.targetType ?? null,
       handArchive: result?.event?.detail?.handArchive ?? payload.handArchive ?? null,
       rewardCards: result?.event?.detail?.rewardCards ?? null,
       rewardType:
         result?.event?.detail?.rewardType ?? payload.rewardType ?? null,
       drawCount: result?.event?.detail?.drawCount,
       digDiscardedCount: result?.event?.detail?.digDiscardedCount,
+      effectId: result?.event?.detail?.effectId ?? null,
+      movedTypes: result?.event?.detail?.movedTypes ?? null,
+      movedCount: result?.event?.detail?.movedCount,
+      playLimit: result?.event?.detail?.playLimit,
     });
   }
 
