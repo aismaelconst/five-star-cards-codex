@@ -1,17 +1,21 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="120" height="160" viewBox="0 0 120 160" shape-rendering="crispEdges">
   <defs>
     <pattern id="pixel" width="6" height="6" patternUnits="userSpaceOnUse">
-      <rect width="6" height="6" fill="#bcc6d4" />
-      <rect width="3" height="3" fill="#d7dfe9" opacity="0.35" />
+      <rect width="6" height="6" fill="#a8bbcc" />
+      <rect width="3" height="3" fill="#d7e7f4" opacity="0.4" />
     </pattern>
   </defs>
-  <rect width="120" height="160" fill="#778191" />
-  <rect x="4" y="4" width="112" height="152" fill="#bcc6d4" />
+  <rect width="120" height="160" fill="#5e7488" />
+  <rect x="4" y="4" width="112" height="152" fill="#a8bbcc" />
   <rect x="6" y="6" width="108" height="148" fill="url(#pixel)" />
-  <rect x="6" y="6" width="108" height="148" fill="none" stroke="#778191" stroke-width="2" />
-  <rect x="18" y="118" width="84" height="22" fill="#3b414a" />
-  <rect x="18" y="118" width="84" height="22" fill="none" stroke="#778191" stroke-width="2" />
-  <g fill="#f7e6c4">
+  <rect x="16" y="6" width="4" height="148" fill="#dbeaf6" opacity="0.45" />
+  <rect x="52" y="6" width="4" height="148" fill="#dbeaf6" opacity="0.35" />
+  <rect x="88" y="6" width="4" height="148" fill="#dbeaf6" opacity="0.45" />
+  <rect x="6" y="6" width="108" height="148" fill="none" stroke="#5e7488" stroke-width="2" />
+  <rect x="14" y="34" width="92" height="64" fill="none" stroke="#dce9f4" stroke-width="2" opacity="0.7" />
+  <rect x="18" y="118" width="84" height="22" fill="#33414f" />
+  <rect x="18" y="118" width="84" height="22" fill="none" stroke="#5e7488" stroke-width="2" />
+  <g fill="#f2e2c2">
     <rect x="58" y="48" width="4" height="4" />
     <rect x="54" y="52" width="4" height="4" />
     <rect x="58" y="52" width="4" height="4" />
@@ -53,5 +57,11 @@
     <rect x="58" y="76" width="4" height="4" />
     <rect x="62" y="76" width="4" height="4" />
     <rect x="58" y="80" width="4" height="4" />
+  </g>
+  <g fill="#dce9f4">
+    <rect x="58" y="38" width="4" height="4" />
+    <rect x="78" y="64" width="4" height="4" />
+    <rect x="58" y="90" width="4" height="4" />
+    <rect x="38" y="64" width="4" height="4" />
   </g>
 </svg>
