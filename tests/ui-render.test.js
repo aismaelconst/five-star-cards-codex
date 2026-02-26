@@ -22,6 +22,21 @@ function makeElements() {
     "tradeInfo",
     "deckInfo",
     "discardInfo",
+    "boardDeckStack",
+    "boardDiscardStack",
+    "deckZone",
+    "discardZone",
+    "archiveZone",
+    "activeZone",
+    "handZone",
+    "feedbackCaption",
+    "goldRacePlayer",
+    "goldRaceOpponent",
+    "archiveInspectOverlay",
+    "archiveInspectTitle",
+    "archiveInspectMeta",
+    "archiveInspectCards",
+    "archiveInspectClose",
     "tradeBronze",
     "tradeSilver",
     "tradeGems",
@@ -61,6 +76,7 @@ function makeElements() {
   elements.tradeEmber = document.createElement("button");
   elements.endTurn = document.createElement("button");
   elements.undoPlays = document.createElement("button");
+  elements.archiveInspectClose = document.createElement("button");
 
   return elements;
 }
@@ -97,31 +113,36 @@ describe("ui/render", () => {
       playCard: vi.fn(),
       playCardByType: vi.fn(),
       returnCard: vi.fn(),
+      openArchiveInspect: vi.fn(),
     };
 
     renderApp(state, elements, handlers);
 
     expect(elements.turnIndicator.textContent).toContain("Hoster");
     expect(elements.turnCounter.textContent).toContain("Turn 2");
-    expect(elements.deckInfo.textContent).toContain("Deck:");
+    expect(elements.deckInfo.textContent).toContain("card(s)");
+    expect(elements.boardDeckStack.className).toContain("card-back");
     expect(elements.tradeInfo.textContent).toContain("Trades used");
+    expect(elements.goldRacePlayer.textContent).toContain("Gold 0/5");
+    expect(elements.goldRaceOpponent.textContent).toContain("Gold 0/5");
     expect(elements.opponentSummary.querySelector(".summary-title")?.textContent).toContain(
       "Opponent Summary"
     );
-    expect(elements.opponentSummary.querySelector(".chip.gold")).not.toBeNull();
+    expect(elements.opponentSummary.querySelector(".archive-empty")).not.toBeNull();
     expect(elements.opponentSummary.querySelector(".summary-hand")?.textContent).toContain("Hand:");
     expect(elements.handCounts.querySelector(".chip.bronze")).not.toBeNull();
     const card = elements.handCards.querySelector(".card");
     expect(card.dataset.cardType).toBeTruthy();
   });
 
-  it("renders expanded counts as chips", () => {
+  it("renders expanded archive as mini-card stacks", () => {
     const state = makeState();
     const elements = makeElements();
     const handlers = {
       playCard: vi.fn(),
       playCardByType: vi.fn(),
       returnCard: vi.fn(),
+      openArchiveInspect: vi.fn(),
     };
     state.ruleset = expandedRuleset;
     state.format = "expanded";
@@ -131,7 +152,24 @@ describe("ui/render", () => {
     renderApp(state, elements, handlers);
 
     expect(elements.handCounts.querySelector(".chip.wood")).not.toBeNull();
-    expect(elements.archivePile.textContent).toContain("platinum x 1");
+    expect(elements.archivePile.querySelector(".mini-stack.platinum")).not.toBeNull();
+  });
+
+  it("opens archive inspect when mini stack is clicked", () => {
+    const state = makeState();
+    const elements = makeElements();
+    const handlers = {
+      playCard: vi.fn(),
+      playCardByType: vi.fn(),
+      returnCard: vi.fn(),
+      openArchiveInspect: vi.fn(),
+    };
+    state.players[0].archive = ["gold", "gold"];
+
+    renderApp(state, elements, handlers);
+
+    elements.archivePile.querySelector(".mini-stack.gold")?.click();
+    expect(handlers.openArchiveInspect).toHaveBeenCalledWith("player", "gold", 2);
   });
 
   it("renders expanded hand piles by type", () => {
@@ -141,6 +179,7 @@ describe("ui/render", () => {
       playCard: vi.fn(),
       playCardByType: vi.fn(),
       returnCard: vi.fn(),
+      openArchiveInspect: vi.fn(),
     };
     state.ruleset = expandedRuleset;
     state.format = "expanded";
@@ -162,6 +201,7 @@ describe("ui/render", () => {
       playCard: vi.fn(),
       playCardByType: vi.fn(),
       returnCard: vi.fn(),
+      openArchiveInspect: vi.fn(),
     };
     state.mode = "cpu";
     state.ruleset = expandedRuleset;
@@ -170,8 +210,8 @@ describe("ui/render", () => {
 
     renderApp(state, elements, handlers);
 
-    expect(elements.opponentSummary.querySelector(".chip.bronze")).not.toBeNull();
-    expect(elements.opponentSummary.querySelector(".chip.wood")).not.toBeNull();
+    expect(elements.opponentSummary.querySelector(".mini-stack.bronze")).not.toBeNull();
+    expect(elements.opponentSummary.querySelector(".mini-stack.wood")).not.toBeNull();
   });
 
   it("renders ancient expansion rules and legend", () => {
@@ -181,6 +221,7 @@ describe("ui/render", () => {
       playCard: vi.fn(),
       playCardByType: vi.fn(),
       returnCard: vi.fn(),
+      openArchiveInspect: vi.fn(),
     };
     state.ruleset = ancientRuleset;
     state.format = "ancient";
@@ -202,6 +243,7 @@ describe("ui/render", () => {
       playCard: vi.fn(),
       playCardByType: vi.fn(),
       returnCard: vi.fn(),
+      openArchiveInspect: vi.fn(),
     };
     state.ruleset = mysticRuleset;
     state.format = "mystic";
@@ -225,6 +267,7 @@ describe("ui/render", () => {
       playCard: vi.fn(),
       playCardByType: vi.fn(),
       returnCard: vi.fn(),
+      openArchiveInspect: vi.fn(),
     };
     state.ruleset = mysticRuleset;
     state.format = "mystic";
@@ -241,6 +284,51 @@ describe("ui/render", () => {
     expect(elements.tradeInfo.textContent).toContain("Plays used: 2/6");
   });
 
+  it("marks gold urgency at four or more gold in archive", () => {
+    const state = makeState();
+    const elements = makeElements();
+    const handlers = {
+      playCard: vi.fn(),
+      playCardByType: vi.fn(),
+      returnCard: vi.fn(),
+    };
+    state.players[0].archive = ["gold", "gold", "gold", "gold"];
+    state.players[1].archive = ["gold", "gold", "gold", "gold"];
+
+    renderApp(state, elements, handlers);
+
+    expect(elements.goldRacePlayer.classList.contains("urgent")).toBe(true);
+    expect(elements.goldRaceOpponent.classList.contains("urgent")).toBe(true);
+    expect(elements.archivePile.querySelector(".mini-stack.gold")?.classList.contains("gold-urgent")).toBe(
+      true
+    );
+  });
+
+  it("renders archive inspect overlay when inspect state is active", () => {
+    const state = makeState();
+    const elements = makeElements();
+    const handlers = {
+      playCard: vi.fn(),
+      playCardByType: vi.fn(),
+      returnCard: vi.fn(),
+      openArchiveInspect: vi.fn(),
+    };
+    state.ui = {
+      archiveInspect: {
+        owner: "player",
+        type: "silver",
+        count: 3,
+        visible: true,
+      },
+    };
+
+    renderApp(state, elements, handlers);
+
+    expect(elements.archiveInspectOverlay.hidden).toBe(false);
+    expect(elements.archiveInspectTitle.textContent).toContain("Silver");
+    expect(elements.archiveInspectCards.querySelectorAll(".card.silver")).toHaveLength(3);
+  });
+
   it("disables actions when not your turn online", () => {
     const state = makeState();
     const elements = makeElements();
@@ -248,6 +336,7 @@ describe("ui/render", () => {
       playCard: vi.fn(),
       playCardByType: vi.fn(),
       returnCard: vi.fn(),
+      openArchiveInspect: vi.fn(),
     };
     state.mode = "online";
     state.online = { playerId: "p2" };
@@ -268,6 +357,7 @@ describe("ui/render", () => {
       playCard: vi.fn(),
       playCardByType: vi.fn(),
       returnCard: vi.fn(),
+      openArchiveInspect: vi.fn(),
     };
     state.mode = "cpu";
     state.currentPlayer = 1;
@@ -285,6 +375,7 @@ describe("ui/render", () => {
       playCard: vi.fn(),
       playCardByType: vi.fn(),
       returnCard: vi.fn(),
+      openArchiveInspect: vi.fn(),
     };
     state.mode = "online";
     state.online = { playerId: "p2" };
@@ -309,6 +400,7 @@ describe("ui/render", () => {
       playCard: vi.fn(),
       playCardByType: vi.fn(),
       returnCard: vi.fn(),
+      openArchiveInspect: vi.fn(),
     };
 
     state.players[0].hand = Array.from({ length: 11 }, () => "bronze");

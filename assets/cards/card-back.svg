@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 400" role="img" aria-labelledby="title desc">
+  <title id="title">Five Star Card Back</title>
+  <desc id="desc">Decorative card back with layered frames and central emblem.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#5a3f2a"/>
+      <stop offset="52%" stop-color="#7a583d"/>
+      <stop offset="100%" stop-color="#3c2a1c"/>
+    </linearGradient>
+    <pattern id="grain" width="24" height="24" patternUnits="userSpaceOnUse" patternTransform="rotate(35)">
+      <rect width="24" height="24" fill="none"/>
+      <rect width="10" height="24" fill="rgba(255,235,198,0.06)"/>
+    </pattern>
+    <linearGradient id="metal" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#f0cf8a"/>
+      <stop offset="50%" stop-color="#d39a3b"/>
+      <stop offset="100%" stop-color="#8e5c1f"/>
+    </linearGradient>
+  </defs>
+
+  <rect x="4" y="4" width="272" height="392" rx="20" fill="#2a1c12"/>
+  <rect x="10" y="10" width="260" height="380" rx="17" fill="url(#bg)" stroke="#a6753d" stroke-width="4"/>
+  <rect x="18" y="18" width="244" height="364" rx="14" fill="url(#grain)" opacity="0.85"/>
+  <rect x="28" y="28" width="224" height="344" rx="12" fill="none" stroke="#d8b077" stroke-width="3" opacity="0.85"/>
+  <rect x="42" y="42" width="196" height="316" rx="10" fill="none" stroke="#f0d2a2" stroke-width="2" opacity="0.6"/>
+
+  <circle cx="140" cy="200" r="70" fill="rgba(20,14,10,0.3)" stroke="url(#metal)" stroke-width="4"/>
+  <polygon points="140,142 155,184 200,184 164,210 178,254 140,228 102,254 116,210 80,184 125,184"
+    fill="none" stroke="url(#metal)" stroke-width="6" stroke-linejoin="round"/>
+  <circle cx="140" cy="200" r="10" fill="url(#metal)"/>
+</svg>

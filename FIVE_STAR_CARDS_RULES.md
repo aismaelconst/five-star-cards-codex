@@ -113,6 +113,17 @@ At the end of your turn:
 
 You **win immediately** when your Archive contains **5 gold**, even if this happens mid‑turn.
 
+## UX Notes (No Rules Changes)
+
+- The UI shows a **Gold race** tracker for both players (`Gold X/5`) with stronger urgency styling at **4/5**.
+- The table board shows **visual deck/discard stacks** (face-down card back for deck, live top-card look for discard).
+- Archive is shown as **mini-card stacks by type** for both players (not chips), with count badges.
+- You can tap/click an archive mini-stack to open an **inspect modal** with larger card visuals and totals.
+- End-of-turn archive actions can show a **turn replay panel** with full card visuals and draw totals.
+- End-turn feedback now uses explicit phase captions (for example **Archiving...** then **Drawing...**) to clarify card movement timing.
+- Card movement feedback (draw, tutor, archive, trade cost/reward) may animate between zones depending on motion settings.
+- Motion can be set to **Auto / Full / Reduced**. Reduced mode minimizes animation only; gameplay is unchanged.
+
 ---
 
 ## Quick Reference

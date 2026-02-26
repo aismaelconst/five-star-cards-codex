@@ -15,6 +15,7 @@ describe("ui/events", () => {
       onlineMode: makeButton("onlineMode"),
       themeClassic: makeButton("themeClassic"),
       themePixel: makeButton("themePixel"),
+      motionToggle: makeButton("motionToggle"),
       formatCore: makeButton("formatCore"),
       formatExpanded: makeButton("formatExpanded"),
       formatAncient: makeButton("formatAncient"),
@@ -67,6 +68,8 @@ describe("ui/events", () => {
       archiveTutorCancel: makeButton("archiveTutorCancel"),
       handArchiveConfirm: makeButton("handArchiveConfirm"),
       handArchiveCancel: makeButton("handArchiveCancel"),
+      turnReplayClose: makeButton("turnReplayClose"),
+      archiveInspectClose: makeButton("archiveInspectClose"),
     };
 
     const handlers = {
@@ -75,6 +78,7 @@ describe("ui/events", () => {
       selectOnlineMode: vi.fn(),
       selectClassicTheme: vi.fn(),
       selectPixelTheme: vi.fn(),
+      toggleMotionMode: vi.fn(),
       selectCoreFormat: vi.fn(),
       selectExpandedFormat: vi.fn(),
       selectAncientFormat: vi.fn(),
@@ -115,6 +119,8 @@ describe("ui/events", () => {
       cancelArchiveTutor: vi.fn(),
       confirmHandArchive: vi.fn(),
       cancelHandArchive: vi.fn(),
+      closeTurnReplay: vi.fn(),
+      closeArchiveInspect: vi.fn(),
     };
 
     wireEvents(elements, handlers);
@@ -124,6 +130,7 @@ describe("ui/events", () => {
     elements.onlineMode.click();
     elements.themeClassic.click();
     elements.themePixel.click();
+    elements.motionToggle.click();
     elements.formatCore.click();
     elements.formatExpanded.click();
     elements.formatAncient.click();
@@ -176,12 +183,15 @@ describe("ui/events", () => {
     elements.archiveTutorCancel.click();
     elements.handArchiveConfirm.click();
     elements.handArchiveCancel.click();
+    elements.turnReplayClose.click();
+    elements.archiveInspectClose.click();
 
     expect(handlers.selectOfflineMode).toHaveBeenCalled();
     expect(handlers.selectCpuMode).toHaveBeenCalled();
     expect(handlers.selectOnlineMode).toHaveBeenCalled();
     expect(handlers.selectClassicTheme).toHaveBeenCalled();
     expect(handlers.selectPixelTheme).toHaveBeenCalled();
+    expect(handlers.toggleMotionMode).toHaveBeenCalled();
     expect(handlers.selectCoreFormat).toHaveBeenCalled();
     expect(handlers.selectExpandedFormat).toHaveBeenCalled();
     expect(handlers.selectAncientFormat).toHaveBeenCalled();
@@ -231,5 +241,7 @@ describe("ui/events", () => {
     expect(handlers.cancelArchiveTutor).toHaveBeenCalled();
     expect(handlers.confirmHandArchive).toHaveBeenCalled();
     expect(handlers.cancelHandArchive).toHaveBeenCalled();
+    expect(handlers.closeTurnReplay).toHaveBeenCalled();
+    expect(handlers.closeArchiveInspect).toHaveBeenCalled();
   });
 });

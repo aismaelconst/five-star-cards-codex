@@ -13,7 +13,15 @@ import {
 } from "./trade-utils.js";
 
 export function createTradeFlow(options) {
-  const { state, elements, sendOrApply, getLocalPlayer, renderApp, showActionToast } =
+  const {
+    state,
+    elements,
+    sendOrApply,
+    getLocalPlayer,
+    renderApp,
+    showActionToast,
+    runFeedback,
+  } =
     options;
   let pendingTrade = null;
   let pendingWoodChoice = null;
@@ -146,6 +154,9 @@ export function createTradeFlow(options) {
     }
     if (state.mode !== "online") {
       renderApp();
+      if (typeof runFeedback === "function") {
+        runFeedback();
+      }
     }
     return result;
   }

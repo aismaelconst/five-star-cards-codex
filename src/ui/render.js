@@ -67,6 +67,171 @@ function titleCase(type) {
     .join(" ");
 }
 
+function renderHandCountChips(types, counts, container) {
+  if (!container) return;
+  container.innerHTML = "";
+  types.forEach((type) => {
+    const badge = document.createElement("div");
+    badge.className = `chip ${type}`;
+    if (type === "gold") {
+      badge.classList.add("gold-focus");
+      const goldCount = counts[type] ?? 0;
+      if (goldCount >= 4) {
+        badge.classList.add("gold-urgent");
+      }
+    }
+    badge.textContent = `${type} x ${counts[type] ?? 0}`;
+    container.appendChild(badge);
+  });
+}
+
+function renderArchiveMiniStacks(container, counts, displayOrder, options = {}) {
+  if (!container) return;
+  container.innerHTML = "";
+  const owner = options.owner ?? "player";
+  const onSelect = options.onSelect ?? null;
+  let shown = 0;
+  displayOrder.forEach((type) => {
+    const count = counts[type] ?? 0;
+    if (count <= 0) return;
+    shown += 1;
+    const stack = document.createElement("button");
+    stack.type = "button";
+    stack.className = `mini-stack ${type}`;
+    stack.dataset.cardType = type;
+    stack.dataset.owner = owner;
+    stack.setAttribute(
+      "aria-label",
+      `${owner === "opponent" ? "Opponent" : "Player"} archive ${titleCase(type)} x ${count}`
+    );
+    if (type === "gold") {
+      stack.classList.add("gold-focus");
+      if (count >= 4) {
+        stack.classList.add("gold-urgent");
+      }
+    }
+
+    const cards = document.createElement("div");
+    cards.className = "mini-stack-cards";
+    const previewCount = Math.min(3, count);
+    for (let index = 0; index < previewCount; index += 1) {
+      const miniCard = document.createElement("div");
+      miniCard.className = `mini-card card ${type}`;
+      miniCard.style.setProperty("--stack-offset", `${index * 10}px`);
+      cards.appendChild(miniCard);
+    }
+
+    const badge = document.createElement("div");
+    badge.className = "mini-stack-badge";
+    badge.textContent = `x${count}`;
+
+    const label = document.createElement("div");
+    label.className = "mini-stack-label";
+    label.textContent = titleCase(type);
+
+    stack.appendChild(cards);
+    stack.appendChild(badge);
+    stack.appendChild(label);
+
+    if (typeof onSelect === "function") {
+      stack.addEventListener("click", () => onSelect(owner, type, count));
+    } else {
+      stack.disabled = true;
+    }
+
+    container.appendChild(stack);
+  });
+  if (shown === 0) {
+    const empty = document.createElement("div");
+    empty.className = "archive-empty muted";
+    empty.textContent = "No archived cards.";
+    container.appendChild(empty);
+  }
+}
+
+function renderDeckDiscardWidgets(elements, player) {
+  if (elements.deckInfo) {
+    elements.deckInfo.textContent = `${player.deck.length} card(s)`;
+  }
+  if (elements.discardInfo) {
+    elements.discardInfo.textContent = `${player.discard.length} card(s)`;
+  }
+  if (elements.boardDeckStack) {
+    elements.boardDeckStack.className = "stack-card card card-back back";
+  }
+  if (elements.boardDiscardStack) {
+    const topCard = player.discard[player.discard.length - 1];
+    const topCardType = topCard ? getCardType(topCard) : null;
+    if (topCardType) {
+      elements.boardDiscardStack.className = `stack-card card ${topCardType}`;
+      elements.boardDiscardStack.dataset.cardType = topCardType;
+    } else {
+      elements.boardDiscardStack.className = "stack-card card card-back back";
+      elements.boardDiscardStack.dataset.cardType = "back";
+    }
+  }
+}
+
+function renderArchiveInspect(state, elements) {
+  if (
+    !elements.archiveInspectOverlay ||
+    !elements.archiveInspectTitle ||
+    !elements.archiveInspectCards ||
+    !elements.archiveInspectMeta
+  ) {
+    return;
+  }
+  const inspect = state.ui?.archiveInspect;
+  if (!inspect?.visible || !inspect.type) {
+    elements.archiveInspectOverlay.hidden = true;
+    return;
+  }
+  const safeCount = Math.max(0, inspect.count ?? 0);
+  const ownerText = inspect.owner === "opponent" ? "Opponent Archive" : "Your Archive";
+  elements.archiveInspectTitle.textContent = `${ownerText}: ${titleCase(inspect.type)}`;
+  elements.archiveInspectMeta.textContent = `${titleCase(inspect.type)} x ${safeCount}`;
+  elements.archiveInspectCards.innerHTML = "";
+  const renderCount = Math.min(12, safeCount);
+  for (let index = 0; index < renderCount; index += 1) {
+    const card = document.createElement("div");
+    card.className = `card ${inspect.type}`;
+    card.dataset.cardType = inspect.type;
+    const label = document.createElement("span");
+    label.className = "card-label";
+    label.textContent = titleCase(inspect.type);
+    card.appendChild(label);
+    elements.archiveInspectCards.appendChild(card);
+  }
+  if (safeCount > renderCount) {
+    const note = document.createElement("div");
+    note.className = "muted";
+    note.textContent = `+${safeCount - renderCount} more`;
+    elements.archiveInspectCards.appendChild(note);
+  }
+  elements.archiveInspectOverlay.hidden = false;
+}
+
+function renderGoldRaceTrack(container, label, count) {
+  if (!container) return;
+  const safeCount = Math.max(0, Math.min(5, count ?? 0));
+  container.className = "gold-race-track";
+  if (safeCount >= 4) container.classList.add("urgent");
+  container.innerHTML = "";
+  const text = document.createElement("div");
+  text.className = "gold-race-label";
+  text.textContent = `${label}: Gold ${safeCount}/5`;
+  container.appendChild(text);
+  const segments = document.createElement("div");
+  segments.className = "gold-race-segments";
+  for (let i = 0; i < 5; i += 1) {
+    const segment = document.createElement("span");
+    segment.className = "gold-race-segment";
+    if (i < safeCount) segment.classList.add("filled");
+    segments.appendChild(segment);
+  }
+  container.appendChild(segments);
+}
+
 function updateHowToPlay(state, elements) {
   if (!elements.rulesList && !elements.expansionRules && !elements.cardLegend) return;
   const baseRules = [
@@ -174,41 +339,36 @@ export function renderApp(state, elements, handlers) {
   const archiveCounts = countCards(player.archive, displayOrder);
   const opponentArchive = countCards(opponent.archive, displayOrder);
   const opponentHandTotal = opponent.hand.length;
-
-  const buildChips = (types, counts, container) => {
-    container.innerHTML = "";
-    types.forEach((type) => {
-      const badge = document.createElement("div");
-      badge.className = `chip ${type}`;
-      badge.textContent = `${type} x ${counts[type] ?? 0}`;
-      container.appendChild(badge);
-    });
-  };
   const currentName = state.players[state.currentPlayer]?.name ?? `Player ${state.currentPlayer + 1}`;
   elements.turnIndicator.textContent = `${currentName}'s Turn`;
   elements.turnCounter.textContent = `Turn ${state.turnCount}`;
+  renderGoldRaceTrack(elements.goldRacePlayer, player.name ?? "You", archiveCounts.gold ?? 0);
+  renderGoldRaceTrack(
+    elements.goldRaceOpponent,
+    opponent.name ?? "Opponent",
+    opponentArchive.gold ?? 0
+  );
   if (elements.opponentSummary) {
-    const opponentTypes = state.mode === "cpu" ? displayOrder : displayOrder;
     elements.opponentSummary.innerHTML = "";
     const title = document.createElement("div");
     title.className = "summary-title";
     title.textContent = "Opponent Summary";
-    const chips = document.createElement("div");
-    chips.className = "summary-chips";
-    buildChips(opponentTypes, opponentArchive, chips);
+    const stacks = document.createElement("div");
+    stacks.className = "summary-archive-stacks";
+    renderArchiveMiniStacks(stacks, opponentArchive, displayOrder, {
+      owner: "opponent",
+      onSelect: handlers.openArchiveInspect,
+    });
     const handInfo = document.createElement("div");
     handInfo.className = "summary-hand";
     handInfo.textContent = `Hand: ${opponentHandTotal}`;
     elements.opponentSummary.appendChild(title);
-    elements.opponentSummary.appendChild(chips);
+    elements.opponentSummary.appendChild(stacks);
     elements.opponentSummary.appendChild(handInfo);
   }
-  if (elements.handCounts) {
-    buildChips(displayOrder, handCounts, elements.handCounts);
-  }
+  renderHandCountChips(displayOrder, handCounts, elements.handCounts);
 
-  elements.deckInfo.textContent = `Deck: ${player.deck.length} cards`;
-  elements.discardInfo.textContent = `Discard: ${player.discard.length} cards`;
+  renderDeckDiscardWidgets(elements, player);
   elements.tradeInfo.textContent = `Trades used: ${state.tradesThisTurn}/${state.ruleset.maxTrades} • Plays used: ${player.active.length}/${playLimit}`;
 
   const turnGate =
@@ -232,13 +392,11 @@ export function renderApp(state, elements, handlers) {
     state.ruleset
   );
 
-  elements.archivePile.innerHTML = "";
-  displayOrder.forEach((type) => {
-    const badge = document.createElement("div");
-    badge.className = `chip ${type}`;
-    badge.textContent = `${type} x ${archiveCounts[type]}`;
-    elements.archivePile.appendChild(badge);
+  renderArchiveMiniStacks(elements.archivePile, archiveCounts, displayOrder, {
+    owner: "player",
+    onSelect: handlers.openArchiveInspect,
   });
+  renderArchiveInspect(state, elements);
 
   const inMainPhase = state.phase === "main";
   elements.tradeBronze.disabled =

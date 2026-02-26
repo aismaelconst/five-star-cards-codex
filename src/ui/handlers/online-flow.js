@@ -13,6 +13,9 @@ export function createOnlineFlow({
   formatTradeToast,
   onWinner,
   showActionToast,
+  captureFeedbackSnapshot,
+  runFeedbackFromSnapshot,
+  showArchiveReplayFromEvent,
   returnToModeSelect,
 }) {
   let onlineClient = null;
@@ -188,6 +191,11 @@ export function createOnlineFlow({
         .map(([type, value]) => `${value} ${type}`);
       const summary = parts.length ? parts.join(", ") : "no cards";
       elements.opponentAlert.textContent = `Opponent archived ${summary} (drew ${event.drawCount}).`;
+      if (typeof showArchiveReplayFromEvent === "function") {
+        const actorName =
+          state.players.find((player) => player.id === event.playerId)?.name ?? "Opponent";
+        showArchiveReplayFromEvent(event, actorName);
+      }
     }
   }
 
@@ -205,7 +213,14 @@ export function createOnlineFlow({
     handleSelfTradeToast(message);
     handleOpponentEvent(message);
     if (message.type === "state_update") {
+      const beforeSnapshot =
+        typeof captureFeedbackSnapshot === "function"
+          ? captureFeedbackSnapshot()
+          : null;
       applyServerState(message);
+      if (typeof runFeedbackFromSnapshot === "function") {
+        runFeedbackFromSnapshot(beforeSnapshot);
+      }
       if (state.mode === "online") {
         if (state.phase === "confirm" && isMyTurn(state)) {
           showConfirmOverlay(state, elements);

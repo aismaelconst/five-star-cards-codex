@@ -117,6 +117,21 @@ export function createCpuFlow({
       title.className = "summary-title";
       title.textContent = "Archive";
       elements.cpuTurnSummary.appendChild(title);
+      const cards = document.createElement("div");
+      cards.className = "summary-replay-cards";
+      const maxCards = 12;
+      let rendered = 0;
+      displayOrder.forEach((type) => {
+        const amount = summary.archive.counts[type] ?? 0;
+        for (let i = 0; i < amount && rendered < maxCards; i += 1) {
+          const card = document.createElement("div");
+          card.className = `card ${type} replay-card`;
+          card.dataset.cardType = type;
+          cards.appendChild(card);
+          rendered += 1;
+        }
+      });
+      elements.cpuTurnSummary.appendChild(cards);
       const line = document.createElement("div");
       line.className = "summary-line";
       line.textContent = `Archived ${formatCountLine(

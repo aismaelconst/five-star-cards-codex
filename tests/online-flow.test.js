@@ -56,6 +56,9 @@ function createFixture(options = {}) {
     formatTradeToast: vi.fn(() => "self trade toast"),
     onWinner: vi.fn(),
     showActionToast: vi.fn(),
+    captureFeedbackSnapshot: vi.fn(() => ({ local: {} })),
+    runFeedbackFromSnapshot: vi.fn(),
+    showArchiveReplayFromEvent: vi.fn(),
     returnToModeSelect: vi.fn(),
   };
 
@@ -272,6 +275,25 @@ describe("online-flow", () => {
       state: mysticState,
     });
     expect(elements.opponentAlert.textContent).toContain("gold");
+    expect(deps.showArchiveReplayFromEvent).not.toHaveBeenCalled();
+
+    onMessage({
+      type: "state_update",
+      roomId: "ROOM1",
+      playerId: "self-1",
+      lastEvent: {
+        type: "archive",
+        playerId: "opponent-2",
+        counts: { bronze: 1, silver: 1 },
+        drawCount: 3,
+      },
+      state: payloadState,
+    });
+    expect(deps.showArchiveReplayFromEvent).toHaveBeenCalledWith(
+      expect.objectContaining({ drawCount: 3 }),
+      expect.any(String)
+    );
+    expect(deps.runFeedbackFromSnapshot).toHaveBeenCalled();
   });
 
   it("handles lobby, game_start, error, and game_over messages", () => {

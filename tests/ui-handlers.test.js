@@ -25,6 +25,32 @@ function makeElements() {
     winnerModalText: document.createElement("div"),
     winnerModalMessage: document.createElement("div"),
     restartGameModal: document.createElement("button"),
+    goldRace: document.createElement("div"),
+    goldRacePlayer: document.createElement("div"),
+    goldRaceOpponent: document.createElement("div"),
+    turnReplayPanel: Object.assign(document.createElement("div"), { hidden: true }),
+    turnReplayCards: document.createElement("div"),
+    turnReplayMeta: document.createElement("div"),
+    turnReplayClose: document.createElement("button"),
+    archiveInspectOverlay: Object.assign(document.createElement("div"), { hidden: true }),
+    archiveInspectTitle: document.createElement("div"),
+    archiveInspectMeta: document.createElement("div"),
+    archiveInspectCards: document.createElement("div"),
+    archiveInspectClose: document.createElement("button"),
+    feedbackCaption: document.createElement("div"),
+    deckZone: document.createElement("div"),
+    discardZone: document.createElement("div"),
+    archiveZone: document.createElement("div"),
+    activeZone: document.createElement("div"),
+    handZone: document.createElement("div"),
+    boardDeckStack: document.createElement("div"),
+    boardDiscardStack: document.createElement("div"),
+    feedbackLayer: document.createElement("div"),
+    deckAnchor: document.createElement("span"),
+    handAnchor: document.createElement("span"),
+    activeAnchor: document.createElement("span"),
+    archiveAnchor: document.createElement("span"),
+    discardAnchor: document.createElement("span"),
     confirmSummary: document.createElement("div"),
     confirmCards: document.createElement("div"),
     modeOverlay: document.createElement("div"),
@@ -45,6 +71,7 @@ function makeElements() {
     hostFormatAncient: document.createElement("button"),
     hostFormatMystic: document.createElement("button"),
     cpuMode: document.createElement("button"),
+    motionToggle: document.createElement("button"),
     playerNameInput: Object.assign(document.createElement("input"), { value: "" }),
     roomCodeInput: Object.assign(document.createElement("input"), { value: "" }),
     guestNameInput: Object.assign(document.createElement("input"), { value: "" }),
@@ -140,6 +167,44 @@ describe("ui/handlers", () => {
 
     expect(elements.actionToast.hidden).toBe(false);
     expect(elements.actionToastText.textContent).toContain("Played Bronze");
+  });
+
+  it("runs feedback animation wrapper for local actions", () => {
+    const animateFromSnapshots = vi.fn();
+    const captureSnapshot = vi.fn(() => ({ local: {} }));
+    const feedbackFactory = () => ({
+      cycleMotionMode: vi.fn(),
+      closeReplay: vi.fn(),
+      captureSnapshot,
+      animateFromSnapshots,
+      showArchiveReplayFromCards: vi.fn(),
+      showArchiveReplayFromEvent: vi.fn(),
+      reset: vi.fn(),
+    });
+    const handlers = createHandlers(state, elements, onWinner, { feedbackFactory });
+    const player = state.players[0];
+    player.hand = ["bronze"];
+
+    handlers.playCard(0);
+
+    expect(captureSnapshot).toHaveBeenCalled();
+    expect(animateFromSnapshots).toHaveBeenCalled();
+  });
+
+  it("opens and closes archive inspect modal state", () => {
+    const handlers = createHandlers(state, elements, onWinner);
+
+    handlers.openArchiveInspect("player", "gold", 3);
+    expect(state.ui.archiveInspect).toEqual({
+      owner: "player",
+      type: "gold",
+      count: 3,
+      visible: true,
+    });
+
+    handlers.closeArchiveInspect();
+    expect(state.ui.archiveInspect.visible).toBe(false);
+    expect(elements.archiveInspectOverlay.hidden).toBe(true);
   });
 
   it("returns a card from active to hand", () => {
@@ -313,6 +378,44 @@ describe("ui/handlers", () => {
 
     expect(state.currentPlayer).toBe(1);
     expect(state.phase).toBe("between");
+  });
+
+  it("runs archive-then-draw feedback sequence on confirm archive", () => {
+    const animateSequence = vi.fn();
+    const animateFromSnapshots = vi.fn();
+    const captureSnapshot = vi.fn(() => ({ local: {} }));
+    const feedbackFactory = () => ({
+      cycleMotionMode: vi.fn(),
+      closeReplay: vi.fn(),
+      captureSnapshot,
+      animateFromSnapshots,
+      animateSequence,
+      showArchiveReplayFromCards: vi.fn(),
+      showArchiveReplayFromEvent: vi.fn(),
+      reset: vi.fn(),
+    });
+    const handlers = createHandlers(state, elements, onWinner, { feedbackFactory });
+    const player = state.players[0];
+    player.active = ["bronze", "silver"];
+
+    handlers.endTurn();
+    handlers.confirmArchive();
+
+    expect(animateSequence).toHaveBeenCalled();
+    expect(animateFromSnapshots).toHaveBeenCalled();
+  });
+
+  it("shows replay panel on offline archive confirmation", () => {
+    const handlers = createHandlers(state, elements, onWinner);
+    const player = state.players[0];
+    player.active = ["bronze", "silver"];
+
+    handlers.endTurn();
+    handlers.confirmArchive();
+
+    expect(elements.turnReplayPanel.hidden).toBe(false);
+    expect(elements.turnReplayMeta.textContent).toContain("Archived 2 card(s)");
+    expect(elements.turnReplayCards.children.length).toBe(2);
   });
 
   it("calls onWinner when a player wins", () => {

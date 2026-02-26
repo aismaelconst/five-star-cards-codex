@@ -15,17 +15,33 @@ import {
 import { createCpuFlow } from "./handlers/cpu-flow.js";
 import { createOnlineFlow } from "./handlers/online-flow.js";
 import { formatLabel, updateFormatButtons } from "./handlers/format-utils.js";
+import { createFeedbackController } from "./feedback/feedback-controller.js";
+import { buildArchiveDrawSequence } from "./feedback/sequence-builder.js";
 
 const THEME_STORAGE_KEY = "fsc_theme";
 
 export function createHandlers(state, elements, onWinner, options = {}) {
   const socketUrl = options.socketUrl ?? null;
   const clientFactory = options.clientFactory ?? createOnlineClient;
+  const feedbackFactory = options.feedbackFactory ?? createFeedbackController;
   let toastTimer = null;
   let handlers = null;
   let onlineFlow = null;
   let cpuFlow = null;
   let currentTheme = "classic";
+  let pendingLocalFeedback = null;
+
+  state.ui = {
+    motionMode: state.ui?.motionMode ?? "auto",
+    replayQueue: Array.isArray(state.ui?.replayQueue) ? state.ui.replayQueue : [],
+    archiveInspect: state.ui?.archiveInspect ?? {
+      owner: "player",
+      type: null,
+      count: 0,
+      visible: false,
+    },
+  };
+  const feedback = feedbackFactory({ state, elements });
 
   function readStoredTheme() {
     try {
@@ -104,8 +120,62 @@ export function createHandlers(state, elements, onWinner, options = {}) {
   function selectPixelTheme() {
     applyTheme("pixel");
   }
+
+  function toggleMotionMode() {
+    feedback.cycleMotionMode();
+  }
+
+  function closeTurnReplay() {
+    feedback.closeReplay();
+  }
+
   function showModePicker() {
     elements.modeOverlay.hidden = false;
+  }
+
+  function runPendingFeedback(options = {}) {
+    if (!pendingLocalFeedback) return;
+    const { before, after, actionType } = pendingLocalFeedback;
+    pendingLocalFeedback = null;
+    if (actionType === ActionTypes.CONFIRM_ARCHIVE && options.archiveContext) {
+      const sequence = buildArchiveDrawSequence({
+        playedCards: options.archiveContext.playedCards ?? [],
+        drawCount: options.archiveContext.drawCount ?? 0,
+        displayOrder: state.ruleset?.displayOrder,
+        beforeSnapshot: before,
+        afterSnapshot: after,
+      });
+      if (typeof feedback.animateSequence === "function") {
+        void feedback.animateSequence(sequence);
+        return;
+      }
+    }
+    void feedback.animateFromSnapshots(before, after);
+  }
+
+  function openArchiveInspect(owner, type, count) {
+    state.ui.archiveInspect = {
+      owner: owner ?? "player",
+      type: type ?? null,
+      count: Number.isFinite(count) ? count : 0,
+      visible: Boolean(type),
+    };
+    render();
+  }
+
+  function closeArchiveInspect(options = {}) {
+    state.ui.archiveInspect = {
+      owner: "player",
+      type: null,
+      count: 0,
+      visible: false,
+    };
+    if (elements.archiveInspectOverlay) {
+      elements.archiveInspectOverlay.hidden = true;
+    }
+    if (!options.skipRender) {
+      render();
+    }
   }
 
   function selectOfflineMode() {
@@ -185,7 +255,7 @@ export function createHandlers(state, elements, onWinner, options = {}) {
 
   function selectCoreFormat() {
     if (state.mode === "cpu") {
-    state.format = "core";
+      state.format = "core";
       updateFormatButtons(state, elements);
       if (elements.formatOverlay) {
         elements.formatOverlay.hidden = true;
@@ -279,7 +349,13 @@ export function createHandlers(state, elements, onWinner, options = {}) {
     if (state.mode === "online") {
       return onlineFlow.sendAction(action);
     }
-    return applyAction(state, action);
+    const localPlayer = getLocalPlayer();
+    const localPlayerId = localPlayer?.id;
+    const before = feedback.captureSnapshot(localPlayerId);
+    const result = applyAction(state, action);
+    const after = feedback.captureSnapshot(localPlayerId);
+    pendingLocalFeedback = { before, after, actionType: action.type };
+    return result;
   }
 
   function getLocalPlayer() {
@@ -303,6 +379,7 @@ export function createHandlers(state, elements, onWinner, options = {}) {
     getLocalPlayer,
     renderApp: render,
     showActionToast,
+    runFeedback: runPendingFeedback,
   });
 
   function playCard(index) {
@@ -316,6 +393,7 @@ export function createHandlers(state, elements, onWinner, options = {}) {
         showActionToast(`Played ${formatCardName(cardType)}.`);
       }
       renderApp(state, elements, handlers);
+      runPendingFeedback();
     }
     return result;
   }
@@ -329,6 +407,7 @@ export function createHandlers(state, elements, onWinner, options = {}) {
         showActionToast(`Played ${formatCardName(type)}.`);
       }
       renderApp(state, elements, handlers);
+      runPendingFeedback();
     }
     return result;
   }
@@ -344,6 +423,7 @@ export function createHandlers(state, elements, onWinner, options = {}) {
         showActionToast(`Returned ${formatCardName(cardType)} to hand.`);
       }
       renderApp(state, elements, handlers);
+      runPendingFeedback();
     }
     return result;
   }
@@ -357,6 +437,7 @@ export function createHandlers(state, elements, onWinner, options = {}) {
         showActionToast(`Returned ${moved} card(s) to hand.`);
       }
       renderApp(state, elements, handlers);
+      runPendingFeedback();
     }
     return result;
   }
@@ -366,12 +447,20 @@ export function createHandlers(state, elements, onWinner, options = {}) {
     const result = sendOrApply({ type: ActionTypes.END_TURN });
     if (state.mode !== "online") {
       renderApp(state, elements, handlers);
+      runPendingFeedback();
       showConfirmOverlay(state, elements);
     }
     return result;
   }
 
   function finalizeArchive(payload = {}) {
+    const pending = state.pendingArchive
+      ? {
+          playedCards: [...state.pendingArchive.playedCards],
+          drawCount: state.pendingArchive.drawCount,
+          playerIndex: state.pendingArchive.playerIndex,
+        }
+      : null;
     const result = sendOrApply({ type: ActionTypes.CONFIRM_ARCHIVE, payload });
     if (state.mode !== "online") {
       elements.confirmOverlay.hidden = true;
@@ -379,13 +468,23 @@ export function createHandlers(state, elements, onWinner, options = {}) {
         onWinner(result.event.winnerIndex);
         return;
       }
+      if (pending && pending.playedCards.length > 0 && state.mode !== "cpu") {
+        const actorName = state.players[pending.playerIndex]?.name ?? "Player";
+        feedback.showArchiveReplayFromCards(
+          pending.playedCards,
+          pending.drawCount,
+          actorName
+        );
+      }
       if (state.mode === "cpu") {
         renderApp(state, elements, handlers);
+        runPendingFeedback({ archiveContext: pending });
         cpuFlow.maybeRunCpuTurn();
         return result;
       }
       showTurnOverlay(state, elements);
       renderApp(state, elements, handlers);
+      runPendingFeedback({ archiveContext: pending });
     }
     return result;
   }
@@ -395,6 +494,7 @@ export function createHandlers(state, elements, onWinner, options = {}) {
     if (state.mode !== "online") {
       elements.confirmOverlay.hidden = true;
       renderApp(state, elements, handlers);
+      runPendingFeedback();
     }
     return result;
   }
@@ -404,6 +504,7 @@ export function createHandlers(state, elements, onWinner, options = {}) {
     if (state.mode !== "online") {
       elements.turnOverlay.hidden = true;
       renderApp(state, elements, handlers);
+      runPendingFeedback();
     }
     return result;
   }
@@ -438,6 +539,8 @@ export function createHandlers(state, elements, onWinner, options = {}) {
     elements.confirmOverlay.hidden = true;
     tradeFlow.hideOverlays();
     hideActionToast();
+    closeArchiveInspect({ skipRender: true });
+    feedback.reset();
 
     startGame(state);
     render();
@@ -469,6 +572,8 @@ export function createHandlers(state, elements, onWinner, options = {}) {
     tradeFlow.hideOverlays();
     if (elements.cpuTurnOverlay) elements.cpuTurnOverlay.hidden = true;
     hideActionToast();
+    closeArchiveInspect({ skipRender: true });
+    feedback.reset();
     elements.onlineChoiceOverlay.hidden = true;
     elements.hostOverlay.hidden = true;
     elements.guestOverlay.hidden = true;
@@ -500,6 +605,18 @@ export function createHandlers(state, elements, onWinner, options = {}) {
     formatTradeToast,
     onWinner,
     showActionToast,
+    captureFeedbackSnapshot: () => {
+      const localPlayer = getLocalPlayer();
+      return feedback.captureSnapshot(localPlayer?.id);
+    },
+    runFeedbackFromSnapshot: (beforeSnapshot) => {
+      const localPlayer = getLocalPlayer();
+      const afterSnapshot = feedback.captureSnapshot(localPlayer?.id);
+      void feedback.animateFromSnapshots(beforeSnapshot, afterSnapshot);
+    },
+    showArchiveReplayFromEvent: (event, actorName) => {
+      feedback.showArchiveReplayFromEvent(event, actorName);
+    },
     returnToModeSelect,
   });
 
@@ -520,6 +637,10 @@ export function createHandlers(state, elements, onWinner, options = {}) {
     showModePicker,
     selectClassicTheme,
     selectPixelTheme,
+    toggleMotionMode,
+    closeTurnReplay,
+    openArchiveInspect,
+    closeArchiveInspect,
     selectOfflineMode,
     selectCpuMode,
     selectOnlineMode: onlineFlow.selectOnlineMode,

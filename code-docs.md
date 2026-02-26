@@ -120,6 +120,13 @@ Defined in `src/game/multiplayer.js`.
 Rendering lives in `src/ui/render.js`.
 
 - `renderApp()` is the main renderer and is called after most state changes.
+- The board now renders a tabletop play surface with feedback HUD:
+  - Deck and discard table widgets with visual stacks and counts.
+  - Gold race tracks for both players (`goldRacePlayer`, `goldRaceOpponent`).
+  - Opponent summary title + archive mini-stacks and hand count.
+  - Local archive mini-stacks (one stack per type with count > 0).
+  - Turn replay panel (`turnReplayPanel`) that can display full card visuals for end-turn archive summaries.
+  - Feedback caption lane (`feedbackCaption`) for phase text like archiving/drawing.
 - It selects a player perspective depending on mode:
   - Offline: `state.currentPlayer`.
   - CPU: the human player is always index 0.
@@ -129,6 +136,8 @@ Rendering lives in `src/ui/render.js`.
 - Trade buttons are enabled only when the phase is `main`, it is the local player’s turn, and `canInitiateTrade()` is true.
 - Mystic-only trade buttons are rendered/enabled only in `mystic` format.
 - Trade info shows dynamic play usage (`Plays used: activeCount/playCap`) so Pearl/Obsidian effects are visible.
+- Archive mini-stacks can be inspected through `archiveInspectOverlay` (`state.ui.archiveInspect` drives visibility).
+- Gold archive stacks are emphasized (`gold-focus`) and become urgent at 4+ (`gold-urgent`).
 - `showConfirmOverlay()` renders a summary of pending archive cards and draw count.
 
 Card tooltips are generated in `src/ui/card-tooltips.js` and include draw rules, trade recipes, and special notes (wood substitution, gold win condition).
@@ -141,14 +150,22 @@ The handler orchestration lives in `src/ui/handlers.js`.
 Trade selection overlays and pool-cost handling are implemented in `src/ui/handlers/trade-flow.js`, with shared formatting helpers in `src/ui/handlers/trade-utils.js`.
 Online lobby/WebSocket handling lives in `src/ui/handlers/online-flow.js`, CPU turn summaries in `src/ui/handlers/cpu-flow.js`, and format button labeling/toggling in `src/ui/handlers/format-utils.js`.
 Trade success toast formatting is centralized in `src/ui/handlers/trade-utils.js` (`formatTradeToast`), including tutor/draw/archive/archive-from-hand/effect reward variants.
+Motion/replay feedback is managed by `src/ui/feedback/feedback-controller.js` with helper modules:
+- `src/ui/feedback/state-diff.js` captures visible pre/post snapshots and computes movement descriptors.
+- `src/ui/feedback/animation-queue.js` runs flight animations sequentially.
+- `src/ui/feedback/replay-builder.js` converts archive event counts/cards into replay panel entries + summary text.
+- `src/ui/feedback/sequence-builder.js` builds deterministic step sequences (caption + movement) for archive/draw cadence.
 
 Key responsibilities:
 - Mode selection (offline, CPU, online) and format selection (core/gilded gems/ancient/mystic).
 - Theme selection (classic vs. pixel) with persistence in local storage.
+- Motion mode selection (`auto`, `full`, `reduced`) with persistence in local storage and `prefers-reduced-motion` support.
 - Calling `startGame()` and initializing CPU or online state.
-- Managing overlays (confirm archive, turn overlay, wood substitution, gem tutor, choice cost, pool cost, archive tutor, CPU summary).
+- Managing overlays (confirm archive, turn overlay, wood substitution, gem tutor, choice cost, pool cost, archive tutor, archive inspect, CPU summary).
 - Converting UI actions into `applyAction()` calls or online `action` messages.
 - Showing short action toasts for local card movement and successful local/online self trade effects.
+- Triggering replay panel display for archive confirmations/opponent archive events and queueing card-flight animations after local and online state updates.
+- Running archive confirmation as a staged sequence: active → archive first, then deck → hand draw steps, with caption updates and zone pulse fallback for reduced motion.
 
 Trade overlays:
 - If a trade can use wood, the wood overlay is shown first.
@@ -166,7 +183,7 @@ Shelved content:
 
 CPU flow:
 - `maybeRunCpuTurn()` runs after the human completes their archive in CPU mode.
-- The CPU summary overlay is shown if enabled.
+- The CPU summary overlay now includes replay-style full card visuals for archived cards.
 - The CPU avoids playing its entire hand if that would result in a zero-draw turn with an empty hand.
 
 ## Online Client

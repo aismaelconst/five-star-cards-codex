@@ -5,6 +5,9 @@ export function wireEvents(elements, handlers) {
   if (elements.themePixel) {
     elements.themePixel.addEventListener("click", handlers.selectPixelTheme);
   }
+  if (elements.motionToggle) {
+    elements.motionToggle.addEventListener("click", handlers.toggleMotionMode);
+  }
   elements.offlineMode.addEventListener("click", handlers.selectOfflineMode);
   if (elements.cpuMode) {
     elements.cpuMode.addEventListener("click", handlers.selectCpuMode);
@@ -132,5 +135,11 @@ export function wireEvents(elements, handlers) {
   }
   if (elements.handArchiveCancel) {
     elements.handArchiveCancel.addEventListener("click", handlers.cancelHandArchive);
+  }
+  if (elements.turnReplayClose) {
+    elements.turnReplayClose.addEventListener("click", handlers.closeTurnReplay);
+  }
+  if (elements.archiveInspectClose) {
+    elements.archiveInspectClose.addEventListener("click", handlers.closeArchiveInspect);
   }
 }

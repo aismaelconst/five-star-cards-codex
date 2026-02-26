@@ -13,12 +13,15 @@
           <h1>Five Star Cards</h1>
           <p class="subtitle">A two-player race to archive five gold stars.</p>
         </div>
-        <div class="theme-toggle">
-          <span class="muted">Theme</span>
-          <div class="toggle-group" role="group" aria-label="Theme">
-            <button id="themeClassic" class="ghost">Classic</button>
-            <button id="themePixel" class="ghost">Pixel</button>
+        <div class="top-controls">
+          <div class="theme-toggle">
+            <span class="muted">Theme</span>
+            <div class="toggle-group" role="group" aria-label="Theme">
+              <button id="themeClassic" class="ghost">Classic</button>
+              <button id="themePixel" class="ghost">Pixel</button>
+            </div>
           </div>
+          <button class="ghost" id="motionToggle">Motion: Auto</button>
         </div>
       </header>
 
@@ -45,8 +48,7 @@
 
             <div class="end-turn">
               <button class="primary" id="endTurn">Archive & End Turn</button>
-              <div class="deck-info" id="deckInfo"></div>
-              <div class="discard-info" id="discardInfo"></div>
+              <div class="muted">Deck and discard live on the table board.</div>
             </div>
           </section>
 
@@ -67,8 +69,12 @@
           </section>
         </aside>
 
-        <section class="panel play">
+        <section class="panel play table-surface">
           <div class="play-header">
+            <div class="gold-race" id="goldRace">
+              <div class="gold-race-track" id="goldRacePlayer"></div>
+              <div class="gold-race-track" id="goldRaceOpponent"></div>
+            </div>
             <div class="turn">
               <span id="turnIndicator"></span>
               <span class="divider">•</span>
@@ -77,28 +83,54 @@
           </div>
           <div class="player-summary" id="opponentSummary"></div>
           <div class="muted" id="opponentAlert"></div>
+          <div class="table-lane">
+            <div class="table-widget" id="deckZone">
+              <div class="table-widget-title">Deck</div>
+              <div class="stack-card card card-back back" id="boardDeckStack"></div>
+              <div class="stack-count deck-info" id="deckInfo"></div>
+              <span class="zone-anchor" id="deckAnchor" aria-hidden="true"></span>
+            </div>
+            <div class="feedback-caption" id="feedbackCaption" aria-live="polite"></div>
+            <div class="table-widget" id="discardZone">
+              <div class="table-widget-title">Discard</div>
+              <div class="stack-card card card-back back" id="boardDiscardStack"></div>
+              <div class="stack-count discard-info" id="discardInfo"></div>
+              <span class="zone-anchor" id="discardAnchor" aria-hidden="true"></span>
+            </div>
+          </div>
+          <section class="turn-replay" id="turnReplayPanel" hidden>
+            <div class="turn-replay-header">
+              <h3>Turn Replay</h3>
+              <button class="ghost" id="turnReplayClose">Close</button>
+            </div>
+            <div class="turn-replay-meta" id="turnReplayMeta"></div>
+            <div class="turn-replay-cards" id="turnReplayCards"></div>
+          </section>
 
           <div class="zones">
-            <div class="zone">
+            <div class="zone" id="archiveZone">
               <div class="zone-header">
                 <h3>Archive</h3>
+                <span class="zone-anchor" id="archiveAnchor" aria-hidden="true"></span>
               </div>
-              <div class="pile" id="archivePile"></div>
+              <div class="archive-mini-grid" id="archivePile"></div>
             </div>
 
-            <div class="zone">
+            <div class="zone" id="activeZone">
               <div class="zone-header">
                 <h3>Active Cards</h3>
                 <span class="zone-note">Play up to 5 cards</span>
+                <span class="zone-anchor" id="activeAnchor" aria-hidden="true"></span>
               </div>
               <div class="hand" id="activeCards"></div>
               <button class="ghost" id="undoPlays">Return All To Hand</button>
             </div>
 
-            <div class="zone">
+            <div class="zone" id="handZone">
               <div class="zone-header">
                 <h3>Hand</h3>
                 <div class="counts" id="handCounts"></div>
+                <span class="zone-anchor" id="handAnchor" aria-hidden="true"></span>
               </div>
               <div class="hand" id="handCards"></div>
             </div>
@@ -327,6 +359,17 @@
       </div>
     </div>
 
+    <div class="overlay confirm-overlay" id="archiveInspectOverlay" hidden>
+      <div class="overlay-card">
+        <h2 id="archiveInspectTitle">Archive Detail</h2>
+        <p class="confirm-summary" id="archiveInspectMeta"></p>
+        <div class="confirm-cards archive-inspect-grid" id="archiveInspectCards"></div>
+        <div class="confirm-actions">
+          <button class="primary" id="archiveInspectClose">Close</button>
+        </div>
+      </div>
+    </div>
+
     <div class="overlay winner-overlay" id="winnerOverlay" hidden>
       <div class="overlay-card">
         <h2 id="winnerModalText"></h2>
@@ -339,6 +382,7 @@
     <div class="action-toast" id="actionToast" hidden>
       <div id="actionToastText"></div>
     </div>
+    <div id="feedbackLayer" aria-hidden="true"></div>
 
     <script type="module" src="app.js"></script>
   </body>
