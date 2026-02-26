@@ -47,6 +47,7 @@ function makeElements() {
     "tradeAmethyst",
     "tradeAsh",
     "tradeEmber",
+    "openTradesModal",
     "endTurn",
     "undoPlays",
     "confirmOverlay",
@@ -74,6 +75,7 @@ function makeElements() {
   elements.tradeAmethyst = document.createElement("button");
   elements.tradeAsh = document.createElement("button");
   elements.tradeEmber = document.createElement("button");
+  elements.openTradesModal = document.createElement("button");
   elements.endTurn = document.createElement("button");
   elements.undoPlays = document.createElement("button");
   elements.archiveInspectClose = document.createElement("button");
@@ -133,6 +135,38 @@ describe("ui/render", () => {
     expect(elements.handCounts.querySelector(".chip.bronze")).not.toBeNull();
     const card = elements.handCards.querySelector(".card");
     expect(card.dataset.cardType).toBeTruthy();
+  });
+
+  it("shows explore-trades indicator when at least one trade is available", () => {
+    const state = makeState();
+    const elements = makeElements();
+    const handlers = {
+      playCard: vi.fn(),
+      playCardByType: vi.fn(),
+      returnCard: vi.fn(),
+      openArchiveInspect: vi.fn(),
+    };
+    state.players[0].archive = Array.from({ length: 5 }, () => "bronze");
+    state.players[0].deck = ["silver"];
+
+    renderApp(state, elements, handlers);
+
+    expect(elements.openTradesModal.classList.contains("has-trades")).toBe(true);
+  });
+
+  it("hides explore-trades indicator when no trades are available", () => {
+    const state = makeState();
+    const elements = makeElements();
+    const handlers = {
+      playCard: vi.fn(),
+      playCardByType: vi.fn(),
+      returnCard: vi.fn(),
+      openArchiveInspect: vi.fn(),
+    };
+
+    renderApp(state, elements, handlers);
+
+    expect(elements.openTradesModal.classList.contains("has-trades")).toBe(false);
   });
 
   it("renders expanded archive as mini-card stacks", () => {

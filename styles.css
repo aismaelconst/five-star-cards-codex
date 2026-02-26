@@ -69,6 +69,11 @@ body {
   flex-wrap: wrap;
 }
 
+.play-header-left {
+  display: flex;
+  gap: 6px;
+}
+
 .play-header-actions {
   display: flex;
   flex-direction: column;
@@ -111,6 +116,7 @@ h3 {
 }
 
 .table-surface {
+  padding: 18px;
   background:
     radial-gradient(120% 120% at 50% 10%, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0) 60%),
     radial-gradient(140% 120% at 10% 100%, rgba(0, 0, 0, 0.14), rgba(0, 0, 0, 0) 62%),
@@ -307,16 +313,16 @@ h3 {
 .play {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 16px;
 }
 
 .player-summary {
   background: rgba(255, 246, 228, 0.95);
   border-radius: 16px;
-  padding: 14px 18px;
+  padding: 12px 14px;
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 8px;
   justify-content: flex-start;
   align-items: center;
   font-weight: 600;
@@ -346,7 +352,7 @@ h3 {
 .zones {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 14px;
 }
 
 .zone-anchor {
@@ -375,7 +381,7 @@ h3 {
   background: rgba(255, 250, 238, 0.82);
   border: 1px solid rgba(31, 27, 22, 0.22);
   border-radius: 16px;
-  padding: 14px;
+  padding: 12px;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.85);
 }
 
@@ -412,9 +418,9 @@ h3 {
 
 .table-lane {
   display: grid;
-  gap: 14px;
+  gap: 16px;
   grid-template-columns: minmax(120px, 180px) 1fr minmax(120px, 180px);
-  align-items: center;
+  align-items: stretch;
 }
 
 .table-widget {
@@ -426,8 +432,23 @@ h3 {
   flex-direction: column;
   align-items: center;
   gap: 8px;
-  min-height: 144px;
+  min-height: 138px;
   position: relative;
+}
+
+.table-active-zone {
+  min-height: 138px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.table-active-zone .feedback-caption {
+  min-height: 24px;
+}
+
+.table-active-zone .hand {
+  min-height: 74px;
 }
 
 .table-widget-title {
@@ -458,7 +479,7 @@ h3 {
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 1px dashed rgba(255, 255, 255, 0.35);
+  border: 1px dashed rgba(255, 255, 255, 0.4);
   border-radius: 12px;
   color: #f5e8cf;
   font-size: 0.9rem;
@@ -550,18 +571,15 @@ h3 {
 
 .gold-race {
   display: flex;
-  flex-direction: column;
-  gap: 8px;
-  min-width: min(100%, 320px);
-  flex: 1 1 320px;
+  gap: 6px;
 }
 
 .gold-race-track {
-  border: 1px solid rgba(31, 27, 22, 0.14);
-  border-radius: 14px;
-  padding: 8px 10px;
-  background: rgba(255, 252, 244, 0.95);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(31, 27, 22, 0.1);
+  border-radius: 12px;
+  padding: 4px 8px;
+  background: rgba(255, 252, 244, 0.75);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.65);
 }
 
 .gold-race-track.urgent {
@@ -570,26 +588,50 @@ h3 {
 }
 
 .gold-race-label {
-  font-size: 0.8rem;
+  font-size: 0.74rem;
   color: var(--ink-2);
-  margin-bottom: 6px;
+  margin-bottom: 2px;
 }
 
 .gold-race-segments {
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 5px;
+  display: flex;
+  gap: 3px;
 }
 
 .gold-race-segment {
-  height: 8px;
-  border-radius: 999px;
-  background: rgba(160, 145, 110, 0.2);
+  width: 14px;
+  height: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.72rem;
+  line-height: 1;
+  color: rgba(160, 145, 110, 0.35);
 }
 
 .gold-race-segment.filled {
-  background: linear-gradient(90deg, #db9f0e, #f6ce5f);
-  box-shadow: 0 0 8px rgba(212, 161, 21, 0.4);
+  color: #db9f0e;
+  text-shadow: 0 0 5px rgba(212, 161, 21, 0.35);
+}
+
+#openTradesModal {
+  position: relative;
+}
+
+.trade-dot {
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #d93025;
+  border: 2px solid #fff8eb;
+  display: none;
+}
+
+#openTradesModal.has-trades .trade-dot {
+  display: block;
 }
 
 .turn-replay {
@@ -1604,6 +1646,20 @@ body.motion-reduced .feedback-caption {
 @media (max-width: 980px) {
   .board {
     grid-template-columns: 1fr;
+  }
+
+  .play-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .play-header-left {
+    width: 100%;
+  }
+
+  .play-header-actions {
+    align-items: stretch;
+    width: 100%;
   }
 
   .table-lane {

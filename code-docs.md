@@ -122,8 +122,9 @@ Rendering lives in `src/ui/render.js`.
 - `renderApp()` is the main renderer and is called after most state changes.
 - The board now renders a tabletop play surface with feedback HUD:
   - Deck and discard table widgets with visual stacks and counts.
-  - Gold race tracks for both players (`goldRacePlayer`, `goldRaceOpponent`).
-  - Opponent summary title + archive mini-stacks and hand count.
+  - Compact gold race tracks for both players (`goldRacePlayer`, `goldRaceOpponent`) rendered as filled/unfilled star pips.
+  - Opponent summary title + archive mini-stacks and hand count now sits in the play header area.
+  - Active Cards zone is centered in the table lane between deck/discard so play/archive feedback stays in the middle of the board.
   - Local archive mini-stacks (one stack per type with count > 0).
   - Turn replay panel (`turnReplayPanel`) that can display full card visuals for end-turn archive summaries.
   - Feedback caption lane (`feedbackCaption`) for phase text like archiving/drawing.
@@ -137,6 +138,7 @@ Rendering lives in `src/ui/render.js`.
 - The hand is rendered as individual cards for 10 or fewer cards; otherwise it collapses into pile counts per card type.
 - The "How To Play" panel is refreshed per format, showing only relevant expansion rules and legend chips.
 - Trade buttons are enabled only when the phase is `main`, it is the local player’s turn, and `canInitiateTrade()` is true.
+- `openTradesModal` receives a `has-trades` class when at least one trade is currently initiable for the local player, enabling a red-dot affordance in the Archive header.
 - Mystic-only trade buttons are rendered/enabled only in `mystic` format.
 - Trade info shows dynamic play usage (`Plays used: activeCount/playCap`) so Pearl/Obsidian effects are visible.
 - Archive mini-stacks can be inspected through `archiveInspectOverlay` (`state.ui.archiveInspect` drives visibility).

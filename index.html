@@ -29,9 +29,12 @@
       <section class="board">
         <section class="panel play table-surface">
           <div class="play-header">
-            <div class="gold-race" id="goldRace">
-              <div class="gold-race-track" id="goldRacePlayer"></div>
-              <div class="gold-race-track" id="goldRaceOpponent"></div>
+            <div class="play-header-left">
+              <div class="gold-race compact" id="goldRace">
+                <div class="gold-race-track" id="goldRacePlayer"></div>
+                <div class="gold-race-track" id="goldRaceOpponent"></div>
+              </div>
+              <div class="player-summary" id="opponentSummary"></div>
             </div>
             <div class="play-header-actions">
               <div class="turn">
@@ -43,7 +46,6 @@
               <div class="trade-info" id="tradeInfo"></div>
             </div>
           </div>
-          <div class="player-summary" id="opponentSummary"></div>
           <div class="muted" id="opponentAlert"></div>
           <div class="table-lane">
             <div class="table-widget" id="deckZone">
@@ -52,7 +54,16 @@
               <div class="stack-count deck-info" id="deckInfo"></div>
               <span class="zone-anchor" id="deckAnchor" aria-hidden="true"></span>
             </div>
-            <div class="feedback-caption" id="feedbackCaption" aria-live="polite"></div>
+            <div class="zone table-active-zone" id="activeZone">
+              <div class="zone-header">
+                <h3>Active Cards</h3>
+                <span class="zone-note">Play up to 5 cards</span>
+                <span class="zone-anchor" id="activeAnchor" aria-hidden="true"></span>
+              </div>
+              <div class="feedback-caption" id="feedbackCaption" aria-live="polite"></div>
+              <div class="hand" id="activeCards"></div>
+              <button class="ghost compact" id="undoPlays">Return All To Hand</button>
+            </div>
             <div class="table-widget" id="discardZone">
               <div class="table-widget-title">Discard</div>
               <div class="stack-card card card-back back" id="boardDiscardStack"></div>
@@ -74,21 +85,11 @@
               <div class="zone-header">
                 <div class="zone-title-row">
                   <h3>Archive</h3>
-                  <button class="ghost compact" id="openTradesModal">Explore Trades</button>
+                  <button class="ghost compact" id="openTradesModal">Explore Trades<span class="trade-dot" aria-hidden="true"></span></button>
                 </div>
                 <span class="zone-anchor" id="archiveAnchor" aria-hidden="true"></span>
               </div>
               <div class="archive-mini-grid" id="archivePile"></div>
-            </div>
-
-            <div class="zone" id="activeZone">
-              <div class="zone-header">
-                <h3>Active Cards</h3>
-                <span class="zone-note">Play up to 5 cards</span>
-                <span class="zone-anchor" id="activeAnchor" aria-hidden="true"></span>
-              </div>
-              <div class="hand" id="activeCards"></div>
-              <button class="ghost" id="undoPlays">Return All To Hand</button>
             </div>
 
             <div class="zone" id="handZone">

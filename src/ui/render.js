@@ -226,6 +226,7 @@ function renderGoldRaceTrack(container, label, count) {
   for (let i = 0; i < 5; i += 1) {
     const segment = document.createElement("span");
     segment.className = "gold-race-segment";
+    segment.textContent = "★";
     if (i < safeCount) segment.classList.add("filled");
     segments.appendChild(segment);
   }
@@ -460,6 +461,22 @@ export function renderApp(state, elements, handlers) {
     elements.tradeEmber.hidden = !isMystic;
     elements.tradeEmber.disabled =
       !isMystic || !inMainPhase || !turnGate || !canInitiateTrade(state, player, "trade_ember");
+  }
+  if (elements.openTradesModal) {
+    const possibleTrades = [
+      "trade_bronze",
+      "trade_silver",
+      ...(isExpanded ? ["trade_gem_set", "trade_platinum"] : []),
+      ...(isAncient ? ["trade_ancients_archive"] : []),
+      ...(isMystic
+        ? ["trade_pearl", "trade_obsidian", "trade_amethyst", "trade_ash", "trade_ember"]
+        : []),
+    ];
+    const hasAvailableTrade =
+      inMainPhase &&
+      turnGate &&
+      possibleTrades.some((recipeId) => canInitiateTrade(state, player, recipeId));
+    elements.openTradesModal.classList.toggle("has-trades", hasAvailableTrade);
   }
   elements.endTurn.disabled = state.phase !== "main" || !turnGate;
   elements.undoPlays.disabled = !inMainPhase || !turnGate || player.active.length === 0;
