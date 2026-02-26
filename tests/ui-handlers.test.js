@@ -275,6 +275,22 @@ describe("ui/handlers", () => {
     expect(elements.actionToastText.textContent).toContain("gained Silver");
   });
 
+  it("closes trades modal before opening wood substitution overlay", () => {
+    state = createInitialState({ mode: "offline", format: "expanded" });
+    elements = makeElements();
+    const handlers = createHandlers(state, elements, onWinner);
+    const player = state.players[0];
+    player.archive = ["wood", "bronze", "bronze", "bronze", "bronze"];
+    player.deck = ["silver"];
+    elements.tradesOverlay.hidden = false;
+    elements.woodOverlay.hidden = true;
+
+    handlers.trade("trade_bronze");
+
+    expect(elements.tradesOverlay.hidden).toBe(true);
+    expect(elements.woodOverlay.hidden).toBe(false);
+  });
+
   it("opens pool cost overlay for ancients trade", () => {
     state = createInitialState({ mode: "offline", format: "ancient" });
     elements = makeElements();

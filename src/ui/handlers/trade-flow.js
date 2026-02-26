@@ -69,6 +69,12 @@ export function createTradeFlow(options) {
     if (elements.handArchiveOverlay) elements.handArchiveOverlay.hidden = true;
   }
 
+  function hideTradesModal() {
+    if (elements.tradesOverlay) {
+      elements.tradesOverlay.hidden = true;
+    }
+  }
+
   function trade(recipeId) {
     if (state.phase !== "main") return null;
     const player = getLocalPlayer();
@@ -84,6 +90,7 @@ export function createTradeFlow(options) {
       handArchive: null,
       targetType: null,
     };
+    hideTradesModal();
     const woodOptions = getWoodSubstitutionOptions(state, player, recipeId);
     const recipe = state.ruleset.tradeRecipes?.[recipeId];
     const baseCost = recipe?.cost ?? {};
