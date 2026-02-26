@@ -125,6 +125,30 @@ export function createHandlers(state, elements, onWinner, options = {}) {
     feedback.cycleMotionMode();
   }
 
+  function openHowToPlay() {
+    if (elements.howToPlayOverlay) {
+      elements.howToPlayOverlay.hidden = false;
+    }
+  }
+
+  function closeHowToPlay() {
+    if (elements.howToPlayOverlay) {
+      elements.howToPlayOverlay.hidden = true;
+    }
+  }
+
+  function openTradesModal() {
+    if (elements.tradesOverlay) {
+      elements.tradesOverlay.hidden = false;
+    }
+  }
+
+  function closeTradesModal() {
+    if (elements.tradesOverlay) {
+      elements.tradesOverlay.hidden = true;
+    }
+  }
+
   function closeTurnReplay() {
     feedback.closeReplay();
   }
@@ -187,6 +211,8 @@ export function createHandlers(state, elements, onWinner, options = {}) {
     if (elements.cpuOverlay) {
       elements.cpuOverlay.hidden = true;
     }
+    closeHowToPlay();
+    closeTradesModal();
     if (elements.formatOverlay) {
       updateFormatButtons(state, elements);
       elements.formatOverlay.hidden = false;
@@ -201,6 +227,8 @@ export function createHandlers(state, elements, onWinner, options = {}) {
     elements.onlineChoiceOverlay.hidden = true;
     elements.hostOverlay.hidden = true;
     elements.guestOverlay.hidden = true;
+    closeHowToPlay();
+    closeTradesModal();
     if (elements.formatOverlay) {
       updateFormatButtons(state, elements);
       elements.formatOverlay.hidden = false;
@@ -539,6 +567,8 @@ export function createHandlers(state, elements, onWinner, options = {}) {
     elements.confirmOverlay.hidden = true;
     tradeFlow.hideOverlays();
     hideActionToast();
+    closeHowToPlay();
+    closeTradesModal();
     closeArchiveInspect({ skipRender: true });
     feedback.reset();
 
@@ -572,6 +602,8 @@ export function createHandlers(state, elements, onWinner, options = {}) {
     tradeFlow.hideOverlays();
     if (elements.cpuTurnOverlay) elements.cpuTurnOverlay.hidden = true;
     hideActionToast();
+    closeHowToPlay();
+    closeTradesModal();
     closeArchiveInspect({ skipRender: true });
     feedback.reset();
     elements.onlineChoiceOverlay.hidden = true;
@@ -638,6 +670,10 @@ export function createHandlers(state, elements, onWinner, options = {}) {
     selectClassicTheme,
     selectPixelTheme,
     toggleMotionMode,
+    openHowToPlay,
+    closeHowToPlay,
+    openTradesModal,
+    closeTradesModal,
     closeTurnReplay,
     openArchiveInspect,
     closeArchiveInspect,

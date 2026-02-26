@@ -28,7 +28,7 @@ body {
 }
 
 .app {
-  max-width: 1200px;
+  max-width: 1600px;
   margin: 0 auto;
   padding: 32px 24px 64px;
   display: flex;
@@ -69,6 +69,13 @@ body {
   flex-wrap: wrap;
 }
 
+.play-header-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 10px;
+}
+
 h1,
 h2,
 h3 {
@@ -99,7 +106,7 @@ h3 {
 .board {
   display: grid;
   gap: 24px;
-  grid-template-columns: minmax(220px, 1fr) 3fr;
+  grid-template-columns: 1fr;
   align-items: start;
 }
 
@@ -356,6 +363,12 @@ h3 {
   justify-content: space-between;
   align-items: baseline;
   margin-bottom: 12px;
+}
+
+.zone-title-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 .zone {
@@ -1054,6 +1067,11 @@ button:not(:disabled):hover {
   color: var(--ink-2);
 }
 
+.ghost.compact {
+  padding: 8px 12px;
+  font-size: 0.85rem;
+}
+
 .end-turn {
   display: flex;
   flex-direction: column;
@@ -1396,6 +1414,34 @@ body.theme-pixel .option-button.active {
 
 .mode-overlay .overlay-card {
   max-width: 420px;
+}
+
+.howto-modal-card {
+  width: min(920px, 96vw);
+  max-width: 96vw;
+  max-height: 88vh;
+  overflow: auto;
+  text-align: left;
+}
+
+.howto-modal-card .rules {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  color: var(--ink-2);
+}
+
+.trades-modal-card {
+  width: min(920px, 96vw);
+  max-width: 96vw;
+  max-height: 88vh;
+  overflow: auto;
+}
+
+.trades-modal-card .trade-buttons {
+  margin-top: 8px;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
 }
 
 .online-lobby {

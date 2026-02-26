@@ -119,6 +119,8 @@ You **win immediately** when your Archive contains **5 gold**, even if this happ
 - The table board shows **visual deck/discard stacks** (face-down card back for deck, live top-card look for discard).
 - Archive is shown as **mini-card stacks by type** for both players (not chips), with count badges.
 - You can tap/click an archive mini-stack to open an **inspect modal** with larger card visuals and totals.
+- **How To Play** is now opened as a modal from the top control bar.
+- **Explore Trades** is opened as a modal from the Archive section.
 - End-of-turn archive actions can show a **turn replay panel** with full card visuals and draw totals.
 - End-turn feedback now uses explicit phase captions (for example **Archiving...** then **Drawing...**) to clarify card movement timing.
 - Card movement feedback (draw, tutor, archive, trade cost/reward) may animate between zones depending on motion settings.

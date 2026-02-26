@@ -127,6 +127,9 @@ Rendering lives in `src/ui/render.js`.
   - Local archive mini-stacks (one stack per type with count > 0).
   - Turn replay panel (`turnReplayPanel`) that can display full card visuals for end-turn archive summaries.
   - Feedback caption lane (`feedbackCaption`) for phase text like archiving/drawing.
+- Sidebar content has been moved to modals:
+  - `howToPlayOverlay` opened from `openHowToPlay` in the top control bar.
+  - `tradesOverlay` opened from `openTradesModal` near the Archive zone.
 - It selects a player perspective depending on mode:
   - Offline: `state.currentPlayer`.
   - CPU: the human player is always index 0.
@@ -160,6 +163,7 @@ Key responsibilities:
 - Mode selection (offline, CPU, online) and format selection (core/gilded gems/ancient/mystic).
 - Theme selection (classic vs. pixel) with persistence in local storage.
 - Motion mode selection (`auto`, `full`, `reduced`) with persistence in local storage and `prefers-reduced-motion` support.
+- Modal controls for board helpers (`openHowToPlay`/`closeHowToPlay`, `openTradesModal`/`closeTradesModal`).
 - Calling `startGame()` and initializing CPU or online state.
 - Managing overlays (confirm archive, turn overlay, wood substitution, gem tutor, choice cost, pool cost, archive tutor, archive inspect, CPU summary).
 - Converting UI actions into `applyAction()` calls or online `action` messages.

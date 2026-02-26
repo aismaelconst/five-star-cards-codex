@@ -44,7 +44,13 @@ function setupDom() {
     <span id="discardAnchor"></span>
     <button id="themeClassic"></button>
     <button id="themePixel"></button>
+    <button id="openHowToPlay"></button>
     <button id="motionToggle"></button>
+    <div id="howToPlayOverlay"></div>
+    <button id="closeHowToPlay"></button>
+    <div id="tradesOverlay"></div>
+    <button id="openTradesModal"></button>
+    <button id="closeTradesModal"></button>
     <button id="tradeBronze"></button>
     <button id="tradeSilver"></button>
     <button id="tradeGems"></button>

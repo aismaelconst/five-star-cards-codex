@@ -8,6 +8,18 @@ export function wireEvents(elements, handlers) {
   if (elements.motionToggle) {
     elements.motionToggle.addEventListener("click", handlers.toggleMotionMode);
   }
+  if (elements.openHowToPlay) {
+    elements.openHowToPlay.addEventListener("click", handlers.openHowToPlay);
+  }
+  if (elements.closeHowToPlay) {
+    elements.closeHowToPlay.addEventListener("click", handlers.closeHowToPlay);
+  }
+  if (elements.openTradesModal) {
+    elements.openTradesModal.addEventListener("click", handlers.openTradesModal);
+  }
+  if (elements.closeTradesModal) {
+    elements.closeTradesModal.addEventListener("click", handlers.closeTradesModal);
+  }
   elements.offlineMode.addEventListener("click", handlers.selectOfflineMode);
   if (elements.cpuMode) {
     elements.cpuMode.addEventListener("click", handlers.selectCpuMode);

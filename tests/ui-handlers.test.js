@@ -71,7 +71,13 @@ function makeElements() {
     hostFormatAncient: document.createElement("button"),
     hostFormatMystic: document.createElement("button"),
     cpuMode: document.createElement("button"),
+    openHowToPlay: document.createElement("button"),
+    closeHowToPlay: document.createElement("button"),
     motionToggle: document.createElement("button"),
+    openTradesModal: document.createElement("button"),
+    closeTradesModal: document.createElement("button"),
+    howToPlayOverlay: Object.assign(document.createElement("div"), { hidden: true }),
+    tradesOverlay: Object.assign(document.createElement("div"), { hidden: true }),
     playerNameInput: Object.assign(document.createElement("input"), { value: "" }),
     roomCodeInput: Object.assign(document.createElement("input"), { value: "" }),
     guestNameInput: Object.assign(document.createElement("input"), { value: "" }),
@@ -205,6 +211,20 @@ describe("ui/handlers", () => {
     handlers.closeArchiveInspect();
     expect(state.ui.archiveInspect.visible).toBe(false);
     expect(elements.archiveInspectOverlay.hidden).toBe(true);
+  });
+
+  it("opens and closes the how-to-play and trades modals", () => {
+    const handlers = createHandlers(state, elements, onWinner);
+
+    handlers.openHowToPlay();
+    handlers.openTradesModal();
+    expect(elements.howToPlayOverlay.hidden).toBe(false);
+    expect(elements.tradesOverlay.hidden).toBe(false);
+
+    handlers.closeHowToPlay();
+    handlers.closeTradesModal();
+    expect(elements.howToPlayOverlay.hidden).toBe(true);
+    expect(elements.tradesOverlay.hidden).toBe(true);
   });
 
   it("returns a card from active to hand", () => {

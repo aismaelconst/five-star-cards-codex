@@ -15,7 +15,11 @@ describe("ui/events", () => {
       onlineMode: makeButton("onlineMode"),
       themeClassic: makeButton("themeClassic"),
       themePixel: makeButton("themePixel"),
+      openHowToPlay: makeButton("openHowToPlay"),
       motionToggle: makeButton("motionToggle"),
+      closeHowToPlay: makeButton("closeHowToPlay"),
+      openTradesModal: makeButton("openTradesModal"),
+      closeTradesModal: makeButton("closeTradesModal"),
       formatCore: makeButton("formatCore"),
       formatExpanded: makeButton("formatExpanded"),
       formatAncient: makeButton("formatAncient"),
@@ -78,7 +82,11 @@ describe("ui/events", () => {
       selectOnlineMode: vi.fn(),
       selectClassicTheme: vi.fn(),
       selectPixelTheme: vi.fn(),
+      openHowToPlay: vi.fn(),
       toggleMotionMode: vi.fn(),
+      closeHowToPlay: vi.fn(),
+      openTradesModal: vi.fn(),
+      closeTradesModal: vi.fn(),
       selectCoreFormat: vi.fn(),
       selectExpandedFormat: vi.fn(),
       selectAncientFormat: vi.fn(),
@@ -130,7 +138,11 @@ describe("ui/events", () => {
     elements.onlineMode.click();
     elements.themeClassic.click();
     elements.themePixel.click();
+    elements.openHowToPlay.click();
     elements.motionToggle.click();
+    elements.closeHowToPlay.click();
+    elements.openTradesModal.click();
+    elements.closeTradesModal.click();
     elements.formatCore.click();
     elements.formatExpanded.click();
     elements.formatAncient.click();
@@ -191,7 +203,11 @@ describe("ui/events", () => {
     expect(handlers.selectOnlineMode).toHaveBeenCalled();
     expect(handlers.selectClassicTheme).toHaveBeenCalled();
     expect(handlers.selectPixelTheme).toHaveBeenCalled();
+    expect(handlers.openHowToPlay).toHaveBeenCalled();
     expect(handlers.toggleMotionMode).toHaveBeenCalled();
+    expect(handlers.closeHowToPlay).toHaveBeenCalled();
+    expect(handlers.openTradesModal).toHaveBeenCalled();
+    expect(handlers.closeTradesModal).toHaveBeenCalled();
     expect(handlers.selectCoreFormat).toHaveBeenCalled();
     expect(handlers.selectExpandedFormat).toHaveBeenCalled();
     expect(handlers.selectAncientFormat).toHaveBeenCalled();
