@@ -126,6 +126,7 @@ You **win immediately** when your Archive contains **5 gold**, even if this happ
 - End-turn feedback now uses explicit phase captions (for example **Archiving...** then **Drawing...**) to clarify card movement timing.
 - Card movement feedback (draw, tutor, archive, trade cost/reward) may animate between zones depending on motion settings.
 - Motion can be set to **Auto / Full / Reduced**. Reduced mode minimizes animation only; gameplay is unchanged.
+- For gold-planning strategy, see `draw-probability-guide.md`.
 
 ---
 

@@ -56,6 +56,10 @@ npm run coverage
 
 - The app uses ES modules, so it must be served from a local server (not opened directly as a file).
 
+## Strategy
+
+- [Gold Draw Probability Guide](draw-probability-guide.md)
+
 ## Hosting (Single Node)
 
 This project can be deployed as a single Node process that serves both the static client and WebSocket server.
