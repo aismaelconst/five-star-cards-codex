@@ -124,10 +124,10 @@ Rendering lives in `src/ui/render.js`.
   - Deck and discard table widgets with visual stacks and counts.
   - Compact gold race tracks for both players (`goldRacePlayer`, `goldRaceOpponent`) rendered as filled/unfilled star pips.
   - Opponent summary title + archive mini-stacks and hand count now sits in the play header area.
-  - Active Cards zone is centered in the table lane between deck/discard so play/archive feedback stays in the middle of the board.
-  - Local archive mini-stacks (one stack per type with count > 0).
+  - Archive zone is centered in the table lane between deck/discard, with local archive mini-stacks (one stack per type with count > 0) and the Explore Trades entry point.
+  - Active Cards zone sits above Hand in the lower stack to reflect the play flow (`Hand -> Active -> Archive`).
   - Turn replay panel (`turnReplayPanel`) that can display full card visuals for end-turn archive summaries.
-  - Feedback caption lane (`feedbackCaption`) for phase text like archiving/drawing.
+  - Feedback caption lane (`feedbackCaption`) is archive-centered for phase text like archiving/drawing.
 - Sidebar content has been moved to modals:
   - `howToPlayOverlay` opened from `openHowToPlay` in the top control bar.
   - `tradesOverlay` opened from `openTradesModal` near the Archive zone.

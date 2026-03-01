@@ -54,15 +54,16 @@
               <div class="stack-count deck-info" id="deckInfo"></div>
               <span class="zone-anchor" id="deckAnchor" aria-hidden="true"></span>
             </div>
-            <div class="zone table-active-zone" id="activeZone">
+            <div class="zone table-archive-zone" id="archiveZone">
               <div class="zone-header">
-                <h3>Active Cards</h3>
-                <span class="zone-note">Play up to 5 cards</span>
-                <span class="zone-anchor" id="activeAnchor" aria-hidden="true"></span>
+                <div class="zone-title-row">
+                  <h3>Archive</h3>
+                  <button class="ghost compact" id="openTradesModal">Explore Trades<span class="trade-dot" aria-hidden="true"></span></button>
+                </div>
+                <span class="zone-anchor" id="archiveAnchor" aria-hidden="true"></span>
               </div>
               <div class="feedback-caption" id="feedbackCaption" aria-live="polite"></div>
-              <div class="hand" id="activeCards"></div>
-              <button class="ghost compact" id="undoPlays">Return All To Hand</button>
+              <div class="archive-mini-grid" id="archivePile"></div>
             </div>
             <div class="table-widget" id="discardZone">
               <div class="table-widget-title">Discard</div>
@@ -81,15 +82,14 @@
           </section>
 
           <div class="zones">
-            <div class="zone" id="archiveZone">
+            <div class="zone flow-active-zone" id="activeZone">
               <div class="zone-header">
-                <div class="zone-title-row">
-                  <h3>Archive</h3>
-                  <button class="ghost compact" id="openTradesModal">Explore Trades<span class="trade-dot" aria-hidden="true"></span></button>
-                </div>
-                <span class="zone-anchor" id="archiveAnchor" aria-hidden="true"></span>
+                <h3>Active Cards</h3>
+                <span class="zone-note">Play up to 5 cards</span>
+                <span class="zone-anchor" id="activeAnchor" aria-hidden="true"></span>
               </div>
-              <div class="archive-mini-grid" id="archivePile"></div>
+              <div class="hand" id="activeCards"></div>
+              <button class="ghost compact" id="undoPlays">Return All To Hand</button>
             </div>
 
             <div class="zone" id="handZone">

@@ -121,7 +121,8 @@ You **win immediately** when your Archive contains **5 gold**, even if this happ
 - You can tap/click an archive mini-stack to open an **inspect modal** with larger card visuals and totals.
 - **How To Play** is now opened as a modal from the top control bar.
 - **Explore Trades** is opened as a modal from the Archive section, with an availability dot when at least one trade is currently possible.
-- The **Active Cards** zone is centered between deck/discard to make play, archive, and draw feedback easier to track.
+- The table now follows a clearer vertical flow: **Hand -> Active Cards -> Archive**.
+- Archive is centered between Deck and Discard, and phase captions (for example **Archiving...**, **Drawing...**) are shown there.
 - End-of-turn archive actions can show a **turn replay panel** with full card visuals and draw totals.
 - End-turn feedback now uses explicit phase captions (for example **Archiving...** then **Drawing...**) to clarify card movement timing.
 - Card movement feedback (draw, tutor, archive, trade cost/reward) may animate between zones depending on motion settings.

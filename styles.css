@@ -436,19 +436,29 @@ h3 {
   position: relative;
 }
 
-.table-active-zone {
+.table-archive-zone {
   min-height: 138px;
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
 
-.table-active-zone .feedback-caption {
+.table-archive-zone .feedback-caption {
   min-height: 24px;
 }
 
-.table-active-zone .hand {
+.table-archive-zone .archive-mini-grid {
   min-height: 74px;
+}
+
+.flow-active-zone {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.flow-active-zone .hand {
+  min-height: 78px;
 }
 
 .table-widget-title {
