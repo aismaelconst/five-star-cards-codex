@@ -162,7 +162,8 @@ Motion/replay feedback is managed by `src/ui/feedback/feedback-controller.js` wi
 - `src/ui/feedback/sequence-builder.js` builds deterministic step sequences (caption + movement) for archive/draw cadence.
 
 Key responsibilities:
-- Mode selection (offline, CPU, online) and format selection (core/gilded gems/ancient/mystic).
+- Mode selection (offline, CPU) and format selection (core/gilded gems/ancient/mystic).
+- Online mode is currently feature-flagged off in `src/ui/handlers.js` (`ONLINE_MODE_ENABLED = false`), which disables the mode button and blocks entry into lobby overlays.
 - Theme selection (classic vs. pixel) with persistence in local storage.
 - Motion mode selection (`auto`, `full`, `reduced`) with persistence in local storage and `prefers-reduced-motion` support.
 - Modal controls for board helpers (`openHowToPlay`/`closeHowToPlay`, `openTradesModal`/`closeTradesModal`).

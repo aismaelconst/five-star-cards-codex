@@ -54,6 +54,7 @@ function makeElements() {
     confirmSummary: document.createElement("div"),
     confirmCards: document.createElement("div"),
     modeOverlay: document.createElement("div"),
+    onlineMode: document.createElement("button"),
     cpuOverlay: document.createElement("div"),
     formatOverlay: document.createElement("div"),
     formatCore: document.createElement("button"),
@@ -509,17 +510,25 @@ describe("ui/handlers", () => {
     expect(state.players[0].deck.length + state.players[0].hand.length).toBe(180);
   });
 
-  it("selects online mode and shows the online choice overlay", () => {
+  it("keeps online mode disabled from mode picker", () => {
+    const handlers = createHandlers(state, elements, onWinner);
+
+    handlers.showModePicker();
+
+    expect(elements.onlineMode.disabled).toBe(true);
+    expect(elements.onlineMode.title).toContain("temporarily unavailable");
+  });
+
+  it("does not enter online mode when online is disabled", () => {
     const handlers = createHandlers(state, elements, onWinner);
     elements.modeOverlay.hidden = true;
+    elements.onlineChoiceOverlay.hidden = true;
 
     handlers.selectOnlineMode();
 
-    expect(state.mode).toBe("online");
+    expect(state.mode).not.toBe("online");
     expect(elements.modeOverlay.hidden).toBe(true);
-    expect(elements.onlineChoiceOverlay.hidden).toBe(false);
-    expect(elements.readyButton.disabled).toBe(true);
-    expect(elements.readyButtonGuest.disabled).toBe(true);
+    expect(elements.onlineChoiceOverlay.hidden).toBe(true);
   });
 
   it("selects cpu mode and starts a cpu game", () => {

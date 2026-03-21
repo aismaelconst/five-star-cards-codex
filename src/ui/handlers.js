@@ -19,6 +19,7 @@ import { createFeedbackController } from "./feedback/feedback-controller.js";
 import { buildArchiveDrawSequence } from "./feedback/sequence-builder.js";
 
 const THEME_STORAGE_KEY = "fsc_theme";
+const ONLINE_MODE_ENABLED = false;
 
 export function createHandlers(state, elements, onWinner, options = {}) {
   const socketUrl = options.socketUrl ?? null;
@@ -154,7 +155,20 @@ export function createHandlers(state, elements, onWinner, options = {}) {
   }
 
   function showModePicker() {
+    if (elements.onlineMode) {
+      elements.onlineMode.disabled = !ONLINE_MODE_ENABLED;
+      if (ONLINE_MODE_ENABLED) {
+        elements.onlineMode.removeAttribute("title");
+      } else {
+        elements.onlineMode.title = "Online mode is temporarily unavailable.";
+      }
+    }
     elements.modeOverlay.hidden = false;
+  }
+
+  function selectOnlineMode() {
+    if (!ONLINE_MODE_ENABLED) return;
+    onlineFlow.selectOnlineMode();
   }
 
   function runPendingFeedback(options = {}) {
@@ -679,7 +693,7 @@ export function createHandlers(state, elements, onWinner, options = {}) {
     closeArchiveInspect,
     selectOfflineMode,
     selectCpuMode,
-    selectOnlineMode: onlineFlow.selectOnlineMode,
+    selectOnlineMode,
     selectCoreFormat,
     selectExpandedFormat,
     selectAncientFormat,

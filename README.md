@@ -30,7 +30,7 @@ The main server already includes WebSocket support. Start it with:
 npm start
 ```
 
-Then open the app and choose Online mode. Use the lobby to create or join a room.
+Online mode is temporarily disabled in the current UI build while deployment compatibility is being reworked.
 
 ## Run Tests
 
