@@ -82,7 +82,7 @@ Each mystic trade costs **only itself** from Archive and is usable **once per pl
 - **Obsidian → opponent plays 1 fewer card on their next turn** (non-stacking)
 - **Amethyst → choose 1 opponent archive card type, move one to opponent deck, then shuffle**
 - **Ash → move 1 random opponent hand card to opponent deck, then shuffle**
-- **Ember → move up to 5 random opponent discard cards to opponent deck, then shuffle once**
+- **Ember → opponent cannot make trades on their next turn**
 
 Targeting / reveal rules:
 - If a target-based effect has no valid target, the trade is unavailable.
@@ -161,4 +161,4 @@ Mystic Trades (once per turn per recipe):
 - Obsidian → opponent -1 play next turn
 - Amethyst → shuffle 1 chosen opponent archive card into deck
 - Ash → shuffle 1 random opponent hand card into deck
-- Ember → shuffle up to 5 random opponent discard cards into deck
+- Ember → opponent cannot make trades next turn

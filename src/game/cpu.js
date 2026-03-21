@@ -267,7 +267,7 @@ function shouldUseMysticEffect(state, player, recipeId) {
     return opponent.hand.length > 0;
   }
   if (recipeId === "trade_ember") {
-    return opponent.discard.length > 0;
+    return true;
   }
   return true;
 }
@@ -482,11 +482,30 @@ function scoreTradePayload(state, player, recipe, payload) {
       } else {
         rewardValue = 0;
       }
-    } else if (recipe.reward.id === "ember_random_discard_to_deck") {
+    } else if (recipe.reward.id === "ember_next_turn_trade_block") {
       if (opponent) {
-        const discardCounts = countCards(opponent.discard, state.ruleset.displayOrder);
-        const moved = Math.min(5, opponent.discard.length);
-        rewardValue = averageValueFromCounts(discardCounts) * moved * 0.35;
+        const deckCounts = countCards(opponent.deck, state.ruleset.displayOrder);
+        const likelyTradeTargets = [
+          "silver",
+          "gold",
+          "ruby",
+          "emerald",
+          "sapphire",
+          "platinum",
+          "turquoise",
+          "lapis_lazuli",
+          "carnelian",
+          "pearl",
+          "obsidian",
+          "amethyst",
+          "ash",
+          "ember",
+        ];
+        const stocked = likelyTradeTargets.reduce(
+          (sum, type) => sum + ((deckCounts[type] ?? 0) > 0 ? 1 : 0),
+          0
+        );
+        rewardValue = 8 + stocked;
       } else {
         rewardValue = 0;
       }

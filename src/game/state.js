@@ -12,6 +12,8 @@ function createTurnEffects(playerCount) {
     currentPlayBonusByPlayer: Array.from({ length: playerCount }, () => 0),
     currentPlayPenaltyByPlayer: Array.from({ length: playerCount }, () => 0),
     nextTurnPlayPenaltyByPlayer: Array.from({ length: playerCount }, () => 0),
+    currentTradeBlockedByPlayer: Array.from({ length: playerCount }, () => false),
+    nextTurnTradeBlockedByPlayer: Array.from({ length: playerCount }, () => false),
     usedTradeRecipesByPlayer: Array.from({ length: playerCount }, () => ({})),
   };
 }

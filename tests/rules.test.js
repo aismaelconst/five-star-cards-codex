@@ -175,6 +175,8 @@ function makeMysticState() {
       currentPlayBonusByPlayer: [0, 0],
       currentPlayPenaltyByPlayer: [0, 0],
       nextTurnPlayPenaltyByPlayer: [0, 0],
+      currentTradeBlockedByPlayer: [false, false],
+      nextTurnTradeBlockedByPlayer: [false, false],
       usedTradeRecipesByPlayer: [{}, {}],
     },
   };
@@ -522,33 +524,33 @@ describe("rules", () => {
     }
   });
 
-  it("ember moves up to five random opponent discard cards to deck", () => {
-    const randomSpy = vi.spyOn(Math, "random").mockReturnValue(0);
-    try {
-      const state = makeMysticState();
-      const player = current(state);
-      const opponent = state.players[1];
-      player.archive = [createCard("ember", mysticRuleset)];
-      opponent.discard = [
-        createCard("gold", mysticRuleset),
-        createCard("silver", mysticRuleset),
-        createCard("bronze", mysticRuleset),
-        createCard("bronze", mysticRuleset),
-        createCard("silver", mysticRuleset),
-        createCard("bronze", mysticRuleset),
-      ];
-      opponent.deck = [];
+  it("ember blocks opponent trades on their next turn", () => {
+    const state = makeMysticState();
+    const player = current(state);
+    const opponent = state.players[1];
+    player.archive = [createCard("ember", mysticRuleset)];
+    opponent.archive = Array.from({ length: 5 }, () => createCard("bronze", mysticRuleset));
+    opponent.deck = [createCard("silver", mysticRuleset)];
 
-      const result = performTrade(state, player, "trade_ember");
-      expect(result.success).toBe(true);
-      expect(result.detail.effectId).toBe("ember_random_discard_to_deck");
-      expect(result.detail.movedCount).toBe(5);
-      expect(result.detail.movedTypes).toHaveLength(5);
-      expect(opponent.discard).toHaveLength(1);
-      expect(opponent.deck).toHaveLength(5);
-    } finally {
-      randomSpy.mockRestore();
-    }
+    const result = performTrade(state, player, "trade_ember");
+    expect(result.success).toBe(true);
+    expect(result.detail.effectId).toBe("ember_next_turn_trade_block");
+    expect(result.detail.tradeBlocked).toBe(true);
+    expect(state.turnEffects.nextTurnTradeBlockedByPlayer[1]).toBe(true);
+
+    prepareArchive(state);
+    finalizeArchive(state);
+    applyAction(state, { type: ActionTypes.START_TURN });
+
+    expect(state.currentPlayer).toBe(1);
+    expect(state.turnEffects.currentTradeBlockedByPlayer[1]).toBe(true);
+    expect(canInitiateTrade(state, opponent, "trade_bronze")).toBe(false);
+
+    prepareArchive(state);
+    finalizeArchive(state);
+    applyAction(state, { type: ActionTypes.START_TURN });
+    expect(state.currentPlayer).toBe(0);
+    expect(state.turnEffects.currentTradeBlockedByPlayer[1]).toBe(false);
   });
 
   it("disables target-based mystic trades when no opponent targets exist", () => {
@@ -565,7 +567,7 @@ describe("rules", () => {
 
     expect(canInitiateTrade(state, player, "trade_amethyst")).toBe(false);
     expect(canInitiateTrade(state, player, "trade_ash")).toBe(false);
-    expect(canInitiateTrade(state, player, "trade_ember")).toBe(false);
+    expect(canInitiateTrade(state, player, "trade_ember")).toBe(true);
   });
 
   it("ingot counts as three bronze for bronze trades when chosen", () => {

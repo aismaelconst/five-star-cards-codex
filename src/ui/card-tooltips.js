@@ -84,8 +84,8 @@ function formatTradeBullet(recipe, type, ruleset) {
       reward = "shuffle 1 chosen opponent archive card into deck";
     } else if (recipe.reward.id === "ash_random_hand_to_deck") {
       reward = "shuffle 1 random opponent hand card into deck";
-    } else if (recipe.reward.id === "ember_random_discard_to_deck") {
-      reward = "shuffle up to 5 random opponent discard cards into deck";
+    } else if (recipe.reward.id === "ember_next_turn_trade_block") {
+      reward = "opponent cannot make trades next turn";
     } else {
       reward = recipe.reward.id ?? "effect";
     }

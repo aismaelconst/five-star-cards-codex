@@ -68,6 +68,8 @@ describe("state", () => {
       currentPlayBonusByPlayer: [0, 0],
       currentPlayPenaltyByPlayer: [0, 0],
       nextTurnPlayPenaltyByPlayer: [0, 0],
+      currentTradeBlockedByPlayer: [false, false],
+      nextTurnTradeBlockedByPlayer: [false, false],
       usedTradeRecipesByPlayer: [{}, {}],
     });
   });

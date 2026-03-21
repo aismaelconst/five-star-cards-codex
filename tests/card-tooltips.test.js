@@ -78,6 +78,6 @@ describe("card tooltips", () => {
     expect(pearlTooltip).toContain("gain +1 play this turn");
     expect(pearlTooltip).toContain("once per turn");
     const emberTooltip = getCardTooltip("ember", mysticRuleset);
-    expect(emberTooltip).toContain("shuffle up to 5 random opponent discard cards");
+    expect(emberTooltip).toContain("opponent cannot make trades next turn");
   });
 });

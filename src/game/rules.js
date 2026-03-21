@@ -125,7 +125,7 @@ const MYSTIC_EFFECT_IDS = new Set([
   "obsidian_next_turn_penalty",
   "amethyst_archive_to_deck",
   "ash_random_hand_to_deck",
-  "ember_random_discard_to_deck",
+  "ember_next_turn_trade_block",
 ]);
 
 function ensureTurnEffects(state) {
@@ -135,6 +135,8 @@ function ensureTurnEffects(state) {
       currentPlayBonusByPlayer: Array.from({ length: playerCount }, () => 0),
       currentPlayPenaltyByPlayer: Array.from({ length: playerCount }, () => 0),
       nextTurnPlayPenaltyByPlayer: Array.from({ length: playerCount }, () => 0),
+      currentTradeBlockedByPlayer: Array.from({ length: playerCount }, () => false),
+      nextTurnTradeBlockedByPlayer: Array.from({ length: playerCount }, () => false),
       usedTradeRecipesByPlayer: Array.from({ length: playerCount }, () => ({})),
     };
     return state.turnEffects;
@@ -152,6 +154,8 @@ function ensureTurnEffects(state) {
   ensureArray("currentPlayBonusByPlayer", () => 0);
   ensureArray("currentPlayPenaltyByPlayer", () => 0);
   ensureArray("nextTurnPlayPenaltyByPlayer", () => 0);
+  ensureArray("currentTradeBlockedByPlayer", () => false);
+  ensureArray("nextTurnTradeBlockedByPlayer", () => false);
   ensureArray("usedTradeRecipesByPlayer", () => ({}));
   return turnEffects;
 }
@@ -433,6 +437,12 @@ export function canInitiateTrade(state, player, recipeId) {
   if (state.tradesThisTurn >= state.ruleset.maxTrades) return false;
   const playerIndex = getPlayerIndex(state, player);
   if (playerIndex === -1) return false;
+  {
+    const turnEffects = ensureTurnEffects(state);
+    if (turnEffects.currentTradeBlockedByPlayer?.[playerIndex]) {
+      return false;
+    }
+  }
   if (recipe.oncePerTurn) {
     const turnEffects = ensureTurnEffects(state);
     if (turnEffects.usedTradeRecipesByPlayer?.[playerIndex]?.[recipeId]) {
@@ -568,6 +578,12 @@ export function canTradeWithOptions(state, player, recipeId, options = {}) {
   if (state.tradesThisTurn >= state.ruleset.maxTrades) return false;
   const playerIndex = getPlayerIndex(state, player);
   if (playerIndex === -1) return false;
+  {
+    const turnEffects = ensureTurnEffects(state);
+    if (turnEffects.currentTradeBlockedByPlayer?.[playerIndex]) {
+      return false;
+    }
+  }
   if (recipe.oncePerTurn) {
     const turnEffects = ensureTurnEffects(state);
     if (turnEffects.usedTradeRecipesByPlayer?.[playerIndex]?.[recipeId]) {
@@ -843,16 +859,10 @@ export function performTrade(state, player, recipeId, options = {}) {
         detail.movedTypes = moved.map((card) => getCardType(card));
         detail.movedCount = moved.length;
       }
-    } else if (recipe.reward.id === "ember_random_discard_to_deck") {
-      if (opponent && opponent.discard.length > 0) {
-        const { remaining, moved } = removeRandomCards(opponent.discard, 5);
-        opponent.discard = remaining;
-        moved.forEach((card) => opponent.deck.push(card));
-        if (moved.length > 0) {
-          opponent.deck = shuffle(opponent.deck);
-        }
-        detail.movedTypes = moved.map((card) => getCardType(card));
-        detail.movedCount = moved.length;
+    } else if (recipe.reward.id === "ember_next_turn_trade_block") {
+      if (opponentIndex !== -1) {
+        turnEffects.nextTurnTradeBlockedByPlayer[opponentIndex] = true;
+        detail.tradeBlocked = true;
       }
     }
   }
@@ -943,13 +953,17 @@ export function finalizeArchive(state, options = {}) {
   if (outgoingIndex !== -1) {
     turnEffects.currentPlayBonusByPlayer[outgoingIndex] = 0;
     turnEffects.currentPlayPenaltyByPlayer[outgoingIndex] = 0;
+    turnEffects.currentTradeBlockedByPlayer[outgoingIndex] = false;
     turnEffects.usedTradeRecipesByPlayer[outgoingIndex] = {};
   }
   if (incomingIndex !== -1) {
     turnEffects.currentPlayBonusByPlayer[incomingIndex] = 0;
     turnEffects.currentPlayPenaltyByPlayer[incomingIndex] =
       turnEffects.nextTurnPlayPenaltyByPlayer[incomingIndex] ?? 0;
+    turnEffects.currentTradeBlockedByPlayer[incomingIndex] =
+      turnEffects.nextTurnTradeBlockedByPlayer[incomingIndex] ?? false;
     turnEffects.nextTurnPlayPenaltyByPlayer[incomingIndex] = 0;
+    turnEffects.nextTurnTradeBlockedByPlayer[incomingIndex] = false;
     turnEffects.usedTradeRecipesByPlayer[incomingIndex] = {};
   }
 

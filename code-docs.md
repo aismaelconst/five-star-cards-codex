@@ -43,6 +43,8 @@ Game state (created in `src/game/state.js`):
   - `currentPlayBonusByPlayer`
   - `currentPlayPenaltyByPlayer`
   - `nextTurnPlayPenaltyByPlayer`
+  - `currentTradeBlockedByPlayer`
+  - `nextTurnTradeBlockedByPlayer`
   - `usedTradeRecipesByPlayer` (once-per-turn recipe tracking)
 
 ## Rulesets & Deck Construction
@@ -81,7 +83,7 @@ Key behaviors:
   - `obsidian_next_turn_penalty`: queue opponent next-turn -1 play (non-stacking)
   - `amethyst_archive_to_deck`: targeted opponent archive card -> opponent deck + shuffle
   - `ash_random_hand_to_deck`: random opponent hand card -> opponent deck + shuffle
-  - `ember_random_discard_to_deck`: up to 5 random opponent discard cards -> opponent deck + one shuffle
+  - `ember_next_turn_trade_block`: opponent cannot initiate trades on their next turn
 - Playing a card moves it from hand to active; returning moves active cards back to hand.
 - `prepareArchive()` stages active cards into `pendingArchive` and switches phase to `confirm`.
 - `finalizeArchive()` moves pending cards to archive, draws cards based on total `draw`, checks win condition, advances turn, applies queued turn penalties, resets one-turn bonuses/flags, and sets phase to `between`.

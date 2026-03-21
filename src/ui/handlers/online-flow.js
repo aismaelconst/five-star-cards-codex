@@ -168,11 +168,8 @@ export function createOnlineFlow({
               ? event.movedTypes[0]
               : "card";
             rewardLine = `shuffle opponent hand ${moved} into deck`;
-          } else if (recipe.reward.id === "ember_random_discard_to_deck") {
-            const moved = Array.isArray(event.movedTypes) ? event.movedTypes : [];
-            rewardLine = moved.length
-              ? `shuffle opponent discard ${moved.join(", ")} into deck`
-              : "shuffle opponent discard cards into deck";
+          } else if (recipe.reward.id === "ember_next_turn_trade_block") {
+            rewardLine = "opponent cannot make trades next turn";
           } else {
             rewardLine = recipe.reward.id ?? "effect";
           }

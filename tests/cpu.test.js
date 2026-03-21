@@ -180,30 +180,21 @@ describe("cpu", () => {
     expect(summary.trades.some((trade) => trade.recipeId === "trade_ash")).toBe(false);
   });
 
-  it("cpu uses ember when opponent discard has cards", () => {
-    const randomSpy = vi.spyOn(Math, "random").mockReturnValue(0);
-    try {
-      const state = createInitialState({
-        mode: "cpu",
-        format: "mystic",
-        playerNames: ["You", "CPU"],
-      });
-      state.currentPlayer = 1;
-      state.cpu = { difficulty: "easy" };
-      const cpu = state.players[1];
-      const opponent = state.players[0];
-      cpu.archive = ["ember"];
-      opponent.discard = ["gold", "silver"];
-      opponent.deck = [];
+  it("cpu uses ember to block opponent trades next turn", () => {
+    const state = createInitialState({
+      mode: "cpu",
+      format: "mystic",
+      playerNames: ["You", "CPU"],
+    });
+    state.currentPlayer = 1;
+    state.cpu = { difficulty: "easy" };
+    const cpu = state.players[1];
+    cpu.archive = ["ember"];
 
-      const summary = executeCpuTurn(state, { difficulty: "easy", cpuIndex: 1 });
+    const summary = executeCpuTurn(state, { difficulty: "easy", cpuIndex: 1 });
 
-      expect(summary.trades[0].recipeId).toBe("trade_ember");
-      expect(summary.trades[0].movedCount).toBe(2);
-      expect(summary.trades[0].movedTypes).toHaveLength(2);
-    } finally {
-      randomSpy.mockRestore();
-    }
+    expect(summary.trades[0].recipeId).toBe("trade_ember");
+    expect(summary.trades[0].effectId).toBe("ember_next_turn_trade_block");
   });
 
   it("cpu falls back to core when minted format is requested", () => {

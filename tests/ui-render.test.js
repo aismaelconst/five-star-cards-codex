@@ -309,6 +309,8 @@ describe("ui/render", () => {
       currentPlayBonusByPlayer: [1, 0],
       currentPlayPenaltyByPlayer: [0, 0],
       nextTurnPlayPenaltyByPlayer: [0, 0],
+      currentTradeBlockedByPlayer: [false, false],
+      nextTurnTradeBlockedByPlayer: [false, false],
       usedTradeRecipesByPlayer: [{}, {}],
     };
     state.players[0].active = ["bronze", "silver"];

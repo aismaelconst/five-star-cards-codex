@@ -277,7 +277,7 @@ function updateHowToPlay(state, elements) {
       "Ash: trade itself to shuffle 1 random opponent hand card into their deck."
     );
     expansionRules.push(
-      "Ember: trade itself to shuffle up to 5 random opponent discard cards into their deck."
+      "Ember: trade itself to prevent opponent trades on their next turn (once per turn)."
     );
   }
 

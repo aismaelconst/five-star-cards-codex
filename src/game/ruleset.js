@@ -211,7 +211,7 @@ export const mysticRuleset = {
     trade_ember: {
       cost: { ember: 1 },
       oncePerTurn: true,
-      reward: { type: "effect", id: "ember_random_discard_to_deck" },
+      reward: { type: "effect", id: "ember_next_turn_trade_block" },
     },
   },
   cardTypes: {
