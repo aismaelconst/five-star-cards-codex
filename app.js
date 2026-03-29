@@ -2,7 +2,7 @@ import { createInitialState } from "./src/game/state.js";
 import { wireEvents } from "./src/ui/events.js";
 import { createHandlers } from "./src/ui/handlers.js";
 import { updateWinnerOverlay } from "./src/ui/winner.js";
-
+import { syncCompactBoardViewport } from "./src/ui/viewport.js";
 
 const state = createInitialState();
 
@@ -168,5 +168,13 @@ function declareWinner(playerIndex) {
 
 const handlers = createHandlers(state, elements, declareWinner);
 
+function handleViewportChange() {
+  syncCompactBoardViewport(window, document);
+  handlers.renderBoard();
+}
+
+syncCompactBoardViewport(window, document);
 wireEvents(elements, handlers);
+window.addEventListener("resize", handleViewportChange);
+window.addEventListener("orientationchange", handleViewportChange);
 handlers.showModePicker();

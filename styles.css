@@ -1691,3 +1691,188 @@ body.motion-reduced .feedback-caption {
     height: 116px;
   }
 }
+
+.archive-count-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: flex-start;
+}
+
+.archive-count-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid rgba(31, 27, 22, 0.2);
+  border-radius: 999px;
+  padding: 6px 10px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  line-height: 1;
+  background: #fff7ea;
+  color: var(--ink-1);
+  box-shadow: none;
+}
+
+.archive-count-label {
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.archive-count-total {
+  font-weight: 700;
+}
+
+body.compact-board .app {
+  padding: 12px 10px 16px;
+  gap: 10px;
+}
+
+body.compact-board .subtitle {
+  display: none;
+}
+
+body.compact-board .topbar,
+body.compact-board .top-controls,
+body.compact-board .theme-toggle,
+body.compact-board .play,
+body.compact-board .play-header,
+body.compact-board .zones,
+body.compact-board .gold-race,
+body.compact-board .summary-archive-stacks,
+body.compact-board .archive-count-grid {
+  gap: 6px;
+}
+
+body.compact-board .topbar {
+  align-items: flex-start;
+}
+
+body.compact-board .panel,
+body.compact-board .table-surface {
+  padding: 12px;
+}
+
+body.compact-board .play-header-left {
+  width: 100%;
+  flex-direction: column;
+}
+
+body.compact-board .play-header-actions {
+  width: 100%;
+  gap: 8px;
+}
+
+body.compact-board .turn {
+  padding: 9px 12px;
+  font-size: 0.88rem;
+}
+
+body.compact-board button {
+  padding: 9px 12px;
+  font-size: 0.88rem;
+}
+
+body.compact-board .ghost.compact {
+  padding: 6px 9px;
+  font-size: 0.74rem;
+}
+
+body.compact-board .player-summary {
+  padding: 8px 10px;
+}
+
+body.compact-board .summary-title {
+  font-size: 0.72rem;
+}
+
+body.compact-board .summary-hand,
+body.compact-board .counts,
+body.compact-board .stack-count,
+body.compact-board .trade-info,
+body.compact-board .muted,
+body.compact-board .zone-note {
+  font-size: 0.8rem;
+}
+
+body.compact-board .gold-race-track {
+  padding: 3px 6px;
+}
+
+body.compact-board .gold-race-label {
+  font-size: 0.66rem;
+}
+
+body.compact-board .gold-race-segment {
+  width: 10px;
+  height: 10px;
+  font-size: 1.1rem;
+}
+
+body.compact-board .table-lane {
+  grid-template-columns: minmax(72px, 0.85fr) minmax(0, 1.45fr) minmax(72px, 0.85fr);
+  gap: 8px;
+}
+
+body.compact-board .table-widget,
+body.compact-board .table-archive-zone {
+  min-width: 0;
+  min-height: 0;
+  padding: 8px;
+  gap: 6px;
+}
+
+body.compact-board .compact-count-only {
+  justify-content: center;
+}
+
+body.compact-board .table-widget-title {
+  font-size: 0.68rem;
+}
+
+body.compact-board .feedback-caption,
+body.compact-board .table-archive-zone .feedback-caption {
+  min-height: 20px;
+  font-size: 0.72rem;
+}
+
+body.compact-board .archive-mini-grid,
+body.compact-board .table-archive-zone .archive-mini-grid,
+body.compact-board .flow-active-zone .hand {
+  min-height: 0;
+}
+
+body.compact-board .zone {
+  padding: 8px;
+}
+
+body.compact-board .zone-header {
+  margin-bottom: 8px;
+}
+
+body.compact-board .hand {
+  gap: 6px;
+}
+
+body.compact-board #handCards .card,
+body.compact-board #handCards .card.pile {
+  width: 68px;
+  height: 94px;
+}
+
+body.compact-board #activeCards .card {
+  width: 56px;
+  height: 78px;
+}
+
+body.compact-board .pile-count {
+  top: 6px;
+  left: 6px;
+  padding: 2px 5px;
+  font-size: 0.68rem;
+}
+
+body.compact-board .archive-count-button {
+  padding: 5px 8px;
+  font-size: 0.72rem;
+}

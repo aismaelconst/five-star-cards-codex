@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 function setupDom() {
   document.body.innerHTML = `
@@ -161,9 +161,31 @@ function setupDom() {
   `;
 }
 
+function installMatchMedia(initialMatches = false) {
+  let matches = initialMatches;
+  window.matchMedia = vi.fn(() => ({
+    get matches() {
+      return matches;
+    },
+    media: "(max-width: 820px), (max-height: 760px)",
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    addListener: vi.fn(),
+    removeListener: vi.fn(),
+    dispatchEvent: vi.fn(),
+  }));
+  return {
+    setMatches(nextValue) {
+      matches = nextValue;
+    },
+  };
+}
+
 describe("app bootstrap", () => {
-  it("initializes without throwing", async () => {
+  it("initializes and re-renders when compact viewport changes", async () => {
+    vi.resetModules();
     setupDom();
+    const viewport = installMatchMedia(false);
     await import("../app.js");
 
     document.getElementById("offlineMode").click();
@@ -171,5 +193,15 @@ describe("app bootstrap", () => {
 
     expect(document.getElementById("turnIndicator").textContent).toContain("Player");
     expect(document.getElementById("turnCounter").textContent).toContain("Turn");
+    expect(document.body.classList.contains("compact-board")).toBe(false);
+    expect(document.getElementById("boardDeckStack").hidden).toBe(false);
+    expect(document.getElementById("boardDiscardStack").hidden).toBe(false);
+
+    viewport.setMatches(true);
+    window.dispatchEvent(new Event("resize"));
+
+    expect(document.body.classList.contains("compact-board")).toBe(true);
+    expect(document.getElementById("boardDeckStack").hidden).toBe(true);
+    expect(document.getElementById("boardDiscardStack").hidden).toBe(true);
   });
 });

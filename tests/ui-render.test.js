@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { renderApp, showConfirmOverlay, showTurnOverlay } from "../src/ui/render.js";
 import {
   baseRuleset,
@@ -82,6 +82,14 @@ function makeElements() {
 
   return elements;
 }
+
+beforeEach(() => {
+  document.body.className = "";
+});
+
+afterEach(() => {
+  document.body.className = "";
+});
 
 function makeState() {
   return {
@@ -226,6 +234,66 @@ describe("ui/render", () => {
 
     const rubyPile = elements.handCards.querySelector(".card.ruby.pile");
     expect(rubyPile).not.toBeNull();
+  });
+
+  it("renders compact archive counts and hides deck or discard visuals", () => {
+    document.body.classList.add("compact-board");
+    const state = makeState();
+    const elements = makeElements();
+    const handlers = {
+      playCard: vi.fn(),
+      playCardByType: vi.fn(),
+      returnCard: vi.fn(),
+      openArchiveInspect: vi.fn(),
+    };
+    state.ruleset = expandedRuleset;
+    state.format = "expanded";
+    state.players[0].archive = ["gold", "platinum"];
+    state.players[0].discard = ["bronze"];
+    state.players[1].archive = ["bronze", "wood"];
+
+    renderApp(state, elements, handlers);
+
+    expect(elements.archivePile.querySelector(".archive-count-button.gold")).not.toBeNull();
+    expect(elements.archivePile.querySelector(".mini-stack")).toBeNull();
+    expect(elements.opponentSummary.querySelector(".archive-count-button.bronze")).not.toBeNull();
+    expect(elements.boardDeckStack.hidden).toBe(true);
+    expect(elements.boardDiscardStack.hidden).toBe(true);
+  });
+
+  it("renders compact hand as piles once hand reaches six cards", () => {
+    document.body.classList.add("compact-board");
+    const state = makeState();
+    const elements = makeElements();
+    const handlers = {
+      playCard: vi.fn(),
+      playCardByType: vi.fn(),
+      returnCard: vi.fn(),
+      openArchiveInspect: vi.fn(),
+    };
+    state.players[0].hand = ["bronze", "bronze", "bronze", "silver", "silver", "gold"];
+
+    renderApp(state, elements, handlers);
+
+    expect(elements.handCards.querySelector(".card.pile")).not.toBeNull();
+    expect(elements.handCards.children.length).toBeLessThan(6);
+  });
+
+  it("keeps six-card hands expanded outside compact mode", () => {
+    const state = makeState();
+    const elements = makeElements();
+    const handlers = {
+      playCard: vi.fn(),
+      playCardByType: vi.fn(),
+      returnCard: vi.fn(),
+      openArchiveInspect: vi.fn(),
+    };
+    state.players[0].hand = ["bronze", "bronze", "bronze", "silver", "silver", "gold"];
+
+    renderApp(state, elements, handlers);
+
+    expect(elements.handCards.querySelector(".card.pile")).toBeNull();
+    expect(elements.handCards.children).toHaveLength(6);
   });
 
   it("renders cpu opponent archive breakdown", () => {

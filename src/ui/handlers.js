@@ -737,6 +737,7 @@ export function createHandlers(state, elements, onWinner, options = {}) {
     cancelArchiveTutor: tradeFlow.cancelArchiveTutor,
     startTurn,
     closeCpuSummary: cpuFlow.closeCpuSummary,
+    renderBoard: render,
   };
 
   initTheme();

@@ -2,6 +2,7 @@ import { countCards, getCardType } from "../shared/utils.js";
 import { canInitiateTrade, getCurrentPlayer, getPlayerPlayLimit } from "../game/rules.js";
 import { isMyTurn } from "../game/multiplayer.js";
 import { getCardTooltip } from "./card-tooltips.js";
+import { isCompactBoardActive } from "./viewport.js";
 
 function applyCardTooltip(el, type, ruleset) {
   const tooltip = getCardTooltip(type, ruleset);
@@ -31,9 +32,11 @@ function renderCards(container, cards, clickHandler, ruleset) {
   });
 }
 
-function renderHand(state, player, elements, handlers) {
+function renderHand(state, player, elements, handlers, options = {}) {
+  const compactBoard = options.compactBoard ?? false;
   const displayOrder = state.ruleset.displayOrder ?? ["bronze", "silver", "gold"];
-  if (player.hand.length <= 10) {
+  const pileThreshold = compactBoard ? 5 : 10;
+  if (player.hand.length <= pileThreshold) {
     renderCards(elements.handCards, player.hand, handlers.playCard, state.ruleset);
     return;
   }
@@ -88,6 +91,7 @@ function renderHandCountChips(types, counts, container) {
 function renderArchiveMiniStacks(container, counts, displayOrder, options = {}) {
   if (!container) return;
   container.innerHTML = "";
+  container.classList.remove("archive-count-grid");
   const owner = options.owner ?? "player";
   const onSelect = options.onSelect ?? null;
   let shown = 0;
@@ -149,17 +153,75 @@ function renderArchiveMiniStacks(container, counts, displayOrder, options = {}) 
   }
 }
 
-function renderDeckDiscardWidgets(elements, player) {
+function renderArchiveCounts(container, counts, displayOrder, options = {}) {
+  if (!container) return;
+  container.innerHTML = "";
+  container.classList.add("archive-count-grid");
+  const owner = options.owner ?? "player";
+  const onSelect = options.onSelect ?? null;
+  let shown = 0;
+  displayOrder.forEach((type) => {
+    const count = counts[type] ?? 0;
+    if (count <= 0) return;
+    shown += 1;
+    const badge = document.createElement("button");
+    badge.type = "button";
+    badge.className = `archive-count-button chip ${type}`;
+    badge.dataset.cardType = type;
+    badge.dataset.owner = owner;
+    badge.setAttribute(
+      "aria-label",
+      `${owner === "opponent" ? "Opponent" : "Player"} archive ${titleCase(type)} x ${count}`
+    );
+    if (type === "gold") {
+      badge.classList.add("gold-focus");
+      if (count >= 4) {
+        badge.classList.add("gold-urgent");
+      }
+    }
+    const label = document.createElement("span");
+    label.className = "archive-count-label";
+    label.textContent = titleCase(type);
+    const total = document.createElement("span");
+    total.className = "archive-count-total";
+    total.textContent = `x${count}`;
+    badge.appendChild(label);
+    badge.appendChild(total);
+    if (typeof onSelect === "function") {
+      badge.addEventListener("click", () => onSelect(owner, type, count));
+    } else {
+      badge.disabled = true;
+    }
+    container.appendChild(badge);
+  });
+  if (shown === 0) {
+    const empty = document.createElement("div");
+    empty.className = "archive-empty muted";
+    empty.textContent = "No archived cards.";
+    container.appendChild(empty);
+  }
+}
+
+function renderDeckDiscardWidgets(elements, player, options = {}) {
+  const compactBoard = options.compactBoard ?? false;
   if (elements.deckInfo) {
     elements.deckInfo.textContent = `${player.deck.length} card(s)`;
   }
   if (elements.discardInfo) {
     elements.discardInfo.textContent = `${player.discard.length} card(s)`;
   }
+  if (elements.deckZone) {
+    elements.deckZone.classList.toggle("compact-count-only", compactBoard);
+  }
+  if (elements.discardZone) {
+    elements.discardZone.classList.toggle("compact-count-only", compactBoard);
+  }
   if (elements.boardDeckStack) {
+    elements.boardDeckStack.hidden = compactBoard;
     elements.boardDeckStack.className = "stack-card card card-back back";
   }
   if (elements.boardDiscardStack) {
+    elements.boardDiscardStack.hidden = compactBoard;
     const topCard = player.discard[player.discard.length - 1];
     const topCardType = topCard ? getCardType(topCard) : null;
     if (topCardType) {
@@ -332,6 +394,7 @@ export function renderApp(state, elements, handlers) {
     : state.players.find((p) => p.id !== player.id) ??
       state.players[state.currentPlayer === 0 ? 1 : 0];
 
+  const compactBoard = isCompactBoardActive();
   const displayOrder = state.ruleset.displayOrder ?? ["bronze", "silver", "gold"];
   const playerIndex = state.players.findIndex((entry) => entry.id === player.id);
   const effectivePlayerIndex = playerIndex === -1 ? state.currentPlayer : playerIndex;
@@ -355,11 +418,20 @@ export function renderApp(state, elements, handlers) {
     title.className = "summary-title";
     title.textContent = "Opponent Summary";
     const stacks = document.createElement("div");
-    stacks.className = "summary-archive-stacks";
-    renderArchiveMiniStacks(stacks, opponentArchive, displayOrder, {
-      owner: "opponent",
-      onSelect: handlers.openArchiveInspect,
-    });
+    stacks.className = compactBoard
+      ? "summary-archive-stacks archive-count-grid"
+      : "summary-archive-stacks";
+    if (compactBoard) {
+      renderArchiveCounts(stacks, opponentArchive, displayOrder, {
+        owner: "opponent",
+        onSelect: handlers.openArchiveInspect,
+      });
+    } else {
+      renderArchiveMiniStacks(stacks, opponentArchive, displayOrder, {
+        owner: "opponent",
+        onSelect: handlers.openArchiveInspect,
+      });
+    }
     const handInfo = document.createElement("div");
     handInfo.className = "summary-hand";
     handInfo.textContent = `Hand: ${opponentHandTotal}`;
@@ -369,7 +441,7 @@ export function renderApp(state, elements, handlers) {
   }
   renderHandCountChips(displayOrder, handCounts, elements.handCounts);
 
-  renderDeckDiscardWidgets(elements, player);
+  renderDeckDiscardWidgets(elements, player, { compactBoard });
   elements.tradeInfo.textContent = `Trades used: ${state.tradesThisTurn}/${state.ruleset.maxTrades} • Plays used: ${player.active.length}/${playLimit}`;
 
   const turnGate =
@@ -382,10 +454,16 @@ export function renderApp(state, elements, handlers) {
   const activeOwner = showOpponentActive ? opponent : player;
   const canInteract = turnGate;
 
-  renderHand(state, player, elements, {
-    playCard: canInteract ? handlers.playCard : null,
-    playCardByType: canInteract ? handlers.playCardByType : null,
-  });
+  renderHand(
+    state,
+    player,
+    elements,
+    {
+      playCard: canInteract ? handlers.playCard : null,
+      playCardByType: canInteract ? handlers.playCardByType : null,
+    },
+    { compactBoard }
+  );
   renderCards(
     elements.activeCards,
     activeOwner.active,
@@ -393,10 +471,17 @@ export function renderApp(state, elements, handlers) {
     state.ruleset
   );
 
-  renderArchiveMiniStacks(elements.archivePile, archiveCounts, displayOrder, {
-    owner: "player",
-    onSelect: handlers.openArchiveInspect,
-  });
+  if (compactBoard) {
+    renderArchiveCounts(elements.archivePile, archiveCounts, displayOrder, {
+      owner: "player",
+      onSelect: handlers.openArchiveInspect,
+    });
+  } else {
+    renderArchiveMiniStacks(elements.archivePile, archiveCounts, displayOrder, {
+      owner: "player",
+      onSelect: handlers.openArchiveInspect,
+    });
+  }
   renderArchiveInspect(state, elements);
 
   const inMainPhase = state.phase === "main";

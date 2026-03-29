@@ -5,13 +5,13 @@ This document describes how the Five Star Cards codebase is structured, how the 
 ## Entry Points
 
 - `index.html` defines the UI structure and loads the client bundle via `<script type="module" src="app.js"></script>`.
-- `app.js` bootstraps the client: creates initial state, binds DOM elements, wires event handlers, and shows the mode picker.
+- `app.js` bootstraps the client: creates initial state, binds DOM elements, wires event handlers, syncs the compact-board viewport class, and shows the mode picker.
 - `server/index.js` is the combined static file server + WebSocket server used for online multiplayer.
 
 ## Directory Map
 
 - `src/game/` contains game rules, state, lifecycle, CPU logic, and online helpers.
-- `src/ui/` contains rendering, event wiring, and interaction handlers (trade flow helpers live under `src/ui/handlers/`).
+- `src/ui/` contains rendering, viewport helpers, event wiring, and interaction handlers (trade flow helpers live under `src/ui/handlers/`).
 - `src/online/` contains the WebSocket client wrapper used by the browser.
 - `src/shared/` contains cross-cutting utilities (shuffle, card counting, IDs).
 - `assets/` contains SVG card art used by the UI.
@@ -123,10 +123,10 @@ Rendering lives in `src/ui/render.js`.
 
 - `renderApp()` is the main renderer and is called after most state changes.
 - The board now renders a tabletop play surface with feedback HUD:
-  - Deck and discard table widgets with visual stacks and counts.
+  - Deck and discard table widgets with visual stacks and counts on standard viewports, and count-only widgets in compact-board mode.
   - Compact gold race tracks for both players (`goldRacePlayer`, `goldRaceOpponent`) rendered as filled/unfilled star pips.
-  - Opponent summary title + archive mini-stacks and hand count now sits in the play header area.
-  - Archive zone is centered in the table lane between deck/discard, with local archive mini-stacks (one stack per type with count > 0) and the Explore Trades entry point.
+  - Opponent summary title + archive breakdown and hand count now sits in the play header area; compact-board mode switches the archive display from mini-stacks to count chips.
+  - Archive zone is centered in the table lane between deck/discard, with the Explore Trades entry point preserved in both standard and compact-board layouts.
   - Active Cards zone sits above Hand in the lower stack to reflect the play flow (`Hand -> Active -> Archive`).
   - Turn replay panel (`turnReplayPanel`) that can display full card visuals for end-turn archive summaries.
   - Feedback caption lane (`feedbackCaption`) is archive-centered for phase text like archiving/drawing.
@@ -137,13 +137,13 @@ Rendering lives in `src/ui/render.js`.
   - Offline: `state.currentPlayer`.
   - CPU: the human player is always index 0.
   - Online: the player matching `state.online.playerId`.
-- The hand is rendered as individual cards for 10 or fewer cards; otherwise it collapses into pile counts per card type.
+- The hand is rendered as individual cards for 10 or fewer cards on standard viewports; compact-board mode lowers that threshold to 5 cards so the board stays visible without page scrolling.
 - The "How To Play" panel is refreshed per format, showing only relevant expansion rules and legend chips.
 - Trade buttons are enabled only when the phase is `main`, it is the local player’s turn, and `canInitiateTrade()` is true.
 - `openTradesModal` receives a `has-trades` class when at least one trade is currently initiable for the local player, enabling a red-dot affordance in the Archive header.
 - Mystic-only trade buttons are rendered/enabled only in `mystic` format.
 - Trade info shows dynamic play usage (`Plays used: activeCount/playCap`) so Pearl/Obsidian effects are visible.
-- Archive mini-stacks can be inspected through `archiveInspectOverlay` (`state.ui.archiveInspect` drives visibility).
+- Archive displays can be inspected through `archiveInspectOverlay` (`state.ui.archiveInspect` drives visibility), whether they are rendered as mini-stacks or compact count chips.
 - Gold archive stacks are emphasized (`gold-focus`) and become urgent at 4+ (`gold-urgent`).
 - `showConfirmOverlay()` renders a summary of pending archive cards and draw count.
 
@@ -165,6 +165,7 @@ Motion/replay feedback is managed by `src/ui/feedback/feedback-controller.js` wi
 
 Key responsibilities:
 - Mode selection (offline, CPU) and format selection (core/gilded gems/ancient/mystic).
+- Viewport sync via `src/ui/viewport.js`, which toggles the `compact-board` body class and triggers re-renders on resize/orientation changes.
 - Online mode is currently feature-flagged off in `src/ui/handlers.js` (`ONLINE_MODE_ENABLED = false`), which disables the mode button and blocks entry into lobby overlays.
 - Theme selection (classic vs. pixel) with persistence in local storage.
 - Motion mode selection (`auto`, `full`, `reduced`) with persistence in local storage and `prefers-reduced-motion` support.
@@ -249,4 +250,4 @@ Online:
 
 ## Tests
 
-Vitest tests live in `tests/` and cover core rule logic, UI handlers, and online behavior. Use `npm test` to run the suite.
+Vitest tests live in `tests/` and cover core rule logic, UI handlers, online behavior, and compact-board rendering/viewport wiring. Use `npm test` to run the suite.
