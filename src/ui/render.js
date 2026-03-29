@@ -70,24 +70,6 @@ function titleCase(type) {
     .join(" ");
 }
 
-function renderHandCountChips(types, counts, container) {
-  if (!container) return;
-  container.innerHTML = "";
-  types.forEach((type) => {
-    const badge = document.createElement("div");
-    badge.className = `chip ${type}`;
-    if (type === "gold") {
-      badge.classList.add("gold-focus");
-      const goldCount = counts[type] ?? 0;
-      if (goldCount >= 4) {
-        badge.classList.add("gold-urgent");
-      }
-    }
-    badge.textContent = `${type} x ${counts[type] ?? 0}`;
-    container.appendChild(badge);
-  });
-}
-
 function renderArchiveMiniStacks(container, counts, displayOrder, options = {}) {
   if (!container) return;
   container.innerHTML = "";
@@ -399,7 +381,6 @@ export function renderApp(state, elements, handlers) {
   const playerIndex = state.players.findIndex((entry) => entry.id === player.id);
   const effectivePlayerIndex = playerIndex === -1 ? state.currentPlayer : playerIndex;
   const playLimit = getPlayerPlayLimit(state, effectivePlayerIndex);
-  const handCounts = countCards(player.hand, displayOrder);
   const archiveCounts = countCards(player.archive, displayOrder);
   const opponentArchive = countCards(opponent.archive, displayOrder);
   const opponentHandTotal = opponent.hand.length;
@@ -439,7 +420,6 @@ export function renderApp(state, elements, handlers) {
     elements.opponentSummary.appendChild(stacks);
     elements.opponentSummary.appendChild(handInfo);
   }
-  renderHandCountChips(displayOrder, handCounts, elements.handCounts);
 
   renderDeckDiscardWidgets(elements, player, { compactBoard });
   elements.tradeInfo.textContent = `Trades used: ${state.tradesThisTurn}/${state.ruleset.maxTrades} • Plays used: ${player.active.length}/${playLimit}`;

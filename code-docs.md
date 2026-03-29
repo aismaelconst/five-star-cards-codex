@@ -125,7 +125,7 @@ Rendering lives in `src/ui/render.js`.
 - The board now renders a tabletop play surface with feedback HUD:
   - Deck and discard table widgets with visual stacks and counts on standard viewports, and count-only widgets in compact-board mode.
   - Compact gold race tracks for both players (`goldRacePlayer`, `goldRaceOpponent`) rendered as filled/unfilled star pips.
-  - Opponent summary title + archive breakdown and hand count now sits in the play header area; compact-board mode switches the archive display from mini-stacks to count chips.
+  - Opponent summary title + archive breakdown now sits in the play header area; compact-board mode switches the archive display from mini-stacks to count chips.
   - Archive zone is centered in the table lane between deck/discard, with the Explore Trades entry point preserved in both standard and compact-board layouts.
   - Active Cards zone sits above Hand in the lower stack to reflect the play flow (`Hand -> Active -> Archive`).
   - Turn replay panel (`turnReplayPanel`) that can display full card visuals for end-turn archive summaries.

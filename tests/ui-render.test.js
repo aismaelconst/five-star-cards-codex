@@ -15,7 +15,6 @@ function makeElements() {
     "rulesList",
     "expansionRules",
     "cardLegend",
-    "handCounts",
     "archivePile",
     "activeCards",
     "handCards",
@@ -140,7 +139,6 @@ describe("ui/render", () => {
     );
     expect(elements.opponentSummary.querySelector(".archive-empty")).not.toBeNull();
     expect(elements.opponentSummary.querySelector(".summary-hand")?.textContent).toContain("Hand:");
-    expect(elements.handCounts.querySelector(".chip.bronze")).not.toBeNull();
     const card = elements.handCards.querySelector(".card");
     expect(card.dataset.cardType).toBeTruthy();
   });
@@ -193,7 +191,6 @@ describe("ui/render", () => {
 
     renderApp(state, elements, handlers);
 
-    expect(elements.handCounts.querySelector(".chip.wood")).not.toBeNull();
     expect(elements.archivePile.querySelector(".mini-stack.platinum")).not.toBeNull();
   });
 

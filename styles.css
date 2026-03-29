@@ -390,15 +390,6 @@ h3 {
   font-size: 0.9rem;
 }
 
-.counts {
-  font-size: 0.9rem;
-  color: var(--ink-2);
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  justify-content: flex-end;
-}
-
 .count-line + .count-line {
   margin-top: 6px;
 }
@@ -1787,7 +1778,6 @@ body.compact-board .summary-title {
 }
 
 body.compact-board .summary-hand,
-body.compact-board .counts,
 body.compact-board .stack-count,
 body.compact-board .trade-info,
 body.compact-board .muted,

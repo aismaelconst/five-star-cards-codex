@@ -14,7 +14,6 @@ const elements = {
   rulesList: document.getElementById("rulesList"),
   expansionRules: document.getElementById("expansionRules"),
   cardLegend: document.getElementById("cardLegend"),
-  handCounts: document.getElementById("handCounts"),
   archivePile: document.getElementById("archivePile"),
   activeCards: document.getElementById("activeCards"),
   handCards: document.getElementById("handCards"),
