@@ -4,6 +4,7 @@ import {
   expandedRuleset,
   ancientRuleset,
   mysticRuleset,
+  foundryRuleset,
   mintedRuleset,
 } from "../src/game/ruleset.js";
 import { createCard } from "../src/game/cards.js";
@@ -179,6 +180,35 @@ function makeMysticState() {
       nextTurnTradeBlockedByPlayer: [false, false],
       usedTradeRecipesByPlayer: [{}, {}],
     },
+  };
+}
+
+function makeFoundryState() {
+  return {
+    players: [
+      {
+        deck: [],
+        hand: [],
+        active: [],
+        archive: [],
+        discard: [],
+      },
+      {
+        deck: [],
+        hand: [],
+        active: [],
+        archive: [],
+        discard: [],
+      },
+    ],
+    ruleset: foundryRuleset,
+    format: "foundry",
+    currentPlayer: 0,
+    tradesThisTurn: 0,
+    phase: "main",
+    winner: null,
+    turnCount: 1,
+    pendingArchive: null,
   };
 }
 
@@ -743,4 +773,105 @@ describe("rules", () => {
     expect(state.phase).toBe("main");
     expect(state.pendingArchive).toBe(null);
   });
+  it("prospector digs until the first non-bronze card", () => {
+    const state = makeFoundryState();
+    const player = current(state);
+    player.archive = [
+      createCard("prospector", foundryRuleset),
+      createCard("bronze", foundryRuleset),
+    ];
+    player.deck = [
+      createCard("gold", foundryRuleset),
+      createCard("bronze", foundryRuleset),
+      createCard("bronze", foundryRuleset),
+    ];
+
+    const result = performTrade(state, player, "trade_prospector");
+
+    expect(result.success).toBe(true);
+    expect(result.detail.rewardType).toBe("gold");
+    expect(result.detail.digDiscardedCount).toBe(2);
+    expect(player.hand.map((card) => card.type)).toContain("gold");
+    expect(player.discard.map((card) => card.type)).toEqual([
+      "prospector",
+      "bronze",
+      "bronze",
+      "bronze",
+    ]);
+  });
+
+  it("alloy can satisfy bronze and silver efficiency costs", () => {
+    const bronzeState = makeFoundryState();
+    const bronzePlayer = current(bronzeState);
+    bronzePlayer.archive = [
+      createCard("smelter", foundryRuleset),
+      createCard("bronze", foundryRuleset),
+      createCard("bronze", foundryRuleset),
+      createCard("alloy", foundryRuleset),
+    ];
+    bronzePlayer.deck = [createCard("silver", foundryRuleset)];
+
+    expect(
+      canTradeWithOptions(bronzeState, bronzePlayer, "trade_smelter", { useEfficiency: true })
+    ).toBe(true);
+    const bronzeResult = performTrade(bronzeState, bronzePlayer, "trade_smelter", {
+      useEfficiency: true,
+    });
+    expect(bronzeResult.success).toBe(true);
+    expect(bronzePlayer.hand.some((card) => card.type === "silver")).toBe(true);
+
+    const silverState = makeFoundryState();
+    const silverPlayer = current(silverState);
+    silverPlayer.archive = [
+      createCard("refiner", foundryRuleset),
+      createCard("silver", foundryRuleset),
+      createCard("silver", foundryRuleset),
+      createCard("alloy", foundryRuleset),
+    ];
+    silverPlayer.deck = [createCard("gold", foundryRuleset)];
+
+    expect(
+      canTradeWithOptions(silverState, silverPlayer, "trade_refiner", { useEfficiency: true })
+    ).toBe(true);
+    const silverResult = performTrade(silverState, silverPlayer, "trade_refiner", {
+      useEfficiency: true,
+    });
+    expect(silverResult.success).toBe(true);
+    expect(silverPlayer.hand.some((card) => card.type === "gold")).toBe(true);
+  });
+
+  it("assayer only tutors foundry rewards", () => {
+    const state = makeFoundryState();
+    const player = current(state);
+    player.archive = [
+      createCard("assayer", foundryRuleset),
+      createCard("bronze", foundryRuleset),
+    ];
+    player.deck = [
+      createCard("silver", foundryRuleset),
+      createCard("alloy", foundryRuleset),
+      createCard("refiner", foundryRuleset),
+    ];
+
+    expect(
+      canTradeWithOptions(state, player, "trade_assayer", {
+        choiceType: "bronze",
+        rewardType: "refiner",
+      })
+    ).toBe(true);
+    expect(
+      canTradeWithOptions(state, player, "trade_assayer", {
+        choiceType: "bronze",
+        rewardType: "silver",
+      })
+    ).toBe(false);
+
+    const result = performTrade(state, player, "trade_assayer", {
+      choiceType: "bronze",
+      rewardType: "refiner",
+    });
+    expect(result.success).toBe(true);
+    expect(player.hand.some((card) => card.type === "refiner")).toBe(true);
+  });
+
 });

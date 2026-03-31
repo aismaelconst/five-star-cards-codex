@@ -14,6 +14,8 @@ Choose one format before starting the game:
   - Core + 5 each: turquoise, lapis lazuli, carnelian, ingot, sterling
 - **Mystic (180 cards)**
   - Core + 5 each: pearl, obsidian, amethyst, ash, ember
+- **Foundry (180 cards)**
+  - Core + 5 each: prospector, alloy, assayer, smelter, refiner
 
 All non-core cards have **draw 0** (they do not draw cards at end of turn).
 
@@ -89,6 +91,19 @@ Targeting / reveal rules:
 - Gold can be targeted by mystic disruption effects.
 - Randomly moved card type(s) are revealed to both players.
 
+### Foundry Trades (Foundry)
+
+- **Prospector + Bronze → dig**
+  - Reveal cards from the top of your deck until you hit a **non-bronze** card.
+  - Discard the revealed bronze cards, add the first non-bronze card to your hand.
+- **Assayer + 1 non-gold → tutor 1 Foundry card**
+  - Choose `prospector`, `alloy`, `smelter`, or `refiner` from your deck and put it into your hand, then shuffle.
+- **Smelter + 3 bronze → tutor 1 silver**
+- **Refiner + 3 silver → tutor 1 gold**
+- **Alloy**
+  - Counts as **1 bronze or 1 silver** when paying trade costs from the Archive.
+
+
 ## 2. Play Cards (Optional)
 
 You may play **up to 5 cards** from your hand into your **Active Cards** area. You may play fewer than 5.
@@ -162,3 +177,11 @@ Mystic Trades (once per turn per recipe):
 - Amethyst → shuffle 1 chosen opponent archive card into deck
 - Ash → shuffle 1 random opponent hand card into deck
 - Ember → opponent cannot make trades next turn
+
+Foundry Trades:
+
+- Prospector + Bronze → dig for a non-bronze card
+- Assayer + 1 non-gold → tutor 1 Foundry card (shuffle)
+- Smelter + 3 bronze → 1 silver (tutor, shuffle)
+- Refiner + 3 silver → 1 gold (tutor, shuffle)
+- Alloy: counts as 1 bronze or 1 silver in archive trades

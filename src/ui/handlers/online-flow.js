@@ -111,6 +111,12 @@ export function createOnlineFlow({
         );
         return;
       }
+      if (event.recipeId === "trade_prospector") {
+        const discarded = typeof event.digDiscardedCount === "number" ? event.digDiscardedCount : 0;
+        const reward = event.rewardType ? `found ${event.rewardType}` : "deck exhausted";
+        elements.opponentAlert.textContent = `Opponent used prospector to dig: discarded ${discarded} bronze, ${reward}${woodNote}.`;
+        return;
+      }
       const recipe = state.ruleset.tradeRecipes?.[event.recipeId];
       if (recipe) {
         const costParts = [];

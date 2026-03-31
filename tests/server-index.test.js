@@ -135,6 +135,7 @@ describe("server/index", () => {
     expect(resolveRequestedFormat("expanded")).toBe("expanded");
     expect(resolveRequestedFormat("ancient")).toBe("ancient");
     expect(resolveRequestedFormat("mystic")).toBe("mystic");
+    expect(resolveRequestedFormat("foundry")).toBe("foundry");
     expect(resolveRequestedFormat("minted")).toBe("core");
     expect(resolveRequestedFormat("unknown")).toBe("core");
   });

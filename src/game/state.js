@@ -5,6 +5,7 @@ import {
   expandedRuleset,
   ancientRuleset,
   mysticRuleset,
+  foundryRuleset,
 } from "./ruleset.js";
 
 function createTurnEffects(playerCount) {
@@ -36,6 +37,7 @@ export function createInitialState(options = {}) {
     requestedFormat === "expanded" ||
     requestedFormat === "ancient" ||
     requestedFormat === "mystic" ||
+    requestedFormat === "foundry" ||
     requestedFormat === "core"
       ? requestedFormat
       : "core";
@@ -47,7 +49,9 @@ export function createInitialState(options = {}) {
         ? ancientRuleset
         : format === "mystic"
           ? mysticRuleset
-        : baseRuleset);
+          : format === "foundry"
+            ? foundryRuleset
+            : baseRuleset);
   const gameId = options.gameId ?? `game-${Date.now()}`;
   const playerIds = options.playerIds ?? ["player-1", "player-2"];
   const playerNames = options.playerNames ?? ["Player 1", "Player 2"];

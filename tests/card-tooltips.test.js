@@ -5,6 +5,7 @@ import {
   expandedRuleset,
   ancientRuleset,
   mysticRuleset,
+  foundryRuleset,
   mintedRuleset,
   shelvedCardTypes,
 } from "../src/game/ruleset.js";
@@ -58,6 +59,15 @@ describe("card tooltips", () => {
   it("formats lapis lazuli name", () => {
     const tooltip = getCardTooltip("lapis_lazuli", ancientRuleset);
     expect(tooltip).toContain("Lapis Lazuli");
+  });
+
+  it("includes foundry dig, tutor, and substitution notes", () => {
+    const prospectorTooltip = getCardTooltip("prospector", foundryRuleset);
+    expect(prospectorTooltip).toContain("dig until non bronze");
+    const alloyTooltip = getCardTooltip("alloy", foundryRuleset);
+    expect(alloyTooltip).toContain("1 bronze or 1 silver");
+    const assayerTooltip = getCardTooltip("assayer", foundryRuleset);
+    expect(assayerTooltip).toContain("tutor prospector/alloy/smelter/refiner");
   });
 
   it("includes minted substitution notes", () => {

@@ -26,11 +26,18 @@ describe("trade-utils", () => {
     expect(withoutReward).toContain("Deck exhausted");
   });
 
-  it("formats gem and fallback trade toasts", () => {
+  it("formats gem, prospector, and fallback trade toasts", () => {
     const gemToast = formatTradeToast("trade_gem_set", { reward: "any" }, { rewardType: "ruby" });
+    const prospectorToast = formatTradeToast(
+      "trade_prospector",
+      { reward: "dig_non_bronze" },
+      { rewardType: "gold", digDiscardedCount: 2 }
+    );
     const genericToast = formatTradeToast("trade_unknown", undefined, {});
 
     expect(gemToast).toContain("gained Ruby");
+    expect(prospectorToast).toContain("Discarded 2 bronze");
+    expect(prospectorToast).toContain("Found gold");
     expect(genericToast).toBe("Trade complete.");
   });
 

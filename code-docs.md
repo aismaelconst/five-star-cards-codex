@@ -31,7 +31,7 @@ Player state (created in `src/game/state.js`):
 
 Game state (created in `src/game/state.js`):
 - `players` array
-- `ruleset`, `format` (`core`, `expanded`, `ancient`, `mystic`)
+- `ruleset`, `format` (`core`, `expanded`, `ancient`, `mystic`, `foundry`)
 - `mode` (`offline`, `cpu`, `online`)
 - `currentPlayer`, `tradesThisTurn`, `turnCount`
 - `phase` (`main`, `confirm`, `between`)
@@ -57,6 +57,8 @@ Rulesets live in `src/game/ruleset.js`.
 - `ancientRuleset` adds a pool-cost trade (`trade_ancients_archive`) that archives a chosen non-gold card directly from deck.
 - `mysticRuleset` extends core with `pearl`, `obsidian`, `amethyst`, `ash`, and `ember`.
 - `mysticRuleset` adds one-card effect trades (`reward: { type: "effect", id }`) and uses `oncePerTurn: true` per recipe.
+- `foundryRuleset` extends core with `prospector`, `alloy`, `assayer`, `smelter`, and `refiner`.
+- `foundryRuleset` adds a bronze-only dig trade, a Foundry-only tutor, and upgrade trades that reuse the standard tutor flow.
 - `shelvedCardTypes` keeps non-active card defs (`electrum`, `copper`) in code for future reuse.
 - `mintedRuleset` is still defined in `ruleset.js` as shelved content, but it is no longer selectable via game format state/UI/server allow-lists.
 - Decks are created in `src/game/cards.js` using `ruleset.deckCounts` and shuffled in `src/game/state.js` via `shuffle()`.
@@ -75,7 +77,7 @@ Key behaviors:
 - Wood substitution is supported (expanded rules only) using `getWoodSubstitutionOptions()` and `buildCostWithWood()`.
 - Platinum trade (`trade_platinum`) “digs” by popping cards from the deck until a non bronze/silver is found, discarding the rest.
 - Trade recipes can include `choiceCost` (additional cost type), `poolCost` (distinct selections from a pool), `rewardOptions` (restricted tutor targets), and `reward` variants (`cards`, `draw`, `archive`, `archive_cards`, `archive_hand`, `effect`).
-- Efficiency cards (`ingot`, `sterling`, `ledger`) can satisfy bronze/silver trade costs with an optional conversion step inside `getTradeCost()` and `canInitiateTrade()`, controlled by the `useEfficiency` trade payload flag.
+- Efficiency cards (`ingot`, `sterling`, `ledger`, `alloy`) can satisfy bronze/silver trade costs with an optional conversion step inside `getTradeCost()` and `canInitiateTrade()`, controlled by the `useEfficiency` trade payload flag.
 - `oncePerTurn` recipes are enforced through `turnEffects.usedTradeRecipesByPlayer`.
 - Dynamic play limits are enforced by `getPlayerPlayLimit()` and used by `playCard()`.
 - Mystic effect handlers in `performTrade()`:
@@ -107,6 +109,7 @@ CPU logic is in `src/game/cpu.js`.
 - Uses weighted heuristics for trades and plays based on difficulty (`easy`, `medium`, `hard`).
 - Generates a list of trades (respecting `maxTrades`) and card plays (respecting `maxPlays`).
 - In mystic format, CPU applies deterministic effect heuristics (e.g., Pearl when hand exceeds cap, Amethyst targeting `gold` first).
+- In foundry format, CPU evaluates Prospector digs from deck counts only and tutors toward higher-value Foundry upgrade lines.
 - Executes a full turn using the same `applyAction()` pipeline as humans, and returns a summary for UI display.
 
 ## Multiplayer Utilities
@@ -164,7 +167,7 @@ Motion/replay feedback is managed by `src/ui/feedback/feedback-controller.js` wi
 - `src/ui/feedback/sequence-builder.js` builds deterministic step sequences (caption + movement) for archive/draw cadence.
 
 Key responsibilities:
-- Mode selection (offline, CPU) and format selection (core/gilded gems/ancient/mystic).
+- Mode selection (offline, CPU) and format selection (core/gilded gems/ancient/mystic/foundry).
 - Viewport sync via `src/ui/viewport.js`, which toggles the `compact-board` body class and triggers re-renders on resize/orientation changes.
 - Online mode is currently feature-flagged off in `src/ui/handlers.js` (`ONLINE_MODE_ENABLED = false`), which disables the mode button and blocks entry into lobby overlays.
 - Theme selection (classic vs. pixel) with persistence in local storage.
@@ -219,7 +222,7 @@ Server responsibilities:
 Exported server helpers:
 - `createGameServer(options)` builds the HTTP + WebSocket server with injectable dependencies (`http`, `ws`, logger, rule helpers) for deterministic unit tests.
 - `createStaticRequestHandler({ rootDir, fsImpl })` is the static asset responder used by the HTTP server.
-- `resolveRequestedFormat(format)` centralizes format allow-listing (`core`, `expanded`, `ancient`, `mystic`).
+- `resolveRequestedFormat(format)` centralizes format allow-listing (`core`, `expanded`, `ancient`, `mystic`, `foundry`).
 - `DEFAULT_PORT` / `DEFAULT_ROOT_DIR` are exported constants for startup wiring.
 
 Runtime startup behavior:

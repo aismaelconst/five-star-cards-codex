@@ -39,10 +39,12 @@ export function createTradeFlow(options) {
     if ((recipe.cost.bronze ?? 0) > 0) {
       candidates.add("ingot");
       candidates.add("ledger");
+      candidates.add("alloy");
     }
     if ((recipe.cost.silver ?? 0) > 0) {
       candidates.add("sterling");
       candidates.add("ledger");
+      candidates.add("alloy");
     }
     return Array.from(candidates).filter((type) => Boolean(state.ruleset.cardTypes?.[type]));
   }

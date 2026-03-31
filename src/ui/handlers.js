@@ -355,6 +355,21 @@ export function createHandlers(state, elements, onWinner, options = {}) {
     startOfflineGame("mystic");
   }
 
+  function selectFoundryFormat() {
+    if (state.mode === "cpu") {
+      state.format = "foundry";
+      updateFormatButtons(state, elements);
+      if (elements.formatOverlay) {
+        elements.formatOverlay.hidden = true;
+      }
+      if (elements.cpuOverlay) {
+        elements.cpuOverlay.hidden = false;
+      }
+      return;
+    }
+    startOfflineGame("foundry");
+  }
+
   function selectCpuEasy() {
     startCpuGame(state.format ?? "core", "easy");
   }
@@ -384,6 +399,11 @@ export function createHandlers(state, elements, onWinner, options = {}) {
 
   function selectHostFormatMystic() {
     state.format = "mystic";
+    updateFormatButtons(state, elements);
+  }
+
+  function selectHostFormatFoundry() {
+    state.format = "foundry";
     updateFormatButtons(state, elements);
   }
 
@@ -698,6 +718,7 @@ export function createHandlers(state, elements, onWinner, options = {}) {
     selectExpandedFormat,
     selectAncientFormat,
     selectMysticFormat,
+    selectFoundryFormat,
     selectCpuEasy,
     selectCpuMedium,
     selectCpuHard,
@@ -705,6 +726,7 @@ export function createHandlers(state, elements, onWinner, options = {}) {
     selectHostFormatExpanded,
     selectHostFormatAncient,
     selectHostFormatMystic,
+    selectHostFormatFoundry,
     createRoom: onlineFlow.createRoom,
     joinRoom: onlineFlow.joinRoom,
     backToChoice: onlineFlow.backToChoice,

@@ -5,6 +5,7 @@ import {
   expandedRuleset,
   ancientRuleset,
   mysticRuleset,
+  foundryRuleset,
 } from "../src/game/ruleset.js";
 
 function makeElements() {
@@ -40,6 +41,10 @@ function makeElements() {
     "tradeSilver",
     "tradeGems",
     "tradePlatinum",
+    "tradeProspector",
+    "tradeAssayer",
+    "tradeSmelter",
+    "tradeRefiner",
     "tradeAncientsArchive",
     "tradePearl",
     "tradeObsidian",
@@ -68,6 +73,10 @@ function makeElements() {
   elements.tradeSilver = document.createElement("button");
   elements.tradeGems = document.createElement("button");
   elements.tradePlatinum = document.createElement("button");
+  elements.tradeProspector = document.createElement("button");
+  elements.tradeAssayer = document.createElement("button");
+  elements.tradeSmelter = document.createElement("button");
+  elements.tradeRefiner = document.createElement("button");
   elements.tradeAncientsArchive = document.createElement("button");
   elements.tradePearl = document.createElement("button");
   elements.tradeObsidian = document.createElement("button");
@@ -276,6 +285,25 @@ describe("ui/render", () => {
     expect(elements.handCards.children.length).toBeLessThan(6);
   });
 
+  it("switches six-card compact hands to piles", () => {
+    document.body.classList.add("compact-board");
+    const state = makeState();
+    const elements = makeElements();
+    const handlers = {
+      playCard: vi.fn(),
+      playCardByType: vi.fn(),
+      returnCard: vi.fn(),
+      openArchiveInspect: vi.fn(),
+    };
+    state.ruleset = foundryRuleset;
+    state.format = "foundry";
+    state.players[0].hand = ["bronze", "bronze", "bronze", "alloy", "prospector", "smelter"];
+
+    renderApp(state, elements, handlers);
+
+    expect(elements.handCards.querySelector(".card.pile")).not.toBeNull();
+  });
+
   it("keeps six-card hands expanded outside compact mode", () => {
     const state = makeState();
     const elements = makeElements();
@@ -357,6 +385,30 @@ describe("ui/render", () => {
     expect(elements.tradeAmethyst.hidden).toBe(false);
     expect(elements.tradeAsh.hidden).toBe(false);
     expect(elements.tradeEmber.hidden).toBe(false);
+  });
+
+  it("renders foundry expansion rules and foundry trade buttons", () => {
+    const state = makeState();
+    const elements = makeElements();
+    const handlers = {
+      playCard: vi.fn(),
+      playCardByType: vi.fn(),
+      returnCard: vi.fn(),
+      openArchiveInspect: vi.fn(),
+    };
+    state.ruleset = foundryRuleset;
+    state.format = "foundry";
+    state.players[0].archive = ["prospector", "bronze", "assayer", "alloy"];
+    state.players[0].deck = ["gold", "refiner"];
+
+    renderApp(state, elements, handlers);
+
+    expect(elements.expansionRules.textContent).toContain("Prospector");
+    expect(elements.cardLegend.textContent).toContain("Alloy");
+    expect(elements.tradeProspector.hidden).toBe(false);
+    expect(elements.tradeProspector.disabled).toBe(false);
+    expect(elements.tradeAssayer.hidden).toBe(false);
+    expect(elements.tradeAssayer.disabled).toBe(false);
   });
 
   it("shows dynamic play cap in trade info for mystic bonuses", () => {

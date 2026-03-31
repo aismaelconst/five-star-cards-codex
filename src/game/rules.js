@@ -33,6 +33,7 @@ function applyEfficiencySubstitution(counts, cost = {}) {
   const maxIngot = counts.ingot ?? 0;
   const maxSterling = counts.sterling ?? 0;
   const maxLedger = counts.ledger ?? 0;
+  const maxAlloy = counts.alloy ?? 0;
   let best = null;
   for (let ingot = 0; ingot <= maxIngot; ingot += 1) {
     for (let sterling = 0; sterling <= maxSterling; sterling += 1) {
@@ -42,41 +43,62 @@ function applyEfficiencySubstitution(counts, cost = {}) {
           ledgerSilver <= maxLedger - ledgerBronze;
           ledgerSilver += 1
         ) {
-          const bronzeCovered = ingot * 3 + ledgerBronze;
-          const silverCovered = sterling * 2 + ledgerSilver;
-          const remainingBronze = Math.max(0, requiredBronze - bronzeCovered);
-          const remainingSilver = Math.max(0, requiredSilver - silverCovered);
-          if (remainingBronze > (counts.bronze ?? 0)) continue;
-          if (remainingSilver > (counts.silver ?? 0)) continue;
-          const usedSpecial = ingot + sterling + ledgerBronze + ledgerSilver;
-          const overpay =
-            Math.max(0, bronzeCovered - requiredBronze) +
-            Math.max(0, silverCovered - requiredSilver);
-          const ledgerUsed = ledgerBronze + ledgerSilver;
-          const candidate = {
-            ingot,
-            sterling,
-            ledgerUsed,
-            remainingBronze,
-            remainingSilver,
-            usedSpecial,
-            overpay,
-          };
-          if (!best) {
-            best = candidate;
-            continue;
-          }
-          if (candidate.usedSpecial < best.usedSpecial) {
-            best = candidate;
-            continue;
-          }
-          if (candidate.usedSpecial === best.usedSpecial) {
-            if (candidate.overpay < best.overpay) {
-              best = candidate;
-              continue;
-            }
-            if (candidate.overpay === best.overpay && candidate.ledgerUsed < best.ledgerUsed) {
-              best = candidate;
+          for (let alloyBronze = 0; alloyBronze <= maxAlloy; alloyBronze += 1) {
+            for (
+              let alloySilver = 0;
+              alloySilver <= maxAlloy - alloyBronze;
+              alloySilver += 1
+            ) {
+              const bronzeCovered = ingot * 3 + ledgerBronze + alloyBronze;
+              const silverCovered = sterling * 2 + ledgerSilver + alloySilver;
+              const remainingBronze = Math.max(0, requiredBronze - bronzeCovered);
+              const remainingSilver = Math.max(0, requiredSilver - silverCovered);
+              if (remainingBronze > (counts.bronze ?? 0)) continue;
+              if (remainingSilver > (counts.silver ?? 0)) continue;
+              const ledgerUsed = ledgerBronze + ledgerSilver;
+              const alloyUsed = alloyBronze + alloySilver;
+              const usedSpecial = ingot + sterling + ledgerUsed + alloyUsed;
+              const overpay =
+                Math.max(0, bronzeCovered - requiredBronze) +
+                Math.max(0, silverCovered - requiredSilver);
+              const flexibleUsed = ledgerUsed + alloyUsed;
+              const candidate = {
+                ingot,
+                sterling,
+                ledgerUsed,
+                alloyUsed,
+                remainingBronze,
+                remainingSilver,
+                usedSpecial,
+                overpay,
+                flexibleUsed,
+              };
+              if (!best) {
+                best = candidate;
+                continue;
+              }
+              if (candidate.usedSpecial < best.usedSpecial) {
+                best = candidate;
+                continue;
+              }
+              if (candidate.usedSpecial === best.usedSpecial) {
+                if (candidate.overpay < best.overpay) {
+                  best = candidate;
+                  continue;
+                }
+                if (candidate.overpay === best.overpay) {
+                  if (candidate.flexibleUsed < best.flexibleUsed) {
+                    best = candidate;
+                    continue;
+                  }
+                  if (
+                    candidate.flexibleUsed === best.flexibleUsed &&
+                    candidate.ledgerUsed < best.ledgerUsed
+                  ) {
+                    best = candidate;
+                  }
+                }
+              }
             }
           }
         }
@@ -101,6 +123,9 @@ function applyEfficiencySubstitution(counts, cost = {}) {
   }
   if (best.ledgerUsed > 0) {
     adjusted.ledger = (adjusted.ledger ?? 0) + best.ledgerUsed;
+  }
+  if (best.alloyUsed > 0) {
+    adjusted.alloy = (adjusted.alloy ?? 0) + best.alloyUsed;
   }
   return adjusted;
 }
@@ -512,7 +537,7 @@ export function canInitiateTrade(state, player, recipeId) {
     }
     return player.deck.length > 0;
   }
-  if (recipe.reward === "dig_non_bronze_silver") {
+  if (recipe.reward === "dig_non_bronze_silver" || recipe.reward === "dig_non_bronze") {
     return true;
   }
   const deckCounts = countCards(player.deck);
@@ -604,7 +629,7 @@ export function canTradeWithOptions(state, player, recipeId, options = {}) {
     const deckCounts = countCards(player.deck);
     return (deckCounts[options.rewardType] ?? 0) > 0;
   }
-  if (recipe.reward === "dig_non_bronze_silver") {
+  if (recipe.reward === "dig_non_bronze_silver" || recipe.reward === "dig_non_bronze") {
     return true;
   }
   const deckCounts = countCards(player.deck);
@@ -744,12 +769,16 @@ export function performTrade(state, player, recipeId, options = {}) {
       player.deck = shuffle(player.deck);
       detail.rewardType = options.rewardType;
     }
-  } else if (recipe.reward === "dig_non_bronze_silver") {
+  } else if (recipe.reward === "dig_non_bronze_silver" || recipe.reward === "dig_non_bronze") {
     let reward = null;
     let discarded = 0;
+    const blockedTypes =
+      recipe.reward === "dig_non_bronze_silver"
+        ? new Set(["bronze", "silver"])
+        : new Set(["bronze"]);
     while (player.deck.length > 0) {
       const card = player.deck.pop();
-      if (getCardType(card) === "bronze" || getCardType(card) === "silver") {
+      if (blockedTypes.has(getCardType(card))) {
         player.discard.push(card);
         discarded += 1;
       } else {

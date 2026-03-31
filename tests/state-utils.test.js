@@ -6,6 +6,7 @@ import {
   expandedRuleset,
   ancientRuleset,
   mysticRuleset,
+  foundryRuleset,
   mintedRuleset,
 } from "../src/game/ruleset.js";
 import { countCards, generateRoomCode, shuffle } from "../src/shared/utils.js";
@@ -59,6 +60,12 @@ describe("state", () => {
   it("creates a mystic state with mystics expansion", () => {
     const state = createInitialState({ format: "mystic" });
     expect(state.format).toBe("mystic");
+    expect(state.players[0].deck.length).toBe(180);
+  });
+
+  it("creates a foundry state with foundry expansion", () => {
+    const state = createInitialState({ format: "foundry" });
+    expect(state.format).toBe("foundry");
     expect(state.players[0].deck.length).toBe(180);
   });
 
@@ -136,6 +143,17 @@ describe("utils", () => {
     expect(counts.amethyst).toBe(5);
     expect(counts.ash).toBe(5);
     expect(counts.ember).toBe(5);
+  });
+
+  it("createDeck builds foundry counts", () => {
+    const deck = createDeck(foundryRuleset);
+    const counts = countCards(deck, foundryRuleset.displayOrder);
+    expect(deck.length).toBe(180);
+    expect(counts.prospector).toBe(5);
+    expect(counts.alloy).toBe(5);
+    expect(counts.assayer).toBe(5);
+    expect(counts.smelter).toBe(5);
+    expect(counts.refiner).toBe(5);
   });
 
   it("createDeck builds minted counts", () => {

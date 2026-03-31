@@ -197,6 +197,44 @@ describe("cpu", () => {
     expect(summary.trades[0].effectId).toBe("ember_next_turn_trade_block");
   });
 
+  it("cpu tutors refiner from assayer in foundry format", () => {
+    const state = createInitialState({
+      mode: "cpu",
+      format: "foundry",
+      playerNames: ["You", "CPU"],
+    });
+    state.currentPlayer = 1;
+    state.cpu = { difficulty: "medium" };
+    const cpu = state.players[1];
+    cpu.archive = ["assayer", "bronze"];
+    cpu.deck = ["refiner", "smelter", "bronze"];
+
+    const summary = executeCpuTurn(state, { difficulty: "medium", cpuIndex: 1 });
+
+    expect(summary.trades[0].recipeId).toBe("trade_assayer");
+    expect(summary.trades[0].choiceType).toBe("bronze");
+    expect(summary.trades[0].rewardType).toBe("refiner");
+  });
+
+  it("cpu reports prospector dig results in foundry format", () => {
+    const state = createInitialState({
+      mode: "cpu",
+      format: "foundry",
+      playerNames: ["You", "CPU"],
+    });
+    state.currentPlayer = 1;
+    state.cpu = { difficulty: "easy" };
+    const cpu = state.players[1];
+    cpu.archive = ["prospector", "bronze"];
+    cpu.deck = ["gold", "bronze"];
+
+    const summary = executeCpuTurn(state, { difficulty: "easy", cpuIndex: 1 });
+
+    expect(summary.trades[0].recipeId).toBe("trade_prospector");
+    expect(summary.trades[0].rewardType).toBe("gold");
+    expect(summary.trades[0].digDiscardedCount).toBe(1);
+  });
+
   it("cpu falls back to core when minted format is requested", () => {
     const state = createInitialState({
       mode: "cpu",

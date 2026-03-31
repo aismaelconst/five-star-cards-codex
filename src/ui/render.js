@@ -292,6 +292,7 @@ function updateHowToPlay(state, elements) {
   const isExpanded = state.format === "expanded";
   const isAncient = state.format === "ancient";
   const isMystic = state.format === "mystic";
+  const isFoundry = state.format === "foundry";
   const expansionRules = [];
   if (isExpanded) {
     expansionRules.push("Gems: Ruby + Emerald + Sapphire → tutor any card (shuffle).");
@@ -324,6 +325,17 @@ function updateHowToPlay(state, elements) {
       "Ember: trade itself to prevent opponent trades on their next turn (once per turn)."
     );
   }
+  if (isFoundry) {
+    expansionRules.push(
+      "Prospector: trade itself with 1 bronze to dig until the first non-bronze card."
+    );
+    expansionRules.push("Alloy: counts as 1 bronze or 1 silver in archive trades.");
+    expansionRules.push(
+      "Assayer: trade itself with 1 non-gold to tutor a Foundry card into hand (shuffle)."
+    );
+    expansionRules.push("Smelter: trade itself with 3 bronze to tutor 1 silver into hand.");
+    expansionRules.push("Refiner: trade itself with 3 silver to tutor 1 gold into hand.");
+  }
 
   if (elements.expansionRules) {
     if (expansionRules.length === 0) {
@@ -350,6 +362,9 @@ function updateHowToPlay(state, elements) {
     }
     if (isMystic) {
       legendTypes.push("pearl", "obsidian", "amethyst", "ash", "ember");
+    }
+    if (isFoundry) {
+      legendTypes.push("prospector", "alloy", "assayer", "smelter", "refiner");
     }
     elements.cardLegend.innerHTML = "";
     legendTypes.forEach((type) => {
@@ -472,6 +487,7 @@ export function renderApp(state, elements, handlers) {
   const isExpanded = state.format === "expanded";
   const isAncient = state.format === "ancient";
   const isMystic = state.format === "mystic";
+  const isFoundry = state.format === "foundry";
   if (elements.tradeGems) {
     elements.tradeGems.hidden = !isExpanded;
     elements.tradeGems.disabled =
@@ -527,6 +543,29 @@ export function renderApp(state, elements, handlers) {
     elements.tradeEmber.disabled =
       !isMystic || !inMainPhase || !turnGate || !canInitiateTrade(state, player, "trade_ember");
   }
+  if (elements.tradeProspector) {
+    elements.tradeProspector.hidden = !isFoundry;
+    elements.tradeProspector.disabled =
+      !isFoundry ||
+      !inMainPhase ||
+      !turnGate ||
+      !canInitiateTrade(state, player, "trade_prospector");
+  }
+  if (elements.tradeAssayer) {
+    elements.tradeAssayer.hidden = !isFoundry;
+    elements.tradeAssayer.disabled =
+      !isFoundry || !inMainPhase || !turnGate || !canInitiateTrade(state, player, "trade_assayer");
+  }
+  if (elements.tradeSmelter) {
+    elements.tradeSmelter.hidden = !isFoundry;
+    elements.tradeSmelter.disabled =
+      !isFoundry || !inMainPhase || !turnGate || !canInitiateTrade(state, player, "trade_smelter");
+  }
+  if (elements.tradeRefiner) {
+    elements.tradeRefiner.hidden = !isFoundry;
+    elements.tradeRefiner.disabled =
+      !isFoundry || !inMainPhase || !turnGate || !canInitiateTrade(state, player, "trade_refiner");
+  }
   if (elements.openTradesModal) {
     const possibleTrades = [
       "trade_bronze",
@@ -535,6 +574,9 @@ export function renderApp(state, elements, handlers) {
       ...(isAncient ? ["trade_ancients_archive"] : []),
       ...(isMystic
         ? ["trade_pearl", "trade_obsidian", "trade_amethyst", "trade_ash", "trade_ember"]
+        : []),
+      ...(isFoundry
+        ? ["trade_prospector", "trade_assayer", "trade_smelter", "trade_refiner"]
         : []),
     ];
     const hasAvailableTrade =

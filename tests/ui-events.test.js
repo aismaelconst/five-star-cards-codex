@@ -24,6 +24,7 @@ describe("ui/events", () => {
       formatExpanded: makeButton("formatExpanded"),
       formatAncient: makeButton("formatAncient"),
       formatMystic: makeButton("formatMystic"),
+      formatFoundry: makeButton("formatFoundry"),
       cpuEasy: makeButton("cpuEasy"),
       cpuMedium: makeButton("cpuMedium"),
       cpuHard: makeButton("cpuHard"),
@@ -31,6 +32,7 @@ describe("ui/events", () => {
       hostFormatExpanded: makeButton("hostFormatExpanded"),
       hostFormatAncient: makeButton("hostFormatAncient"),
       hostFormatMystic: makeButton("hostFormatMystic"),
+      hostFormatFoundry: makeButton("hostFormatFoundry"),
       createRoom: makeButton("createRoom"),
       chooseCreate: makeButton("chooseCreate"),
       chooseJoin: makeButton("chooseJoin"),
@@ -44,6 +46,10 @@ describe("ui/events", () => {
       tradeSilver: makeButton("tradeSilver"),
       tradeGems: makeButton("tradeGems"),
       tradePlatinum: makeButton("tradePlatinum"),
+      tradeProspector: makeButton("tradeProspector"),
+      tradeAssayer: makeButton("tradeAssayer"),
+      tradeSmelter: makeButton("tradeSmelter"),
+      tradeRefiner: makeButton("tradeRefiner"),
       tradeAncientsArchive: makeButton("tradeAncientsArchive"),
       tradePearl: makeButton("tradePearl"),
       tradeObsidian: makeButton("tradeObsidian"),
@@ -91,6 +97,7 @@ describe("ui/events", () => {
       selectExpandedFormat: vi.fn(),
       selectAncientFormat: vi.fn(),
       selectMysticFormat: vi.fn(),
+      selectFoundryFormat: vi.fn(),
       selectCpuEasy: vi.fn(),
       selectCpuMedium: vi.fn(),
       selectCpuHard: vi.fn(),
@@ -98,6 +105,7 @@ describe("ui/events", () => {
       selectHostFormatExpanded: vi.fn(),
       selectHostFormatAncient: vi.fn(),
       selectHostFormatMystic: vi.fn(),
+      selectHostFormatFoundry: vi.fn(),
       chooseCreate: vi.fn(),
       chooseJoin: vi.fn(),
       backToChoice: vi.fn(),
@@ -147,6 +155,7 @@ describe("ui/events", () => {
     elements.formatExpanded.click();
     elements.formatAncient.click();
     elements.formatMystic.click();
+    elements.formatFoundry.click();
     elements.cpuEasy.click();
     elements.cpuMedium.click();
     elements.cpuHard.click();
@@ -154,6 +163,7 @@ describe("ui/events", () => {
     elements.hostFormatExpanded.click();
     elements.hostFormatAncient.click();
     elements.hostFormatMystic.click();
+    elements.hostFormatFoundry.click();
     elements.chooseCreate.click();
     elements.chooseJoin.click();
     elements.backToChoiceHost.click();
@@ -167,6 +177,10 @@ describe("ui/events", () => {
     elements.tradeSilver.click();
     elements.tradeGems.click();
     elements.tradePlatinum.click();
+    elements.tradeProspector.click();
+    elements.tradeAssayer.click();
+    elements.tradeSmelter.click();
+    elements.tradeRefiner.click();
     elements.tradeAncientsArchive.click();
     elements.tradePearl.click();
     elements.tradeObsidian.click();
@@ -212,6 +226,7 @@ describe("ui/events", () => {
     expect(handlers.selectExpandedFormat).toHaveBeenCalled();
     expect(handlers.selectAncientFormat).toHaveBeenCalled();
     expect(handlers.selectMysticFormat).toHaveBeenCalled();
+    expect(handlers.selectFoundryFormat).toHaveBeenCalled();
     expect(handlers.selectCpuEasy).toHaveBeenCalled();
     expect(handlers.selectCpuMedium).toHaveBeenCalled();
     expect(handlers.selectCpuHard).toHaveBeenCalled();
@@ -219,6 +234,7 @@ describe("ui/events", () => {
     expect(handlers.selectHostFormatExpanded).toHaveBeenCalled();
     expect(handlers.selectHostFormatAncient).toHaveBeenCalled();
     expect(handlers.selectHostFormatMystic).toHaveBeenCalled();
+    expect(handlers.selectHostFormatFoundry).toHaveBeenCalled();
     expect(handlers.chooseCreate).toHaveBeenCalled();
     expect(handlers.chooseJoin).toHaveBeenCalled();
     expect(handlers.backToChoice).toHaveBeenCalled();
@@ -230,6 +246,10 @@ describe("ui/events", () => {
     expect(handlers.trade).toHaveBeenCalledWith("trade_silver");
     expect(handlers.trade).toHaveBeenCalledWith("trade_gem_set");
     expect(handlers.trade).toHaveBeenCalledWith("trade_platinum");
+    expect(handlers.trade).toHaveBeenCalledWith("trade_prospector");
+    expect(handlers.trade).toHaveBeenCalledWith("trade_assayer");
+    expect(handlers.trade).toHaveBeenCalledWith("trade_smelter");
+    expect(handlers.trade).toHaveBeenCalledWith("trade_refiner");
     expect(handlers.trade).toHaveBeenCalledWith("trade_ancients_archive");
     expect(handlers.trade).toHaveBeenCalledWith("trade_pearl");
     expect(handlers.trade).toHaveBeenCalledWith("trade_obsidian");

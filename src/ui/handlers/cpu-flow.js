@@ -33,6 +33,11 @@ export function createCpuFlow({
       const reward = trade.rewardType ? `found ${trade.rewardType}` : "deck exhausted";
       return `Platinum dig${woodNote}: discarded ${discarded} bronze/silver, ${reward}.`;
     }
+    if (trade.recipeId === "trade_prospector") {
+      const discarded = typeof trade.digDiscardedCount === "number" ? trade.digDiscardedCount : 0;
+      const reward = trade.rewardType ? `found ${trade.rewardType}` : "deck exhausted";
+      return `Prospector dig${woodNote}: discarded ${discarded} bronze, ${reward}.`;
+    }
     if (trade.recipeId === "trade_gem_set") {
       const reward = trade.rewardType ? `selected ${trade.rewardType}` : "no reward";
       return `Gem tutor${woodNote}: ${reward}.`;

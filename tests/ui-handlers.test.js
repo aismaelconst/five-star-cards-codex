@@ -61,6 +61,7 @@ function makeElements() {
     formatExpanded: document.createElement("button"),
     formatAncient: document.createElement("button"),
     formatMystic: document.createElement("button"),
+    formatFoundry: document.createElement("button"),
     cpuEasy: document.createElement("button"),
     cpuMedium: document.createElement("button"),
     cpuHard: document.createElement("button"),
@@ -71,6 +72,7 @@ function makeElements() {
     hostFormatExpanded: document.createElement("button"),
     hostFormatAncient: document.createElement("button"),
     hostFormatMystic: document.createElement("button"),
+    hostFormatFoundry: document.createElement("button"),
     cpuMode: document.createElement("button"),
     openHowToPlay: document.createElement("button"),
     closeHowToPlay: document.createElement("button"),
@@ -510,6 +512,16 @@ describe("ui/handlers", () => {
     expect(state.players[0].deck.length + state.players[0].hand.length).toBe(180);
   });
 
+  it("selects foundry format in offline mode", () => {
+    const handlers = createHandlers(state, elements, onWinner);
+    handlers.selectOfflineMode();
+
+    handlers.selectFoundryFormat();
+
+    expect(state.format).toBe("foundry");
+    expect(state.players[0].deck.length + state.players[0].hand.length).toBe(180);
+  });
+
   it("keeps online mode disabled from mode picker", () => {
     const handlers = createHandlers(state, elements, onWinner);
 
@@ -580,6 +592,8 @@ describe("ui/handlers", () => {
     expect(state.format).toBe("ancient");
     handlers.selectHostFormatMystic();
     expect(state.format).toBe("mystic");
+    handlers.selectHostFormatFoundry();
+    expect(state.format).toBe("foundry");
   });
 
   it("opens amethyst target overlay and confirms target selection", () => {

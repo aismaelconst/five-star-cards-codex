@@ -61,6 +61,16 @@ const MYSTIC_DISPLAY_ORDER = [
   "ash",
   "ember",
 ];
+const FOUNDRY_DISPLAY_ORDER = [
+  "bronze",
+  "silver",
+  "gold",
+  "prospector",
+  "alloy",
+  "assayer",
+  "smelter",
+  "refiner",
+];
 const MINTED_DISPLAY_ORDER = [
   "bronze",
   "silver",
@@ -244,6 +254,63 @@ export const mysticRuleset = {
     amethyst: 5,
     ash: 5,
     ember: 5,
+  },
+};
+
+export const foundryRuleset = {
+  ...baseRuleset,
+  displayOrder: FOUNDRY_DISPLAY_ORDER,
+  tradeRecipes: {
+    ...baseRuleset.tradeRecipes,
+    trade_prospector: {
+      cost: { prospector: 1, bronze: 1 },
+      reward: "dig_non_bronze",
+    },
+    trade_assayer: {
+      cost: { assayer: 1 },
+      choiceCost: { count: 1, pool: "non_gold" },
+      reward: "any",
+      rewardOptions: ["prospector", "alloy", "smelter", "refiner"],
+    },
+    trade_smelter: {
+      cost: { smelter: 1, bronze: 3 },
+      reward: "silver",
+    },
+    trade_refiner: {
+      cost: { refiner: 1, silver: 3 },
+      reward: "gold",
+    },
+  },
+  cardTypes: {
+    ...baseRuleset.cardTypes,
+    prospector: {
+      tier: "prospector",
+      draw: 0,
+    },
+    alloy: {
+      tier: "alloy",
+      draw: 0,
+    },
+    assayer: {
+      tier: "assayer",
+      draw: 0,
+    },
+    smelter: {
+      tier: "smelter",
+      draw: 0,
+    },
+    refiner: {
+      tier: "refiner",
+      draw: 0,
+    },
+  },
+  deckCounts: {
+    ...baseRuleset.deckCounts,
+    prospector: 5,
+    alloy: 5,
+    assayer: 5,
+    smelter: 5,
+    refiner: 5,
   },
 };
 

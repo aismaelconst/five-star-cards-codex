@@ -28,6 +28,9 @@ function formatTradeBullet(recipe, type, ruleset) {
   if (recipe.reward === "dig_non_bronze_silver") {
     return "• Trade: Platinum + Bronze + Silver → dig until non bronze/silver; discard bronze/silver; add first non bronze/silver";
   }
+  if (recipe.reward === "dig_non_bronze") {
+    return "• Trade: Prospector + Bronze → dig until non bronze; discard bronze; add first non bronze";
+  }
   const parts = [];
   if (recipe.cost && Object.keys(recipe.cost).length > 0) {
     parts.push(formatCost(recipe.cost, false));
@@ -63,10 +66,10 @@ function formatTradeBullet(recipe, type, ruleset) {
     let label = "cards";
     if (allowed.length > 0) {
       const displayOrder = ruleset?.displayOrder ?? [];
-      const nonGold = displayOrder.filter((type) => type !== "gold");
+      const nonGold = displayOrder.filter((entry) => entry !== "gold");
       const allowedSet = new Set(allowed);
       const isAllNonGold =
-        nonGold.length > 0 && nonGold.every((type) => allowedSet.has(type));
+        nonGold.length > 0 && nonGold.every((entry) => allowedSet.has(entry));
       label = isAllNonGold ? "non-gold cards" : allowed.join("/");
     }
     reward = `archive ${range} ${label} from hand`;
@@ -154,6 +157,9 @@ export function getCardTooltip(type, ruleset) {
     lines.push("• Counts as 2 silver in archive trades.");
   }
   if (type === "ledger") {
+    lines.push("• Counts as 1 bronze or 1 silver in archive trades.");
+  }
+  if (type === "alloy") {
     lines.push("• Counts as 1 bronze or 1 silver in archive trades.");
   }
   if (type === "gold") {

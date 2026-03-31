@@ -10,6 +10,10 @@ import {
 
 const EASY_TRADE_PRIORITY = [
   "trade_silver",
+  "trade_refiner",
+  "trade_smelter",
+  "trade_assayer",
+  "trade_prospector",
   "trade_pearl",
   "trade_obsidian",
   "trade_amethyst",
@@ -25,6 +29,10 @@ const EASY_TRADE_PRIORITY = [
 ];
 const MEDIUM_TRADE_PRIORITY = [
   "trade_silver",
+  "trade_refiner",
+  "trade_smelter",
+  "trade_assayer",
+  "trade_prospector",
   "trade_pearl",
   "trade_obsidian",
   "trade_amethyst",
@@ -45,6 +53,11 @@ const MEDIUM_PLAY_PRIORITY = [
   "gold",
   "silver",
   "bronze",
+  "refiner",
+  "smelter",
+  "assayer",
+  "prospector",
+  "alloy",
   "hallmark",
   "mint",
   "ledger",
@@ -72,6 +85,11 @@ const CARD_VALUE = {
   gold: 100,
   silver: 30,
   bronze: 10,
+  refiner: 24,
+  smelter: 20,
+  assayer: 18,
+  prospector: 16,
+  alloy: 14,
   ingot: 22,
   sterling: 32,
   pearl: 20,
@@ -124,6 +142,11 @@ function getTutorPriority(state, difficulty, allowed) {
       "gold",
       "silver",
       "platinum",
+      "refiner",
+      "smelter",
+      "assayer",
+      "prospector",
+      "alloy",
       "hallmark",
       "mint",
       "ledger",
@@ -410,6 +433,19 @@ function expectedPlatinumRewardValue(deckCounts) {
   return weighted / total;
 }
 
+function expectedProspectorRewardValue(deckCounts) {
+  const entries = Object.entries(deckCounts).filter(
+    ([type, count]) => count > 0 && type !== "bronze"
+  );
+  const total = entries.reduce((sum, [, count]) => sum + count, 0);
+  if (total === 0) return 0;
+  const weighted = entries.reduce(
+    (sum, [type, count]) => sum + getCardValue(type) * count,
+    0
+  );
+  return weighted / total;
+}
+
 function goldWinBonus(state, player, extraGold) {
   const displayOrder = state.ruleset.displayOrder ?? EASY_PLAY_PRIORITY;
   const archiveCounts = countByType(player.archive, displayOrder);
@@ -431,6 +467,8 @@ function scoreTradePayload(state, player, recipe, payload) {
     rewardValue = rewardType ? getCardValue(rewardType) : 0;
   } else if (recipe.reward === "dig_non_bronze_silver") {
     rewardValue = expectedPlatinumRewardValue(deckCounts);
+  } else if (recipe.reward === "dig_non_bronze") {
+    rewardValue = expectedProspectorRewardValue(deckCounts);
   } else if (typeof recipe.reward === "string") {
     rewardType = recipe.reward;
     rewardValue = getCardValue(recipe.reward);
@@ -495,6 +533,11 @@ function scoreTradePayload(state, player, recipe, payload) {
           "turquoise",
           "lapis_lazuli",
           "carnelian",
+          "prospector",
+          "alloy",
+          "assayer",
+          "smelter",
+          "refiner",
           "pearl",
           "obsidian",
           "amethyst",

@@ -37,6 +37,9 @@ export function wireEvents(elements, handlers) {
   if (elements.formatMystic) {
     elements.formatMystic.addEventListener("click", handlers.selectMysticFormat);
   }
+  if (elements.formatFoundry) {
+    elements.formatFoundry.addEventListener("click", handlers.selectFoundryFormat);
+  }
   if (elements.cpuEasy) {
     elements.cpuEasy.addEventListener("click", handlers.selectCpuEasy);
   }
@@ -58,6 +61,9 @@ export function wireEvents(elements, handlers) {
   if (elements.hostFormatMystic) {
     elements.hostFormatMystic.addEventListener("click", handlers.selectHostFormatMystic);
   }
+  if (elements.hostFormatFoundry) {
+    elements.hostFormatFoundry.addEventListener("click", handlers.selectHostFormatFoundry);
+  }
   elements.chooseCreate.addEventListener("click", handlers.chooseCreate);
   elements.chooseJoin.addEventListener("click", handlers.chooseJoin);
   elements.backToChoiceHost.addEventListener("click", handlers.backToChoice);
@@ -69,6 +75,18 @@ export function wireEvents(elements, handlers) {
   elements.copyRoomCode.addEventListener("click", handlers.copyRoomCode);
   elements.tradeBronze.addEventListener("click", () => handlers.trade("trade_bronze"));
   elements.tradeSilver.addEventListener("click", () => handlers.trade("trade_silver"));
+  if (elements.tradeProspector) {
+    elements.tradeProspector.addEventListener("click", () => handlers.trade("trade_prospector"));
+  }
+  if (elements.tradeAssayer) {
+    elements.tradeAssayer.addEventListener("click", () => handlers.trade("trade_assayer"));
+  }
+  if (elements.tradeSmelter) {
+    elements.tradeSmelter.addEventListener("click", () => handlers.trade("trade_smelter"));
+  }
+  if (elements.tradeRefiner) {
+    elements.tradeRefiner.addEventListener("click", () => handlers.trade("trade_refiner"));
+  }
   if (elements.tradeGems) {
     elements.tradeGems.addEventListener("click", () => handlers.trade("trade_gem_set"));
   }

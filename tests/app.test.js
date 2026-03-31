@@ -54,6 +54,10 @@ function setupDom() {
     <button id="tradeSilver"></button>
     <button id="tradeGems"></button>
     <button id="tradePlatinum"></button>
+    <button id="tradeProspector"></button>
+    <button id="tradeAssayer"></button>
+    <button id="tradeSmelter"></button>
+    <button id="tradeRefiner"></button>
     <button id="tradeAncientsArchive"></button>
     <button id="tradePearl"></button>
     <button id="tradeObsidian"></button>
@@ -93,6 +97,7 @@ function setupDom() {
     <button id="formatExpanded"></button>
     <button id="formatAncient"></button>
     <button id="formatMystic"></button>
+    <button id="formatFoundry"></button>
     <button id="formatMinted"></button>
     <div id="cpuOverlay"></div>
     <button id="cpuEasy"></button>
@@ -105,6 +110,7 @@ function setupDom() {
     <button id="hostFormatExpanded"></button>
     <button id="hostFormatAncient"></button>
     <button id="hostFormatMystic"></button>
+    <button id="hostFormatFoundry"></button>
     <button id="hostFormatMinted"></button>
     <input id="playerNameInput" />
     <input id="roomCodeInput" />

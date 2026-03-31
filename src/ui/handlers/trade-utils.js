@@ -10,6 +10,18 @@ export function formatPlatinumMessage(prefix, event) {
   return `${prefix}${woodNote}.${discarded}${reward}`;
 }
 
+function formatProspectorMessage(prefix, event) {
+  const woodNote =
+    event.useWood && event.substituteType
+      ? ` (wood replaced ${event.substituteType})`
+      : "";
+  const discardedCount =
+    typeof event.digDiscardedCount === "number" ? event.digDiscardedCount : 0;
+  const discarded = ` Discarded ${discardedCount} bronze.`;
+  const reward = event.rewardType ? ` Found ${event.rewardType}.` : " Deck exhausted.";
+  return `${prefix}${woodNote}.${discarded}${reward}`;
+}
+
 function titleCase(type) {
   if (!type) return "";
   return type
@@ -26,6 +38,9 @@ function formatWoodNote(event) {
 export function formatTradeToast(recipeId, recipe, event = {}) {
   if (recipeId === "trade_platinum") {
     return formatPlatinumMessage("Platinum dig", event);
+  }
+  if (recipeId === "trade_prospector") {
+    return formatProspectorMessage("Prospector dig", event);
   }
   const woodNote = formatWoodNote(event);
   if (recipeId === "trade_gem_set") {

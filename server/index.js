@@ -30,7 +30,13 @@ const CONTENT_TYPES = {
 };
 
 export function resolveRequestedFormat(format) {
-  if (format === "expanded" || format === "ancient" || format === "mystic" || format === "core") {
+  if (
+    format === "expanded" ||
+    format === "ancient" ||
+    format === "mystic" ||
+    format === "foundry" ||
+    format === "core"
+  ) {
     return format;
   }
   return "core";
