@@ -1,4 +1,5 @@
 import { countCards } from "../shared/utils.js";
+import { getPlayerRuleset } from "./state.js";
 import {
   ActionTypes,
   applyAction,
@@ -133,10 +134,16 @@ function getPlayPriority(difficulty) {
   return EASY_PLAY_PRIORITY;
 }
 
-function getTutorPriority(state, difficulty, allowed) {
+function getRuleset(state, playerOrIndex = state.currentPlayer) {
+  const playerIndex =
+    typeof playerOrIndex === "number" ? playerOrIndex : getPlayerIndex(state, playerOrIndex);
+  return getPlayerRuleset(state, playerIndex === -1 ? state.currentPlayer : playerIndex);
+}
+
+function getTutorPriority(state, player, difficulty, allowed) {
   let priority;
   if (difficulty === "easy") {
-    priority = state.ruleset.displayOrder ?? EASY_PLAY_PRIORITY;
+    priority = getRuleset(state, player).displayOrder ?? EASY_PLAY_PRIORITY;
   } else {
     priority = [
       "gold",
@@ -189,13 +196,14 @@ function resolvePoolTypes(pool, displayOrder) {
 
 function chooseHandArchiveSelection(state, player, recipe) {
   if (!recipe?.reward || recipe.reward.type !== "archive_hand") return null;
+  const ruleset = getRuleset(state, player);
   const allowed = recipe.reward.allowed ?? [];
   const min = recipe.reward.min ?? 1;
   const max = recipe.reward.max ?? min;
-  const counts = countByType(player.hand, state.ruleset.displayOrder);
+  const counts = countByType(player.hand, ruleset.displayOrder);
   const eligible = allowed.reduce((sum, type) => sum + (counts[type] ?? 0), 0);
   if (eligible < min) return null;
-  const cardDefs = state.ruleset.cardTypes ?? {};
+  const cardDefs = ruleset.cardTypes ?? {};
   const order = [...allowed].sort((a, b) => {
     const drawA = cardDefs[a]?.draw ?? 0;
     const drawB = cardDefs[b]?.draw ?? 0;
@@ -266,7 +274,8 @@ function pickHighestValueType(counts) {
 function chooseAmethystTargetType(state, player) {
   const opponent = getOpponent(state, player);
   if (!opponent) return null;
-  const counts = countCards(opponent.archive, state.ruleset.displayOrder);
+  const opponentRuleset = getRuleset(state, opponent);
+  const counts = countCards(opponent.archive, opponentRuleset.displayOrder);
   if ((counts.gold ?? 0) > 0) return "gold";
   if ((counts.silver ?? 0) > 0) return "silver";
   return pickHighestValueType(counts);
@@ -317,7 +326,8 @@ function pickBestRewardByValue(deckCounts) {
 }
 
 function pickTutorReward(state, player, difficulty, allowed) {
-  const deckCounts = countCards(player.deck, state.ruleset.displayOrder);
+  const ruleset = getRuleset(state, player);
+  const deckCounts = countCards(player.deck, ruleset.displayOrder);
   const allowedSet = Array.isArray(allowed) && allowed.length > 0 ? new Set(allowed) : null;
   const filteredCounts = allowedSet
     ? Object.fromEntries(
@@ -327,7 +337,7 @@ function pickTutorReward(state, player, difficulty, allowed) {
   if (difficulty === "hard") {
     return pickBestRewardByValue(filteredCounts);
   }
-  const priority = getTutorPriority(state, difficulty, allowed);
+  const priority = getTutorPriority(state, player, difficulty, allowed);
   return priority.find((type) => (filteredCounts[type] ?? 0) > 0) ?? null;
 }
 
@@ -348,7 +358,7 @@ function pickArchiveReward(deckCounts) {
 
 function choosePoolTypesForRecipe(state, player, recipe) {
   if (!recipe?.poolCost) return [];
-  const displayOrder = state.ruleset.displayOrder ?? [];
+  const displayOrder = getRuleset(state, player).displayOrder ?? [];
   const allowed = resolvePoolTypes(recipe.poolCost.pool, displayOrder);
   const archiveCounts = countByType(player.archive, displayOrder);
   const available = allowed.filter((type) => (archiveCounts[type] ?? 0) > 0);
@@ -447,7 +457,8 @@ function expectedProspectorRewardValue(deckCounts) {
 }
 
 function goldWinBonus(state, player, extraGold) {
-  const displayOrder = state.ruleset.displayOrder ?? EASY_PLAY_PRIORITY;
+  const ruleset = getRuleset(state, player);
+  const displayOrder = ruleset.displayOrder ?? EASY_PLAY_PRIORITY;
   const archiveCounts = countByType(player.archive, displayOrder);
   const activeCounts = countByType(player.active, displayOrder);
   const handCounts = countByType(player.hand, displayOrder);
@@ -456,11 +467,12 @@ function goldWinBonus(state, player, extraGold) {
     (activeCounts.gold ?? 0) +
     (handCounts.gold ?? 0) +
     extraGold;
-  return totalGold >= state.ruleset.winCondition.goldInArchive ? WIN_BONUS : 0;
+  return totalGold >= (ruleset.winCondition?.goldInArchive ?? 5) ? WIN_BONUS : 0;
 }
 
 function scoreTradePayload(state, player, recipe, payload) {
-  const deckCounts = countCards(player.deck, state.ruleset.displayOrder);
+  const ruleset = getRuleset(state, player);
+  const deckCounts = countCards(player.deck, ruleset.displayOrder);
   let rewardType = payload.rewardType;
   let rewardValue = 0;
   if (recipe.reward === "any") {
@@ -503,7 +515,7 @@ function scoreTradePayload(state, player, recipe, payload) {
     const playerIndex = getPlayerIndex(state, player);
     if (recipe.reward.id === "pearl_extra_play") {
       if (playerIndex !== -1 && player.hand.length > getPlayerPlayLimit(state, playerIndex)) {
-        const handCounts = countCards(player.hand, state.ruleset.displayOrder);
+        const handCounts = countCards(player.hand, ruleset.displayOrder);
         const bestPlayable = pickHighestValueType(handCounts);
         rewardValue = bestPlayable ? getCardValue(bestPlayable) : DRAW_VALUE;
       } else {
@@ -515,14 +527,14 @@ function scoreTradePayload(state, player, recipe, payload) {
       rewardValue = payload.targetType ? getCardValue(payload.targetType) : 0;
     } else if (recipe.reward.id === "ash_random_hand_to_deck") {
       if (opponent) {
-        const handCounts = countCards(opponent.hand, state.ruleset.displayOrder);
+        const handCounts = countCards(opponent.hand, getRuleset(state, opponent).displayOrder);
         rewardValue = averageValueFromCounts(handCounts);
       } else {
         rewardValue = 0;
       }
     } else if (recipe.reward.id === "ember_next_turn_trade_block") {
       if (opponent) {
-        const deckCounts = countCards(opponent.deck, state.ruleset.displayOrder);
+        const deckCounts = countCards(opponent.deck, getRuleset(state, opponent).displayOrder);
         const likelyTradeTargets = [
           "silver",
           "gold",
@@ -586,7 +598,7 @@ function chooseChoiceCostType(state, player, recipeId, payload) {
 }
 
 function finalizeTradePayload(state, player, recipeId, payload) {
-  const recipe = state.ruleset.tradeRecipes?.[recipeId];
+  const recipe = getRuleset(state, player).tradeRecipes?.[recipeId];
   if (!recipe) return null;
   const finalized = { ...payload };
   if (recipe.choiceCost) {
@@ -600,7 +612,7 @@ function finalizeTradePayload(state, player, recipeId, payload) {
     finalized.poolTypes = poolTypes;
   }
   if (recipe.reward?.type === "archive" && !finalized.rewardType) {
-    const deckCounts = countCards(player.deck, state.ruleset.displayOrder);
+    const deckCounts = countCards(player.deck, getRuleset(state, player).displayOrder);
     const rewardType = pickArchiveReward(deckCounts);
     if (!rewardType) return null;
     finalized.rewardType = rewardType;
@@ -620,7 +632,7 @@ function finalizeTradePayload(state, player, recipeId, payload) {
 }
 
 function buildTradePayload(state, player, recipeId, difficulty) {
-  const recipe = state.ruleset.tradeRecipes?.[recipeId];
+  const recipe = getRuleset(state, player).tradeRecipes?.[recipeId];
   if (!recipe) return null;
   if (recipe.reward?.type === "archive_hand" && player.hand.length <= HAND_DECLUTTER_THRESHOLD) {
     return null;
@@ -679,17 +691,18 @@ function buildTradePayload(state, player, recipeId, difficulty) {
 }
 
 function chooseHardTrade(state, player) {
-  const recipes = Object.entries(state.ruleset.tradeRecipes ?? {});
-  if (state.ruleset.tradeRecipes?.trade_silver) {
+  const ruleset = getRuleset(state, player);
+  const recipes = Object.entries(ruleset.tradeRecipes ?? {});
+  if (ruleset.tradeRecipes?.trade_silver) {
     const forcedSilver = buildTradePayload(state, player, "trade_silver", "hard");
     if (forcedSilver) return forcedSilver;
   }
-  if (state.ruleset.tradeRecipes?.trade_bronze) {
+  if (ruleset.tradeRecipes?.trade_bronze) {
     const forcedBronze = buildTradePayload(state, player, "trade_bronze", "hard");
     if (forcedBronze) return forcedBronze;
   }
   const candidates = [];
-  const deckCounts = countCards(player.deck, state.ruleset.displayOrder);
+  const deckCounts = countCards(player.deck, ruleset.displayOrder);
   recipes.forEach(([recipeId, recipe]) => {
     const rewardType =
       recipe.reward === "any"
@@ -805,8 +818,9 @@ function completesPlatinumSet(counts) {
 }
 
 function scorePlay(state, player, type) {
-  const displayOrder = state.ruleset.displayOrder ?? EASY_PLAY_PRIORITY;
-  const draw = state.ruleset.cardTypes?.[type]?.draw ?? 0;
+  const ruleset = getRuleset(state, player);
+  const displayOrder = ruleset.displayOrder ?? EASY_PLAY_PRIORITY;
+  const draw = ruleset.cardTypes?.[type]?.draw ?? 0;
   const deckCounts = countByType(player.deck, displayOrder);
   const archiveCounts = countByType(player.archive, displayOrder);
   const activeCounts = countByType(player.active, displayOrder);
@@ -817,7 +831,7 @@ function scorePlay(state, player, type) {
   projected[type] = (projected[type] ?? 0) + 1;
 
   let score = draw * DRAW_VALUE;
-  if (type === "gold" && (projected.gold ?? 0) >= state.ruleset.winCondition.goldInArchive) {
+  if (type === "gold" && (projected.gold ?? 0) >= (ruleset.winCondition?.goldInArchive ?? 5)) {
     score += WIN_BONUS;
   }
   if (["ruby", "emerald", "sapphire"].includes(type) && completesGemSet(projected, type)) {
@@ -834,12 +848,13 @@ function scorePlay(state, player, type) {
 
 export function chooseCpuPlays(state, player, difficulty) {
   const playerIndex = getPlayerIndex(state, player);
+  const ruleset = getRuleset(state, player);
   const maxPlays = getPlayerPlayLimit(
     state,
     playerIndex === -1 ? state.currentPlayer : playerIndex
   );
   if (difficulty === "hard") {
-    const displayOrder = state.ruleset.displayOrder ?? HARD_PLAY_PRIORITY;
+    const displayOrder = ruleset.displayOrder ?? HARD_PLAY_PRIORITY;
     const handCounts = countByType(player.hand, displayOrder);
     const entries = [];
     displayOrder.forEach((type) => {
@@ -871,8 +886,9 @@ export function chooseCpuPlays(state, player, difficulty) {
 function applyEmptyHandGuard(state, player, plays) {
   if (plays.length === 0) return plays;
   if (plays.length < player.hand.length) return plays;
+  const ruleset = getRuleset(state, player);
   const drawCount = plays.reduce((sum, type) => {
-    const draw = state.ruleset.cardTypes?.[type]?.draw ?? 0;
+    const draw = ruleset.cardTypes?.[type]?.draw ?? 0;
     return sum + draw;
   }, 0);
   if (drawCount > 0) return plays;
@@ -888,6 +904,7 @@ export function executeCpuTurn(state, options = {}) {
   }
   if (state.phase !== "main") return false;
   const player = state.players[cpuIndex];
+  const ruleset = getRuleset(state, cpuIndex);
   const summary = {
     trades: [],
     plays: [],
@@ -895,7 +912,7 @@ export function executeCpuTurn(state, options = {}) {
     winnerIndex: null,
   };
 
-  while (state.tradesThisTurn < state.ruleset.maxTrades) {
+  while (state.tradesThisTurn < (ruleset.maxTrades ?? 5)) {
     const payload = chooseCpuTrade(state, player, difficulty);
     if (!payload) break;
     const result = applyAction(state, { type: ActionTypes.TRADE, payload });
@@ -929,7 +946,7 @@ export function executeCpuTurn(state, options = {}) {
   if (state.phase === "confirm") {
     if (state.pendingArchive) {
       summary.archive = {
-        counts: countCards(state.pendingArchive.playedCards, state.ruleset.displayOrder),
+        counts: countCards(state.pendingArchive.playedCards, ruleset.displayOrder),
         drawCount: state.pendingArchive.drawCount,
       };
     }

@@ -1,12 +1,6 @@
 import { shuffle } from "../shared/utils.js";
 import { createDeck } from "./cards.js";
-import {
-  baseRuleset,
-  expandedRuleset,
-  ancientRuleset,
-  mysticRuleset,
-  foundryRuleset,
-} from "./ruleset.js";
+import { getRulesetForFormat, resolveFormat } from "./ruleset.js";
 
 function createTurnEffects(playerCount) {
   return {
@@ -31,35 +25,52 @@ export function createPlayerState(ruleset, playerId, name) {
   };
 }
 
+export function getPlayerFormat(state, playerIndex = state.currentPlayer ?? 0) {
+  if (playerIndex === 0) {
+    return resolveFormat(state.format ?? state.formatsByPlayer?.[0] ?? "core");
+  }
+  if (Array.isArray(state.formatsByPlayer) && state.formatsByPlayer[playerIndex]) {
+    return resolveFormat(state.formatsByPlayer[playerIndex]);
+  }
+  return resolveFormat(state.format ?? "core");
+}
+
+export function getPlayerRuleset(state, playerIndex = state.currentPlayer ?? 0) {
+  const playerFormat = getPlayerFormat(state, playerIndex);
+  const playerZeroFormat = getPlayerFormat(state, 0);
+  if (playerIndex === 0) {
+    return state.ruleset ?? getRulesetForFormat(playerFormat);
+  }
+  if (playerFormat === playerZeroFormat) {
+    return state.ruleset ?? getRulesetForFormat(playerFormat);
+  }
+  return getRulesetForFormat(playerFormat);
+}
+
 export function createInitialState(options = {}) {
-  const requestedFormat = options.format ?? "core";
-  const format =
-    requestedFormat === "expanded" ||
-    requestedFormat === "ancient" ||
-    requestedFormat === "mystic" ||
-    requestedFormat === "foundry" ||
-    requestedFormat === "core"
-      ? requestedFormat
-      : "core";
-  const ruleset =
-    options.ruleset ??
-    (format === "expanded"
-      ? expandedRuleset
-      : format === "ancient"
-        ? ancientRuleset
-        : format === "mystic"
-          ? mysticRuleset
-          : format === "foundry"
-            ? foundryRuleset
-            : baseRuleset);
+  const format = resolveFormat(options.format ?? "core");
+  const cpuFormat = resolveFormat(options.cpuFormat ?? format);
+  const ruleset = options.ruleset ?? getRulesetForFormat(format);
   const gameId = options.gameId ?? `game-${Date.now()}`;
   const playerIds = options.playerIds ?? ["player-1", "player-2"];
   const playerNames = options.playerNames ?? ["Player 1", "Player 2"];
   const mode = options.mode ?? null;
+  const formatsByPlayer = playerIds.map((_, index) => {
+    if (mode === "cpu" && index === 1) {
+      return cpuFormat;
+    }
+    return format;
+  });
+  const rulesetsByPlayer = playerIds.map((_, index) => {
+    if (index === 0) return ruleset;
+    if (formatsByPlayer[index] === format) return ruleset;
+    return getRulesetForFormat(formatsByPlayer[index]);
+  });
   return {
     gameId,
     ruleset,
     format,
+    formatsByPlayer,
     mode,
     cpu: {
       difficulty: null,
@@ -73,8 +84,8 @@ export function createInitialState(options = {}) {
       connection: "disconnected",
     },
     players: [
-      createPlayerState(ruleset, playerIds[0], playerNames[0]),
-      createPlayerState(ruleset, playerIds[1], playerNames[1]),
+      createPlayerState(rulesetsByPlayer[0], playerIds[0], playerNames[0]),
+      createPlayerState(rulesetsByPlayer[1], playerIds[1], playerNames[1]),
     ],
     currentPlayer: 0,
     tradesThisTurn: 0,

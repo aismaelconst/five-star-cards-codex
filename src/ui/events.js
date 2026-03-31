@@ -40,6 +40,24 @@ export function wireEvents(elements, handlers) {
   if (elements.formatFoundry) {
     elements.formatFoundry.addEventListener("click", handlers.selectFoundryFormat);
   }
+  if (elements.cpuFormatCore) {
+    elements.cpuFormatCore.addEventListener("click", handlers.selectCpuFormatCore);
+  }
+  if (elements.cpuFormatExpanded) {
+    elements.cpuFormatExpanded.addEventListener("click", handlers.selectCpuFormatExpanded);
+  }
+  if (elements.cpuFormatAncient) {
+    elements.cpuFormatAncient.addEventListener("click", handlers.selectCpuFormatAncient);
+  }
+  if (elements.cpuFormatMystic) {
+    elements.cpuFormatMystic.addEventListener("click", handlers.selectCpuFormatMystic);
+  }
+  if (elements.cpuFormatFoundry) {
+    elements.cpuFormatFoundry.addEventListener("click", handlers.selectCpuFormatFoundry);
+  }
+  if (elements.cpuFormatRandom) {
+    elements.cpuFormatRandom.addEventListener("click", handlers.selectCpuFormatRandom);
+  }
   if (elements.cpuEasy) {
     elements.cpuEasy.addEventListener("click", handlers.selectCpuEasy);
   }

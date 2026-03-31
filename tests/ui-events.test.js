@@ -25,6 +25,12 @@ describe("ui/events", () => {
       formatAncient: makeButton("formatAncient"),
       formatMystic: makeButton("formatMystic"),
       formatFoundry: makeButton("formatFoundry"),
+      cpuFormatCore: makeButton("cpuFormatCore"),
+      cpuFormatExpanded: makeButton("cpuFormatExpanded"),
+      cpuFormatAncient: makeButton("cpuFormatAncient"),
+      cpuFormatMystic: makeButton("cpuFormatMystic"),
+      cpuFormatFoundry: makeButton("cpuFormatFoundry"),
+      cpuFormatRandom: makeButton("cpuFormatRandom"),
       cpuEasy: makeButton("cpuEasy"),
       cpuMedium: makeButton("cpuMedium"),
       cpuHard: makeButton("cpuHard"),
@@ -98,6 +104,12 @@ describe("ui/events", () => {
       selectAncientFormat: vi.fn(),
       selectMysticFormat: vi.fn(),
       selectFoundryFormat: vi.fn(),
+      selectCpuFormatCore: vi.fn(),
+      selectCpuFormatExpanded: vi.fn(),
+      selectCpuFormatAncient: vi.fn(),
+      selectCpuFormatMystic: vi.fn(),
+      selectCpuFormatFoundry: vi.fn(),
+      selectCpuFormatRandom: vi.fn(),
       selectCpuEasy: vi.fn(),
       selectCpuMedium: vi.fn(),
       selectCpuHard: vi.fn(),
@@ -156,6 +168,12 @@ describe("ui/events", () => {
     elements.formatAncient.click();
     elements.formatMystic.click();
     elements.formatFoundry.click();
+    elements.cpuFormatCore.click();
+    elements.cpuFormatExpanded.click();
+    elements.cpuFormatAncient.click();
+    elements.cpuFormatMystic.click();
+    elements.cpuFormatFoundry.click();
+    elements.cpuFormatRandom.click();
     elements.cpuEasy.click();
     elements.cpuMedium.click();
     elements.cpuHard.click();
@@ -227,6 +245,12 @@ describe("ui/events", () => {
     expect(handlers.selectAncientFormat).toHaveBeenCalled();
     expect(handlers.selectMysticFormat).toHaveBeenCalled();
     expect(handlers.selectFoundryFormat).toHaveBeenCalled();
+    expect(handlers.selectCpuFormatCore).toHaveBeenCalled();
+    expect(handlers.selectCpuFormatExpanded).toHaveBeenCalled();
+    expect(handlers.selectCpuFormatAncient).toHaveBeenCalled();
+    expect(handlers.selectCpuFormatMystic).toHaveBeenCalled();
+    expect(handlers.selectCpuFormatFoundry).toHaveBeenCalled();
+    expect(handlers.selectCpuFormatRandom).toHaveBeenCalled();
     expect(handlers.selectCpuEasy).toHaveBeenCalled();
     expect(handlers.selectCpuMedium).toHaveBeenCalled();
     expect(handlers.selectCpuHard).toHaveBeenCalled();

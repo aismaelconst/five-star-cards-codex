@@ -55,6 +55,13 @@ function makeElements() {
     confirmCards: document.createElement("div"),
     modeOverlay: document.createElement("div"),
     onlineMode: document.createElement("button"),
+    cpuFormatOverlay: Object.assign(document.createElement("div"), { hidden: true }),
+    cpuFormatCore: document.createElement("button"),
+    cpuFormatExpanded: document.createElement("button"),
+    cpuFormatAncient: document.createElement("button"),
+    cpuFormatMystic: document.createElement("button"),
+    cpuFormatFoundry: document.createElement("button"),
+    cpuFormatRandom: document.createElement("button"),
     cpuOverlay: document.createElement("div"),
     formatOverlay: document.createElement("div"),
     formatCore: document.createElement("button"),
@@ -543,7 +550,7 @@ describe("ui/handlers", () => {
     expect(elements.onlineChoiceOverlay.hidden).toBe(true);
   });
 
-  it("selects cpu mode and starts a cpu game", () => {
+  it("selects cpu mode and starts a mixed-format cpu game", () => {
     const handlers = createHandlers(state, elements, onWinner);
     elements.modeOverlay.hidden = false;
 
@@ -554,11 +561,16 @@ describe("ui/handlers", () => {
     expect(elements.formatOverlay.hidden).toBe(false);
 
     handlers.selectCoreFormat();
+    expect(elements.cpuFormatOverlay.hidden).toBe(false);
+    expect(elements.cpuOverlay.hidden).toBe(true);
+
+    handlers.selectCpuFormatAncient();
     expect(elements.cpuOverlay.hidden).toBe(false);
 
     handlers.selectCpuEasy();
     expect(state.cpu.difficulty).toBe("easy");
     expect(state.players[1].name).toBe("CPU");
+    expect(state.formatsByPlayer).toEqual(["core", "ancient"]);
   });
 
   it("selects cpu medium and hard difficulties", () => {
@@ -571,6 +583,20 @@ describe("ui/handlers", () => {
 
     handlers.selectCpuHard();
     expect(state.cpu.difficulty).toBe("hard");
+  });
+
+  it("random cpu format never mirrors the player's format", () => {
+    const randomSpy = vi.spyOn(Math, "random").mockReturnValue(0);
+    const handlers = createHandlers(state, elements, onWinner);
+
+    handlers.selectCpuMode();
+    handlers.selectExpandedFormat();
+    handlers.selectCpuFormatRandom();
+    handlers.selectCpuEasy();
+
+    expect(state.formatsByPlayer[0]).toBe("expanded");
+    expect(state.formatsByPlayer[1]).not.toBe("expanded");
+    randomSpy.mockRestore();
   });
 
   it("toggles host/guest overlays", () => {

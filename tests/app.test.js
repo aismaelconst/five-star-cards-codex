@@ -4,6 +4,7 @@ function setupDom() {
   document.body.innerHTML = `
     <div id="turnIndicator"></div>
     <div id="turnCounter"></div>
+    <div id="matchupLabel"></div>
     <div id="opponentSummary"></div>
     <div id="opponentAlert"></div>
     <ul id="rulesList"></ul>
@@ -99,6 +100,13 @@ function setupDom() {
     <button id="formatMystic"></button>
     <button id="formatFoundry"></button>
     <button id="formatMinted"></button>
+    <div id="cpuFormatOverlay"></div>
+    <button id="cpuFormatCore"></button>
+    <button id="cpuFormatExpanded"></button>
+    <button id="cpuFormatAncient"></button>
+    <button id="cpuFormatMystic"></button>
+    <button id="cpuFormatFoundry"></button>
+    <button id="cpuFormatRandom"></button>
     <div id="cpuOverlay"></div>
     <button id="cpuEasy"></button>
     <button id="cpuMedium"></button>

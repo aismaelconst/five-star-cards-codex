@@ -42,6 +42,7 @@
                 <span class="divider">•</span>
                 <span id="turnCounter"></span>
               </div>
+              <div class="trade-info muted" id="matchupLabel"></div>
               <button class="primary" id="endTurn">Archive & End Turn</button>
               <div class="trade-info" id="tradeInfo"></div>
             </div>
@@ -150,6 +151,21 @@
           <button class="ghost" id="formatAncient">ANCIENT (180)</button>
           <button class="ghost" id="formatMystic">MYSTIC (180)</button>
           <button class="ghost" id="formatFoundry">FOUNDRY (180)</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="overlay mode-overlay" id="cpuFormatOverlay" hidden>
+      <div class="overlay-card">
+        <h2>Choose CPU Deck</h2>
+        <p>Pick the expansion deck the CPU will use. It must be different from yours.</p>
+        <div class="confirm-actions">
+          <button class="primary" id="cpuFormatCore">CORE</button>
+          <button class="ghost" id="cpuFormatExpanded">GILDED GEMS</button>
+          <button class="ghost" id="cpuFormatAncient">ANCIENT</button>
+          <button class="ghost" id="cpuFormatMystic">MYSTIC</button>
+          <button class="ghost" id="cpuFormatFoundry">FOUNDRY</button>
+          <button class="ghost" id="cpuFormatRandom">Random Different</button>
         </div>
       </div>
     </div>

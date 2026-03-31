@@ -1,8 +1,9 @@
 import { ActionTypes, applyAction } from "../game/rules.js";
 import { renderApp, showConfirmOverlay, showTurnOverlay } from "./render.js";
-import { createInitialState } from "../game/state.js";
+import { createInitialState, getPlayerRuleset } from "../game/state.js";
 import { createOnlineClient } from "../online/client.js";
 import { startGame } from "../game/lifecycle.js";
+import { getRandomDifferentFormat } from "../game/ruleset.js";
 import { isMyTurn } from "../game/multiplayer.js";
 import { countCards, getCardType } from "../shared/utils.js";
 import { executeCpuTurn } from "../game/cpu.js";
@@ -14,7 +15,7 @@ import {
 } from "./handlers/trade-utils.js";
 import { createCpuFlow } from "./handlers/cpu-flow.js";
 import { createOnlineFlow } from "./handlers/online-flow.js";
-import { formatLabel, updateFormatButtons } from "./handlers/format-utils.js";
+import { formatLabel, updateCpuFormatButtons, updateFormatButtons } from "./handlers/format-utils.js";
 import { createFeedbackController } from "./feedback/feedback-controller.js";
 import { buildArchiveDrawSequence } from "./feedback/sequence-builder.js";
 
@@ -179,7 +180,10 @@ export function createHandlers(state, elements, onWinner, options = {}) {
       const sequence = buildArchiveDrawSequence({
         playedCards: options.archiveContext.playedCards ?? [],
         drawCount: options.archiveContext.drawCount ?? 0,
-        displayOrder: state.ruleset?.displayOrder,
+        displayOrder: getPlayerRuleset(
+          state,
+          options.archiveContext?.playerIndex ?? 0
+        )?.displayOrder,
         beforeSnapshot: before,
         afterSnapshot: after,
       });
@@ -225,6 +229,9 @@ export function createHandlers(state, elements, onWinner, options = {}) {
     if (elements.cpuOverlay) {
       elements.cpuOverlay.hidden = true;
     }
+    if (elements.cpuFormatOverlay) {
+      elements.cpuFormatOverlay.hidden = true;
+    }
     closeHowToPlay();
     closeTradesModal();
     if (elements.formatOverlay) {
@@ -235,48 +242,7 @@ export function createHandlers(state, elements, onWinner, options = {}) {
     }
   }
 
-  function selectCpuMode() {
-    state.mode = "cpu";
-    elements.modeOverlay.hidden = true;
-    elements.onlineChoiceOverlay.hidden = true;
-    elements.hostOverlay.hidden = true;
-    elements.guestOverlay.hidden = true;
-    closeHowToPlay();
-    closeTradesModal();
-    if (elements.formatOverlay) {
-      updateFormatButtons(state, elements);
-      elements.formatOverlay.hidden = false;
-    } else {
-      startCpuGame("core", state.cpu?.difficulty ?? "easy");
-    }
-  }
-
-  function startOfflineGame(format) {
-    state.mode = "offline";
-    state.format = format;
-    updateFormatButtons(state, elements);
-    if (elements.formatOverlay) {
-      elements.formatOverlay.hidden = true;
-    }
-    resetGame();
-  }
-
-  function startCpuGame(format, difficulty) {
-    state.mode = "cpu";
-    state.format = format;
-    state.cpu = { difficulty };
-    updateFormatButtons(state, elements);
-    if (elements.formatOverlay) {
-      elements.formatOverlay.hidden = true;
-    }
-    if (elements.cpuOverlay) {
-      elements.cpuOverlay.hidden = true;
-    }
-    const freshState = createInitialState({
-      mode: "cpu",
-      format,
-      playerNames: ["You", "CPU"],
-    });
+  function applyFreshState(freshState, overrides = {}) {
     state.players = freshState.players;
     state.currentPlayer = freshState.currentPlayer;
     state.tradesThisTurn = freshState.tradesThisTurn;
@@ -288,23 +254,131 @@ export function createHandlers(state, elements, onWinner, options = {}) {
     state.gameId = freshState.gameId;
     state.ruleset = freshState.ruleset;
     state.format = freshState.format;
+    state.formatsByPlayer = freshState.formatsByPlayer;
     state.online = freshState.online;
-    state.cpu = { difficulty };
+    state.mode = freshState.mode;
+    state.cpu = overrides.cpu ?? freshState.cpu;
+  }
+
+  function resolveCpuFormatSelection(playerFormat, requestedFormat) {
+    if (!requestedFormat || requestedFormat === "random_different") {
+      return getRandomDifferentFormat(playerFormat);
+    }
+    if (requestedFormat === playerFormat) {
+      return getRandomDifferentFormat(playerFormat);
+    }
+    return requestedFormat;
+  }
+
+  function showCpuFormatOverlay() {
+    updateCpuFormatButtons(state, elements);
+    if (elements.formatOverlay) {
+      elements.formatOverlay.hidden = true;
+    }
+    if (elements.cpuFormatOverlay) {
+      elements.cpuFormatOverlay.hidden = false;
+    }
+    if (elements.cpuOverlay) {
+      elements.cpuOverlay.hidden = true;
+    }
+  }
+
+  function selectCpuMode() {
+    state.mode = "cpu";
+    state.cpu = {
+      difficulty: state.cpu?.difficulty ?? "easy",
+      opponentFormat: null,
+      opponentFormatSelection: null,
+    };
+    elements.modeOverlay.hidden = true;
+    elements.onlineChoiceOverlay.hidden = true;
+    elements.hostOverlay.hidden = true;
+    elements.guestOverlay.hidden = true;
+    closeHowToPlay();
+    closeTradesModal();
+    if (elements.cpuOverlay) {
+      elements.cpuOverlay.hidden = true;
+    }
+    if (elements.cpuFormatOverlay) {
+      elements.cpuFormatOverlay.hidden = true;
+    }
+    if (elements.formatOverlay) {
+      updateFormatButtons(state, elements);
+      elements.formatOverlay.hidden = false;
+    } else {
+      startCpuGame(
+        "core",
+        state.cpu?.difficulty ?? "easy",
+        getRandomDifferentFormat("core")
+      );
+    }
+  }
+
+  function startOfflineGame(format) {
+    state.mode = "offline";
+    state.format = format;
+    updateFormatButtons(state, elements);
+    if (elements.formatOverlay) {
+      elements.formatOverlay.hidden = true;
+    }
+    if (elements.cpuFormatOverlay) {
+      elements.cpuFormatOverlay.hidden = true;
+    }
+    resetGame();
+  }
+
+  function startCpuGame(format, difficulty, cpuFormatSelection) {
+    const resolvedCpuFormat = resolveCpuFormatSelection(format, cpuFormatSelection);
+    state.mode = "cpu";
+    state.format = format;
+    state.cpu = {
+      difficulty,
+      opponentFormat: resolvedCpuFormat,
+      opponentFormatSelection: resolvedCpuFormat,
+    };
+    updateFormatButtons(state, elements);
+    updateCpuFormatButtons(state, elements);
+    if (elements.formatOverlay) {
+      elements.formatOverlay.hidden = true;
+    }
+    if (elements.cpuFormatOverlay) {
+      elements.cpuFormatOverlay.hidden = true;
+    }
+    if (elements.cpuOverlay) {
+      elements.cpuOverlay.hidden = true;
+    }
+    const freshState = createInitialState({
+      mode: "cpu",
+      format,
+      cpuFormat: resolvedCpuFormat,
+      playerNames: ["You", "CPU"],
+    });
+    applyFreshState(freshState, {
+      cpu: {
+        difficulty,
+        opponentFormat: resolvedCpuFormat,
+        opponentFormatSelection: resolvedCpuFormat,
+      },
+    });
     startGame(state);
     renderApp(state, elements, handlers);
     cpuFlow.maybeRunCpuTurn();
   }
 
+  function prepareCpuFormatSelection(format) {
+    state.format = format;
+    state.cpu = {
+      difficulty: state.cpu?.difficulty ?? "easy",
+      opponentFormat: null,
+      opponentFormatSelection: null,
+    };
+    updateFormatButtons(state, elements);
+    showCpuFormatOverlay();
+  }
+
   function selectCoreFormat() {
     if (state.mode === "cpu") {
-      state.format = "core";
-      updateFormatButtons(state, elements);
-      if (elements.formatOverlay) {
-        elements.formatOverlay.hidden = true;
-      }
-      if (elements.cpuOverlay) {
-        elements.cpuOverlay.hidden = false;
-      }
+      prepareCpuFormatSelection("core");
       return;
     }
     startOfflineGame("core");
@@ -312,14 +386,7 @@ export function createHandlers(state, elements, onWinner, options = {}) {
 
   function selectExpandedFormat() {
     if (state.mode === "cpu") {
-      state.format = "expanded";
-      updateFormatButtons(state, elements);
-      if (elements.formatOverlay) {
-        elements.formatOverlay.hidden = true;
-      }
-      if (elements.cpuOverlay) {
-        elements.cpuOverlay.hidden = false;
-      }
+      prepareCpuFormatSelection("expanded");
       return;
     }
     startOfflineGame("expanded");
@@ -327,14 +394,7 @@ export function createHandlers(state, elements, onWinner, options = {}) {
 
   function selectAncientFormat() {
     if (state.mode === "cpu") {
-      state.format = "ancient";
-      updateFormatButtons(state, elements);
-      if (elements.formatOverlay) {
-        elements.formatOverlay.hidden = true;
-      }
-      if (elements.cpuOverlay) {
-        elements.cpuOverlay.hidden = false;
-      }
+      prepareCpuFormatSelection("ancient");
       return;
     }
     startOfflineGame("ancient");
@@ -342,14 +402,7 @@ export function createHandlers(state, elements, onWinner, options = {}) {
 
   function selectMysticFormat() {
     if (state.mode === "cpu") {
-      state.format = "mystic";
-      updateFormatButtons(state, elements);
-      if (elements.formatOverlay) {
-        elements.formatOverlay.hidden = true;
-      }
-      if (elements.cpuOverlay) {
-        elements.cpuOverlay.hidden = false;
-      }
+      prepareCpuFormatSelection("mystic");
       return;
     }
     startOfflineGame("mystic");
@@ -357,29 +410,87 @@ export function createHandlers(state, elements, onWinner, options = {}) {
 
   function selectFoundryFormat() {
     if (state.mode === "cpu") {
-      state.format = "foundry";
-      updateFormatButtons(state, elements);
-      if (elements.formatOverlay) {
-        elements.formatOverlay.hidden = true;
-      }
-      if (elements.cpuOverlay) {
-        elements.cpuOverlay.hidden = false;
-      }
+      prepareCpuFormatSelection("foundry");
       return;
     }
     startOfflineGame("foundry");
   }
 
+  function selectCpuOpponentFormat(format) {
+    if (format === state.format) return;
+    state.cpu = {
+      ...(state.cpu ?? {}),
+      difficulty: state.cpu?.difficulty ?? "easy",
+      opponentFormat: null,
+      opponentFormatSelection: format,
+    };
+    updateCpuFormatButtons(state, elements);
+    if (elements.cpuFormatOverlay) {
+      elements.cpuFormatOverlay.hidden = true;
+    }
+    if (elements.cpuOverlay) {
+      elements.cpuOverlay.hidden = false;
+    }
+  }
+
+  function selectCpuFormatCore() {
+    selectCpuOpponentFormat("core");
+  }
+
+  function selectCpuFormatExpanded() {
+    selectCpuOpponentFormat("expanded");
+  }
+
+  function selectCpuFormatAncient() {
+    selectCpuOpponentFormat("ancient");
+  }
+
+  function selectCpuFormatMystic() {
+    selectCpuOpponentFormat("mystic");
+  }
+
+  function selectCpuFormatFoundry() {
+    selectCpuOpponentFormat("foundry");
+  }
+
+  function selectCpuFormatRandom() {
+    state.cpu = {
+      ...(state.cpu ?? {}),
+      difficulty: state.cpu?.difficulty ?? "easy",
+      opponentFormat: null,
+      opponentFormatSelection: "random_different",
+    };
+    updateCpuFormatButtons(state, elements);
+    if (elements.cpuFormatOverlay) {
+      elements.cpuFormatOverlay.hidden = true;
+    }
+    if (elements.cpuOverlay) {
+      elements.cpuOverlay.hidden = false;
+    }
+  }
+
   function selectCpuEasy() {
-    startCpuGame(state.format ?? "core", "easy");
+    startCpuGame(
+      state.format ?? "core",
+      "easy",
+      state.cpu?.opponentFormatSelection ?? state.cpu?.opponentFormat ?? "random_different"
+    );
   }
 
   function selectCpuMedium() {
-    startCpuGame(state.format ?? "core", "medium");
+    startCpuGame(
+      state.format ?? "core",
+      "medium",
+      state.cpu?.opponentFormatSelection ?? state.cpu?.opponentFormat ?? "random_different"
+    );
   }
 
   function selectCpuHard() {
-    startCpuGame(state.format ?? "core", "hard");
+    startCpuGame(
+      state.format ?? "core",
+      "hard",
+      state.cpu?.opponentFormatSelection ?? state.cpu?.opponentFormat ?? "random_different"
+    );
   }
 
   function selectHostFormatCore() {
@@ -578,24 +689,29 @@ export function createHandlers(state, elements, onWinner, options = {}) {
     }
     tradeFlow.resetPending();
     const cpuDifficulty = state.cpu?.difficulty ?? null;
+    const cpuFormat =
+      state.mode === "cpu"
+        ? resolveCpuFormatSelection(
+            state.format ?? "core",
+            state.formatsByPlayer?.[1] ?? state.cpu?.opponentFormat ?? "random_different"
+          )
+        : undefined;
     const freshState = createInitialState({
       mode: state.mode,
       format: state.format ?? "core",
+      cpuFormat,
       playerNames: state.mode === "cpu" ? ["You", "CPU"] : undefined,
     });
-    state.players = freshState.players;
-    state.currentPlayer = freshState.currentPlayer;
-    state.tradesThisTurn = freshState.tradesThisTurn;
-    state.phase = freshState.phase;
-    state.winner = freshState.winner;
-    state.turnCount = freshState.turnCount;
-    state.pendingArchive = freshState.pendingArchive;
-    state.turnEffects = freshState.turnEffects;
-    state.gameId = freshState.gameId;
-    state.ruleset = freshState.ruleset;
-    state.format = freshState.format;
-    state.online = freshState.online;
-    state.cpu = state.mode === "cpu" ? { difficulty: cpuDifficulty ?? "easy" } : freshState.cpu;
+    applyFreshState(freshState, {
+      cpu:
+        state.mode === "cpu"
+          ? {
+              difficulty: cpuDifficulty ?? "easy",
+              opponentFormat: cpuFormat,
+              opponentFormatSelection: cpuFormat,
+            }
+          : freshState.cpu,
+    });
     elements.winnerPanel.hidden = true;
     elements.winnerOverlay.hidden = true;
     elements.confirmOverlay.hidden = true;
@@ -625,6 +741,8 @@ export function createHandlers(state, elements, onWinner, options = {}) {
     state.turnEffects = freshState.turnEffects;
     state.gameId = freshState.gameId;
     state.ruleset = freshState.ruleset;
+    state.format = freshState.format;
+    state.formatsByPlayer = freshState.formatsByPlayer;
     state.online = freshState.online;
     state.mode = freshState.mode;
     state.cpu = freshState.cpu;
@@ -649,6 +767,9 @@ export function createHandlers(state, elements, onWinner, options = {}) {
     }
     if (elements.cpuOverlay) {
       elements.cpuOverlay.hidden = true;
+    }
+    if (elements.cpuFormatOverlay) {
+      elements.cpuFormatOverlay.hidden = true;
     }
     if (elements.restartGameModal) {
       elements.restartGameModal.hidden = false;
@@ -719,6 +840,12 @@ export function createHandlers(state, elements, onWinner, options = {}) {
     selectAncientFormat,
     selectMysticFormat,
     selectFoundryFormat,
+    selectCpuFormatCore,
+    selectCpuFormatExpanded,
+    selectCpuFormatAncient,
+    selectCpuFormatMystic,
+    selectCpuFormatFoundry,
+    selectCpuFormatRandom,
     selectCpuEasy,
     selectCpuMedium,
     selectCpuHard,

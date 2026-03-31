@@ -1,3 +1,5 @@
+const SELECTABLE_FORMATS = ["core", "expanded", "ancient", "mystic", "foundry"];
+
 export function formatLabel(format) {
   if (format === "expanded") return "GILDED GEMS";
   if (format === "ancient") return "ANCIENT";
@@ -6,26 +8,54 @@ export function formatLabel(format) {
   return "CORE";
 }
 
+function toggleButton(el, active, disabled = false) {
+  if (!el) return;
+  el.classList.toggle("active", active);
+  el.setAttribute("aria-pressed", active ? "true" : "false");
+  el.disabled = disabled;
+}
+
 export function updateFormatButtons(state, elements) {
-  const selectableFormats = ["expanded", "ancient", "mystic", "foundry"];
-  const isCore = !state.format || !selectableFormats.includes(state.format);
-  const isExpanded = state.format === "expanded";
-  const isAncient = state.format === "ancient";
-  const isMystic = state.format === "mystic";
-  const isFoundry = state.format === "foundry";
-  const toggle = (el, active) => {
-    if (!el) return;
-    el.classList.toggle("active", active);
-    el.setAttribute("aria-pressed", active ? "true" : "false");
-  };
-  toggle(elements.formatCore, isCore);
-  toggle(elements.formatExpanded, isExpanded);
-  toggle(elements.formatAncient, isAncient);
-  toggle(elements.formatMystic, isMystic);
-  toggle(elements.formatFoundry, isFoundry);
-  toggle(elements.hostFormatCore, isCore);
-  toggle(elements.hostFormatExpanded, isExpanded);
-  toggle(elements.hostFormatAncient, isAncient);
-  toggle(elements.hostFormatMystic, isMystic);
-  toggle(elements.hostFormatFoundry, isFoundry);
+  const format = SELECTABLE_FORMATS.includes(state.format) ? state.format : "core";
+  const isCore = format === "core";
+  const isExpanded = format === "expanded";
+  const isAncient = format === "ancient";
+  const isMystic = format === "mystic";
+  const isFoundry = format === "foundry";
+
+  toggleButton(elements.formatCore, isCore);
+  toggleButton(elements.formatExpanded, isExpanded);
+  toggleButton(elements.formatAncient, isAncient);
+  toggleButton(elements.formatMystic, isMystic);
+  toggleButton(elements.formatFoundry, isFoundry);
+  toggleButton(elements.hostFormatCore, isCore);
+  toggleButton(elements.hostFormatExpanded, isExpanded);
+  toggleButton(elements.hostFormatAncient, isAncient);
+  toggleButton(elements.hostFormatMystic, isMystic);
+  toggleButton(elements.hostFormatFoundry, isFoundry);
+}
+
+export function updateCpuFormatButtons(state, elements) {
+  const playerFormat = SELECTABLE_FORMATS.includes(state.format) ? state.format : "core";
+  const selection = state.cpu?.opponentFormatSelection ?? state.cpu?.opponentFormat ?? null;
+  const cpuButtons = [
+    ["core", elements.cpuFormatCore],
+    ["expanded", elements.cpuFormatExpanded],
+    ["ancient", elements.cpuFormatAncient],
+    ["mystic", elements.cpuFormatMystic],
+    ["foundry", elements.cpuFormatFoundry],
+  ];
+
+  cpuButtons.forEach(([format, button]) => {
+    const disabled = format === playerFormat;
+    toggleButton(button, selection === format && !disabled, disabled);
+    if (!button) return;
+    if (disabled) {
+      button.title = "CPU deck must be different from your deck.";
+    } else {
+      button.removeAttribute("title");
+    }
+  });
+
+  toggleButton(elements.cpuFormatRandom, selection === "random_different");
 }

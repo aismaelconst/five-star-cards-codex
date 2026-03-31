@@ -1,5 +1,6 @@
 import { countCards, getCardType } from "../shared/utils.js";
 import { canInitiateTrade, getCurrentPlayer, getPlayerPlayLimit } from "../game/rules.js";
+import { getPlayerFormat, getPlayerRuleset } from "../game/state.js";
 import { isMyTurn } from "../game/multiplayer.js";
 import { getCardTooltip } from "./card-tooltips.js";
 import { isCompactBoardActive } from "./viewport.js";
@@ -32,12 +33,12 @@ function renderCards(container, cards, clickHandler, ruleset) {
   });
 }
 
-function renderHand(state, player, elements, handlers, options = {}) {
+function renderHand(player, ruleset, elements, handlers, options = {}) {
   const compactBoard = options.compactBoard ?? false;
-  const displayOrder = state.ruleset.displayOrder ?? ["bronze", "silver", "gold"];
+  const displayOrder = ruleset.displayOrder ?? ["bronze", "silver", "gold"];
   const pileThreshold = compactBoard ? 5 : 10;
   if (player.hand.length <= pileThreshold) {
-    renderCards(elements.handCards, player.hand, handlers.playCard, state.ruleset);
+    renderCards(elements.handCards, player.hand, handlers.playCard, ruleset);
     return;
   }
 
@@ -49,7 +50,7 @@ function renderHand(state, player, elements, handlers, options = {}) {
     el.className = `card ${type} pile`;
     el.dataset.cardType = type;
     el.dataset.cardName = titleCase(type);
-    applyCardTooltip(el, type, state.ruleset);
+    applyCardTooltip(el, type, ruleset);
     el.innerHTML = `<div class="pile-count">x ${counts[type]}</div>`;
     const label = document.createElement("span");
     label.className = "card-label";
@@ -277,6 +278,93 @@ function renderGoldRaceTrack(container, label, count) {
   container.appendChild(segments);
 }
 
+function formatName(format) {
+  if (format === "expanded") return "GILDED GEMS";
+  if (format === "ancient") return "ANCIENT";
+  if (format === "mystic") return "MYSTIC";
+  if (format === "foundry") return "FOUNDRY";
+  return "CORE";
+}
+
+function buildFormatGuide(format) {
+  const guide = {
+    label: formatName(format),
+    rules: [],
+    legendTypes: ["bronze", "silver", "gold"],
+  };
+  if (format === "expanded") {
+    guide.rules.push("Gems: Ruby + Emerald + Sapphire → tutor any card (shuffle).");
+    guide.rules.push(
+      "Platinum: Platinum + Bronze + Silver → dig for a non-bronze/silver card."
+    );
+    guide.rules.push(
+      "Wood: can replace one required card in trades costing 3+ (max 1 per trade)."
+    );
+    guide.legendTypes.push("wood", "ruby", "emerald", "sapphire", "platinum");
+  }
+  if (format === "ancient") {
+    guide.rules.push("Ancients: 2 distinct ancients → archive 1 non-gold from deck (shuffle).");
+    guide.rules.push("Ingot: counts as 3 bronze in archive trades.");
+    guide.rules.push("Sterling: counts as 2 silver in archive trades.");
+    guide.legendTypes.push("turquoise", "lapis_lazuli", "carnelian", "ingot", "sterling");
+  }
+  if (format === "mystic") {
+    guide.rules.push("Pearl: trade itself to gain +1 play this turn (once per turn).");
+    guide.rules.push(
+      "Obsidian: trade itself to make opponent play 1 less card next turn (once per turn)."
+    );
+    guide.rules.push(
+      "Amethyst: trade itself to shuffle 1 chosen opponent archive card into their deck."
+    );
+    guide.rules.push(
+      "Ash: trade itself to shuffle 1 random opponent hand card into their deck."
+    );
+    guide.rules.push(
+      "Ember: trade itself to prevent opponent trades on their next turn (once per turn)."
+    );
+    guide.legendTypes.push("pearl", "obsidian", "amethyst", "ash", "ember");
+  }
+  if (format === "foundry") {
+    guide.rules.push(
+      "Prospector: trade itself with 1 bronze to dig until the first non-bronze card."
+    );
+    guide.rules.push("Alloy: counts as 1 bronze or 1 silver in archive trades.");
+    guide.rules.push(
+      "Assayer: trade itself with 1 non-gold to tutor a Foundry card into hand (shuffle)."
+    );
+    guide.rules.push("Smelter: trade itself with 3 bronze to tutor 1 silver into hand.");
+    guide.rules.push("Refiner: trade itself with 3 silver to tutor 1 gold into hand.");
+    guide.legendTypes.push("prospector", "alloy", "assayer", "smelter", "refiner");
+  }
+  return guide;
+}
+
+function renderLegendGroup(container, title, types) {
+  const group = document.createElement("div");
+  group.className = "legend-group";
+  const heading = document.createElement("div");
+  heading.className = "legend-group-title muted";
+  heading.textContent = title;
+  group.appendChild(heading);
+  const chips = document.createElement("div");
+  chips.className = "legend-group-chips";
+  types.forEach((type) => {
+    const chip = document.createElement("span");
+    chip.className = `chip ${type}`;
+    chip.textContent = titleCase(type);
+    chips.appendChild(chip);
+  });
+  group.appendChild(chips);
+  container.appendChild(group);
+}
+
+function getStatePlayerIndex(state, targetPlayer, fallbackIndex = state.currentPlayer ?? 0) {
+  const playerIndex = state.players.findIndex(
+    (entry) => entry === targetPlayer || (targetPlayer?.id && entry.id === targetPlayer.id)
+  );
+  return playerIndex === -1 ? fallbackIndex : playerIndex;
+}
+
 function updateHowToPlay(state, elements) {
   if (!elements.rulesList && !elements.expansionRules && !elements.cardLegend) return;
   const baseRules = [
@@ -289,63 +377,42 @@ function updateHowToPlay(state, elements) {
     elements.rulesList.innerHTML = baseRules.map((rule) => `<li>${rule}</li>`).join("");
   }
 
-  const isExpanded = state.format === "expanded";
-  const isAncient = state.format === "ancient";
-  const isMystic = state.format === "mystic";
-  const isFoundry = state.format === "foundry";
-  const expansionRules = [];
-  if (isExpanded) {
-    expansionRules.push("Gems: Ruby + Emerald + Sapphire → tutor any card (shuffle).");
-    expansionRules.push(
-      "Platinum: Platinum + Bronze + Silver → dig for a non-bronze/silver card."
-    );
-    expansionRules.push(
-      "Wood: can replace one required card in trades costing 3+ (max 1 per trade)."
-    );
-  }
-  if (isAncient) {
-    expansionRules.push(
-      "Ancients: 2 distinct ancients → archive 1 non-gold from deck (shuffle)."
-    );
-    expansionRules.push("Ingot: counts as 3 bronze in archive trades.");
-    expansionRules.push("Sterling: counts as 2 silver in archive trades.");
-  }
-  if (isMystic) {
-    expansionRules.push("Pearl: trade itself to gain +1 play this turn (once per turn).");
-    expansionRules.push(
-      "Obsidian: trade itself to make opponent play 1 less card next turn (once per turn)."
-    );
-    expansionRules.push(
-      "Amethyst: trade itself to shuffle 1 chosen opponent archive card into their deck."
-    );
-    expansionRules.push(
-      "Ash: trade itself to shuffle 1 random opponent hand card into their deck."
-    );
-    expansionRules.push(
-      "Ember: trade itself to prevent opponent trades on their next turn (once per turn)."
-    );
-  }
-  if (isFoundry) {
-    expansionRules.push(
-      "Prospector: trade itself with 1 bronze to dig until the first non-bronze card."
-    );
-    expansionRules.push("Alloy: counts as 1 bronze or 1 silver in archive trades.");
-    expansionRules.push(
-      "Assayer: trade itself with 1 non-gold to tutor a Foundry card into hand (shuffle)."
-    );
-    expansionRules.push("Smelter: trade itself with 3 bronze to tutor 1 silver into hand.");
-    expansionRules.push("Refiner: trade itself with 3 silver to tutor 1 gold into hand.");
-  }
+  const playerFormat = getPlayerFormat(state, 0);
+  const opponentFormat = state.mode === "cpu" ? getPlayerFormat(state, 1) : playerFormat;
+  const playerGuide = buildFormatGuide(playerFormat);
+  const opponentGuide = buildFormatGuide(opponentFormat);
+  const mixedCpuFormats = state.mode === "cpu" && playerFormat !== opponentFormat;
 
   if (elements.expansionRules) {
-    if (expansionRules.length === 0) {
+    if (mixedCpuFormats) {
+      const sections = [
+        { owner: "You", guide: playerGuide },
+        { owner: "CPU", guide: opponentGuide },
+      ];
+      elements.expansionRules.innerHTML = `
+        <div class="expansion-rules mixed-format-rules">
+          ${sections
+            .map(({ owner, guide }) => `
+              <div class="expansion-rules-block">
+                <h3>${owner} • ${guide.label}</h3>
+                <ul class="rules">
+                  ${(guide.rules.length > 0 ? guide.rules : ["No expansion abilities."])
+                    .map((rule) => `<li>${rule}</li>`)
+                    .join("")}
+                </ul>
+              </div>
+            `)
+            .join("")}
+        </div>
+      `;
+    } else if (playerGuide.rules.length === 0) {
       elements.expansionRules.innerHTML = "";
     } else {
       elements.expansionRules.innerHTML = `
         <div class="expansion-rules">
           <h3>Expansion Cards</h3>
           <ul class="rules">
-            ${expansionRules.map((rule) => `<li>${rule}</li>`).join("")}
+            ${playerGuide.rules.map((rule) => `<li>${rule}</li>`).join("")}
           </ul>
         </div>
       `;
@@ -353,26 +420,18 @@ function updateHowToPlay(state, elements) {
   }
 
   if (elements.cardLegend) {
-    const legendTypes = ["bronze", "silver", "gold"];
-    if (isExpanded) {
-      legendTypes.push("wood", "ruby", "emerald", "sapphire", "platinum");
-    }
-    if (isAncient) {
-      legendTypes.push("turquoise", "lapis_lazuli", "carnelian", "ingot", "sterling");
-    }
-    if (isMystic) {
-      legendTypes.push("pearl", "obsidian", "amethyst", "ash", "ember");
-    }
-    if (isFoundry) {
-      legendTypes.push("prospector", "alloy", "assayer", "smelter", "refiner");
-    }
     elements.cardLegend.innerHTML = "";
-    legendTypes.forEach((type) => {
-      const chip = document.createElement("span");
-      chip.className = `chip ${type}`;
-      chip.textContent = titleCase(type);
-      elements.cardLegend.appendChild(chip);
-    });
+    if (mixedCpuFormats) {
+      renderLegendGroup(elements.cardLegend, `You • ${playerGuide.label}`, playerGuide.legendTypes);
+      renderLegendGroup(elements.cardLegend, `CPU • ${opponentGuide.label}`, opponentGuide.legendTypes);
+    } else {
+      playerGuide.legendTypes.forEach((type) => {
+        const chip = document.createElement("span");
+        chip.className = `chip ${type}`;
+        chip.textContent = titleCase(type);
+        elements.cardLegend.appendChild(chip);
+      });
+    }
   }
 }
 
@@ -392,16 +451,32 @@ export function renderApp(state, elements, handlers) {
       state.players[state.currentPlayer === 0 ? 1 : 0];
 
   const compactBoard = isCompactBoardActive();
-  const displayOrder = state.ruleset.displayOrder ?? ["bronze", "silver", "gold"];
-  const playerIndex = state.players.findIndex((entry) => entry.id === player.id);
+  const playerIndex = getStatePlayerIndex(state, player, state.currentPlayer);
   const effectivePlayerIndex = playerIndex === -1 ? state.currentPlayer : playerIndex;
+  const opponentIndex = getStatePlayerIndex(
+    state,
+    opponent,
+    effectivePlayerIndex === 0 ? 1 : 0
+  );
+  const playerRuleset = getPlayerRuleset(state, effectivePlayerIndex);
+  const opponentRuleset = getPlayerRuleset(state, opponentIndex === -1 ? 1 : opponentIndex);
+  const playerFormat = getPlayerFormat(state, effectivePlayerIndex);
+  const opponentFormat = getPlayerFormat(state, opponentIndex === -1 ? 1 : opponentIndex);
+  const displayOrder = playerRuleset.displayOrder ?? ["bronze", "silver", "gold"];
+  const opponentDisplayOrder = opponentRuleset.displayOrder ?? ["bronze", "silver", "gold"];
   const playLimit = getPlayerPlayLimit(state, effectivePlayerIndex);
   const archiveCounts = countCards(player.archive, displayOrder);
-  const opponentArchive = countCards(opponent.archive, displayOrder);
+  const opponentArchive = countCards(opponent.archive, opponentDisplayOrder);
   const opponentHandTotal = opponent.hand.length;
   const currentName = state.players[state.currentPlayer]?.name ?? `Player ${state.currentPlayer + 1}`;
   elements.turnIndicator.textContent = `${currentName}'s Turn`;
   elements.turnCounter.textContent = `Turn ${state.turnCount}`;
+  if (elements.matchupLabel) {
+    elements.matchupLabel.textContent =
+      state.mode === "cpu"
+        ? `You: ${formatName(playerFormat)} • CPU: ${formatName(opponentFormat)}`
+        : `Format: ${formatName(playerFormat)}`;
+  }
   renderGoldRaceTrack(elements.goldRacePlayer, player.name ?? "You", archiveCounts.gold ?? 0);
   renderGoldRaceTrack(
     elements.goldRaceOpponent,
@@ -418,12 +493,12 @@ export function renderApp(state, elements, handlers) {
       ? "summary-archive-stacks archive-count-grid"
       : "summary-archive-stacks";
     if (compactBoard) {
-      renderArchiveCounts(stacks, opponentArchive, displayOrder, {
+      renderArchiveCounts(stacks, opponentArchive, opponentDisplayOrder, {
         owner: "opponent",
         onSelect: handlers.openArchiveInspect,
       });
     } else {
-      renderArchiveMiniStacks(stacks, opponentArchive, displayOrder, {
+      renderArchiveMiniStacks(stacks, opponentArchive, opponentDisplayOrder, {
         owner: "opponent",
         onSelect: handlers.openArchiveInspect,
       });
@@ -437,7 +512,7 @@ export function renderApp(state, elements, handlers) {
   }
 
   renderDeckDiscardWidgets(elements, player, { compactBoard });
-  elements.tradeInfo.textContent = `Trades used: ${state.tradesThisTurn}/${state.ruleset.maxTrades} • Plays used: ${player.active.length}/${playLimit}`;
+  elements.tradeInfo.textContent = `Trades used: ${state.tradesThisTurn}/${playerRuleset.maxTrades} • Plays used: ${player.active.length}/${playLimit}`;
 
   const turnGate =
     state.mode === "online"
@@ -450,8 +525,8 @@ export function renderApp(state, elements, handlers) {
   const canInteract = turnGate;
 
   renderHand(
-    state,
     player,
+    playerRuleset,
     elements,
     {
       playCard: canInteract ? handlers.playCard : null,
@@ -459,11 +534,12 @@ export function renderApp(state, elements, handlers) {
     },
     { compactBoard }
   );
+  const activeOwnerIndex = getStatePlayerIndex(state, activeOwner, effectivePlayerIndex);
   renderCards(
     elements.activeCards,
     activeOwner.active,
     canInteract && !showOpponentActive ? handlers.returnCard : null,
-    state.ruleset
+    getPlayerRuleset(state, activeOwnerIndex === -1 ? effectivePlayerIndex : activeOwnerIndex)
   );
 
   if (compactBoard) {
@@ -484,10 +560,10 @@ export function renderApp(state, elements, handlers) {
     !inMainPhase || !turnGate || !canInitiateTrade(state, player, "trade_bronze");
   elements.tradeSilver.disabled =
     !inMainPhase || !turnGate || !canInitiateTrade(state, player, "trade_silver");
-  const isExpanded = state.format === "expanded";
-  const isAncient = state.format === "ancient";
-  const isMystic = state.format === "mystic";
-  const isFoundry = state.format === "foundry";
+  const isExpanded = playerFormat === "expanded";
+  const isAncient = playerFormat === "ancient";
+  const isMystic = playerFormat === "mystic";
+  const isFoundry = playerFormat === "foundry";
   if (elements.tradeGems) {
     elements.tradeGems.hidden = !isExpanded;
     elements.tradeGems.disabled =
@@ -597,7 +673,7 @@ export function showTurnOverlay(state, elements) {
 export function showConfirmOverlay(state, elements) {
   const pending = state.pendingArchive;
   if (!pending) return;
-  const displayOrder = state.ruleset.displayOrder ?? ["bronze", "silver", "gold"];
+  const displayOrder = getPlayerRuleset(state, pending.playerIndex).displayOrder ?? ["bronze", "silver", "gold"];
   const counts = countCards(pending.playedCards, displayOrder);
   elements.confirmSummary.textContent = `Archive ${pending.playedCards.length} card(s) and draw ${pending.drawCount} card(s).`;
   elements.confirmCards.innerHTML = "";

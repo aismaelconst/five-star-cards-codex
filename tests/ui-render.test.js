@@ -12,6 +12,7 @@ function makeElements() {
   const ids = [
     "turnIndicator",
     "turnCounter",
+    "matchupLabel",
     "opponentSummary",
     "rulesList",
     "expansionRules",
@@ -114,6 +115,8 @@ function makeState() {
     ],
     ruleset: baseRuleset,
     format: "core",
+    formatsByPlayer: ["core", "core"],
+    mode: null,
     currentPlayer: 0,
     tradesThisTurn: 0,
     phase: "main",
@@ -201,6 +204,33 @@ describe("ui/render", () => {
     renderApp(state, elements, handlers);
 
     expect(elements.archivePile.querySelector(".mini-stack.platinum")).not.toBeNull();
+  });
+
+  it("renders mixed cpu matchup labels, help text, and trade buttons by owner format", () => {
+    const state = makeState();
+    const elements = makeElements();
+    const handlers = {
+      playCard: vi.fn(),
+      playCardByType: vi.fn(),
+      returnCard: vi.fn(),
+      openArchiveInspect: vi.fn(),
+    };
+    state.mode = "cpu";
+    state.ruleset = expandedRuleset;
+    state.format = "expanded";
+    state.formatsByPlayer = ["expanded", "mystic"];
+    state.players[0].archive = ["ruby", "emerald", "sapphire"];
+    state.players[0].deck = ["gold"];
+    state.players[1].archive = ["pearl", "gold"];
+
+    renderApp(state, elements, handlers);
+
+    expect(elements.matchupLabel.textContent).toBe("You: GILDED GEMS • CPU: MYSTIC");
+    expect(elements.expansionRules.textContent).toContain("You • GILDED GEMS");
+    expect(elements.expansionRules.textContent).toContain("CPU • MYSTIC");
+    expect(elements.tradeGems.hidden).toBe(false);
+    expect(elements.tradePearl.hidden).toBe(true);
+    expect(elements.opponentSummary.querySelector(".mini-stack.pearl")).not.toBeNull();
   });
 
   it("opens archive inspect when mini stack is clicked", () => {
@@ -333,6 +363,7 @@ describe("ui/render", () => {
     state.mode = "cpu";
     state.ruleset = expandedRuleset;
     state.format = "expanded";
+    state.formatsByPlayer = ["expanded", "expanded"];
     state.players[1].archive = ["bronze", "gold", "wood", "platinum"];
 
     renderApp(state, elements, handlers);

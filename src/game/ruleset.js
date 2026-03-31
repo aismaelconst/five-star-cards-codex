@@ -41,6 +41,8 @@ export const baseRuleset = {
   },
 };
 
+export const ACTIVE_FORMATS = ["core", "expanded", "ancient", "mystic", "foundry"];
+
 const ANCIENT_DISPLAY_ORDER = [
   "bronze",
   "silver",
@@ -374,3 +376,23 @@ export const mintedRuleset = {
     hallmark: 5,
   },
 };
+
+export function resolveFormat(requestedFormat) {
+  return ACTIVE_FORMATS.includes(requestedFormat) ? requestedFormat : "core";
+}
+
+export function getRulesetForFormat(format) {
+  const resolved = resolveFormat(format);
+  if (resolved === "expanded") return expandedRuleset;
+  if (resolved === "ancient") return ancientRuleset;
+  if (resolved === "mystic") return mysticRuleset;
+  if (resolved === "foundry") return foundryRuleset;
+  return baseRuleset;
+}
+
+export function getRandomDifferentFormat(format) {
+  const resolved = resolveFormat(format);
+  const options = ACTIVE_FORMATS.filter((entry) => entry !== resolved);
+  const index = Math.floor(Math.random() * options.length);
+  return options[index] ?? "core";
+}

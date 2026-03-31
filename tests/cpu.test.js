@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { createInitialState } from "../src/game/state.js";
+import { createInitialState, getPlayerRuleset } from "../src/game/state.js";
 import { executeCpuTurn } from "../src/game/cpu.js";
 import { countCards } from "../src/shared/utils.js";
 
@@ -139,6 +139,30 @@ describe("cpu", () => {
     expect(summary.trades[0].recipeId).toBe("trade_pearl");
     expect(summary.trades[0].effectId).toBe("pearl_extra_play");
     expect(summary.trades[0].playLimit).toBe(6);
+  });
+
+  it("cpu uses its own format rules in mixed cpu matchups", () => {
+    const state = createInitialState({
+      mode: "cpu",
+      format: "expanded",
+      cpuFormat: "mystic",
+      playerNames: ["You", "CPU"],
+    });
+    state.currentPlayer = 1;
+    state.cpu = { difficulty: "easy", opponentFormat: "mystic" };
+    const cpu = state.players[1];
+    const opponent = state.players[0];
+    cpu.archive = ["pearl"];
+    cpu.hand = ["bronze", "bronze", "bronze", "bronze", "bronze", "bronze"];
+    opponent.hand = ["bronze"];
+
+    const summary = executeCpuTurn(state, { difficulty: "easy", cpuIndex: 1 });
+    const cpuArchive = countCards(cpu.archive, getPlayerRuleset(state, 1).displayOrder);
+
+    expect(summary.trades[0].recipeId).toBe("trade_pearl");
+    expect(summary.trades[0].effectId).toBe("pearl_extra_play");
+    expect(summary.trades[0].playLimit).toBe(6);
+    expect(cpuArchive.pearl ?? 0).toBe(0);
   });
 
   it("cpu amethyst picks gold first from opponent archive", () => {

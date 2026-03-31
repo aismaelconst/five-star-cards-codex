@@ -8,6 +8,7 @@ import {
   mintedRuleset,
 } from "../src/game/ruleset.js";
 import { createCard } from "../src/game/cards.js";
+import { createInitialState } from "../src/game/state.js";
 import {
   ActionTypes,
   applyAction,
@@ -475,6 +476,37 @@ describe("rules", () => {
     expect(getPlayerPlayLimit(state, 0)).toBe(6);
     expect(player.discard.filter((card) => card.type === "pearl")).toHaveLength(1);
     expect(canInitiateTrade(state, player, "trade_pearl")).toBe(false);
+  });
+
+  it("uses the acting player's ruleset in mixed cpu matchups", () => {
+    const state = createInitialState({
+      mode: "cpu",
+      format: "expanded",
+      cpuFormat: "mystic",
+      playerNames: ["You", "CPU"],
+    });
+    const human = state.players[0];
+    const cpu = state.players[1];
+    human.archive = [
+      createCard("ruby", expandedRuleset),
+      createCard("emerald", expandedRuleset),
+      createCard("sapphire", expandedRuleset),
+    ];
+    human.deck = [createCard("gold", expandedRuleset)];
+    cpu.archive = [createCard("pearl", mysticRuleset)];
+
+    expect(canInitiateTrade(state, human, "trade_gem_set")).toBe(true);
+    expect(canInitiateTrade(state, human, "trade_pearl")).toBe(false);
+
+    state.currentPlayer = 1;
+    expect(canInitiateTrade(state, cpu, "trade_pearl")).toBe(true);
+    expect(canInitiateTrade(state, cpu, "trade_gem_set")).toBe(false);
+
+    const result = performTrade(state, cpu, "trade_pearl", {});
+
+    expect(result.success).toBe(true);
+    expect(result.detail.effectId).toBe("pearl_extra_play");
+    expect(getPlayerPlayLimit(state, 1)).toBe(6);
   });
 
   it("obsidian applies next-turn play penalty with minimum floor of one playable card", () => {

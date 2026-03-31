@@ -1,3 +1,5 @@
+import { getPlayerRuleset } from "../../game/state.js";
+
 export function createCpuFlow({
   state,
   elements,
@@ -12,6 +14,10 @@ export function createCpuFlow({
 }) {
   let pendingCpuWinner = null;
 
+  function getCpuRuleset() {
+    return getPlayerRuleset(state, 1);
+  }
+
   function formatCountLine(counts, displayOrder) {
     const parts = displayOrder
       .map((type) => {
@@ -23,15 +29,14 @@ export function createCpuFlow({
   }
 
   function formatCpuTrade(trade) {
-    const recipe = state.ruleset.tradeRecipes?.[trade.recipeId];
+    const cpuRuleset = getCpuRuleset();
+    const recipe = cpuRuleset.tradeRecipes?.[trade.recipeId];
     const woodNote =
       trade.useWood && trade.substituteType
         ? ` (wood replaced ${trade.substituteType})`
         : "";
     if (trade.recipeId === "trade_platinum") {
-      const discarded = typeof trade.digDiscardedCount === "number" ? trade.digDiscardedCount : 0;
-      const reward = trade.rewardType ? `found ${trade.rewardType}` : "deck exhausted";
-      return `Platinum dig${woodNote}: discarded ${discarded} bronze/silver, ${reward}.`;
+      return formatPlatinumMessage(trade, woodNote);
     }
     if (trade.recipeId === "trade_prospector") {
       const discarded = typeof trade.digDiscardedCount === "number" ? trade.digDiscardedCount : 0;
@@ -52,7 +57,7 @@ export function createCpuFlow({
     if (recipe.choiceCost && trade.choiceType) {
       costParts.push(`${recipe.choiceCost.count} ${trade.choiceType}`);
     }
-    const poolLine = formatPoolCostLine(recipe, trade, state.ruleset.displayOrder);
+    const poolLine = formatPoolCostLine(recipe, trade, cpuRuleset.displayOrder);
     if (poolLine) {
       costParts.push(poolLine);
     }
@@ -92,7 +97,7 @@ export function createCpuFlow({
 
   function showCpuSummary(summary) {
     if (!elements.cpuTurnOverlay || !elements.cpuTurnSummary) return;
-    const displayOrder = state.ruleset.displayOrder ?? ["bronze", "silver", "gold"];
+    const displayOrder = getCpuRuleset().displayOrder ?? ["bronze", "silver", "gold"];
     elements.cpuTurnSummary.innerHTML = "";
     if (summary.trades.length > 0) {
       const title = document.createElement("div");

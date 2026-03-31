@@ -1,4 +1,5 @@
 import { countCards, getCardType, shuffle } from "../shared/utils.js";
+import { getPlayerRuleset } from "./state.js";
 
 export const ActionTypes = {
   TRADE: "TRADE",
@@ -12,8 +13,14 @@ export const ActionTypes = {
   START_TURN: "START_TURN",
 };
 
-function getTradeRecipe(state, recipeId) {
-  return state.ruleset.tradeRecipes?.[recipeId] ?? null;
+function getRulesetForPlayer(state, playerOrIndex = state.currentPlayer) {
+  const playerIndex =
+    typeof playerOrIndex === "number" ? playerOrIndex : getPlayerIndex(state, playerOrIndex);
+  return getPlayerRuleset(state, playerIndex === -1 ? 0 : playerIndex);
+}
+
+function getTradeRecipe(state, player, recipeId) {
+  return getRulesetForPlayer(state, player).tradeRecipes?.[recipeId] ?? null;
 }
 
 function sumCost(cost = {}) {
@@ -250,7 +257,7 @@ function buildPoolCostCounts(poolTypes) {
   }, {});
 }
 
-function getPoolCostCounts(state, recipe, options) {
+function getPoolCostCounts(ruleset, recipe, options) {
   if (!recipe.poolCost) return { valid: true, counts: {}, poolTypes: [] };
   const poolTypes = Array.isArray(options.poolTypes) ? options.poolTypes : null;
   if (!poolTypes) return { valid: false, counts: {}, poolTypes: [] };
@@ -265,14 +272,14 @@ function getPoolCostCounts(state, recipe, options) {
       return { valid: false, counts: {}, poolTypes: [] };
     }
   }
-  const allowed = resolvePoolTypes(state.ruleset, recipe.poolCost.pool);
+  const allowed = resolvePoolTypes(ruleset, recipe.poolCost.pool);
   if (poolTypes.some((type) => !allowed.includes(type))) {
     return { valid: false, counts: {}, poolTypes: [] };
   }
   return { valid: true, counts: buildPoolCostCounts(poolTypes), poolTypes };
 }
 
-function canUseCopperForPool(state, recipe, options, counts) {
+function canUseCopperForPool(ruleset, recipe, options, counts) {
   if (!recipe?.poolCost) return false;
   const poolTypes = Array.isArray(options.poolTypes) ? options.poolTypes : null;
   if (!poolTypes || poolTypes.length !== 1) return false;
@@ -281,7 +288,7 @@ function canUseCopperForPool(state, recipe, options, counts) {
   if (!recipe.poolCost.distinct || min !== 2 || max !== 2) return false;
   if ((counts.copper ?? 0) < 1) return false;
   if ((counts[poolTypes[0]] ?? 0) < 1) return false;
-  const allowed = resolvePoolTypes(state.ruleset, recipe.poolCost.pool);
+  const allowed = resolvePoolTypes(ruleset, recipe.poolCost.pool);
   if (poolTypes.some((type) => !allowed.includes(type))) return false;
   return true;
 }
@@ -330,12 +337,13 @@ function canSatisfyPoolCost(counts, poolCost, ruleset) {
 }
 
 export function getChoiceCostOptions(state, player, recipeId, options = {}) {
-  const recipe = getTradeRecipe(state, recipeId);
+  const recipe = getTradeRecipe(state, player, recipeId);
   if (!recipe?.choiceCost) return [];
+  const ruleset = getRulesetForPlayer(state, player);
   const counts = countCards(player.archive);
   let baseCost = recipe.cost ?? {};
   if (options.useWood) {
-    const rules = state.ruleset.woodSubstitution;
+    const rules = ruleset.woodSubstitution;
     if (!rules?.allow) return [];
     if (sumCost(baseCost) < rules.minCost) return [];
     if ((counts.wood ?? 0) < 1) return [];
@@ -343,23 +351,18 @@ export function getChoiceCostOptions(state, player, recipeId, options = {}) {
     if (recipeId === "trade_platinum" && options.substituteType === "platinum") return [];
     baseCost = buildCostWithWood(baseCost, options.substituteType);
   }
-  return getChoiceCostOptionsForCost(
-    state.ruleset,
-    recipe,
-    counts,
-    baseCost,
-    options.useEfficiency
-  );
+  return getChoiceCostOptionsForCost(ruleset, recipe, counts, baseCost, options.useEfficiency);
 }
 
 function getTradeCost(state, player, recipeId, options = {}) {
-  const recipe = getTradeRecipe(state, recipeId);
+  const recipe = getTradeRecipe(state, player, recipeId);
   if (!recipe) return null;
+  const ruleset = getRulesetForPlayer(state, player);
   const counts = countCards(player.archive);
   const baseCost = recipe.cost ?? {};
   let cost = baseCost;
   if (options.useWood) {
-    const rules = state.ruleset.woodSubstitution;
+    const rules = ruleset.woodSubstitution;
     if (!rules?.allow) return null;
     if (sumCost(baseCost) < rules.minCost) return null;
     if ((counts.wood ?? 0) < 1) return null;
@@ -379,9 +382,9 @@ function getTradeCost(state, player, recipeId, options = {}) {
       [options.choiceType]: (cost[options.choiceType] ?? 0) + recipe.choiceCost.count,
     };
   }
-  let poolCost = getPoolCostCounts(state, recipe, options);
+  let poolCost = getPoolCostCounts(ruleset, recipe, options);
   let usedCopperForPool = false;
-  if (!poolCost.valid && canUseCopperForPool(state, recipe, options, counts)) {
+  if (!poolCost.valid && canUseCopperForPool(ruleset, recipe, options, counts)) {
     poolCost = {
       valid: true,
       counts: buildPoolCostCounts(options.poolTypes ?? []),
@@ -435,9 +438,10 @@ function hasEffectTargets(state, player, effectId, options = {}) {
 }
 
 export function getWoodSubstitutionOptions(state, player, recipeId) {
-  const recipe = getTradeRecipe(state, recipeId);
+  const recipe = getTradeRecipe(state, player, recipeId);
   if (!recipe) return [];
-  const rules = state.ruleset.woodSubstitution;
+  const ruleset = getRulesetForPlayer(state, player);
+  const rules = ruleset.woodSubstitution;
   if (!rules?.allow) return [];
   const baseCost = recipe.cost ?? {};
   if (sumCost(baseCost) < rules.minCost) return [];
@@ -456,10 +460,11 @@ export function getWoodSubstitutionOptions(state, player, recipeId) {
 }
 
 export function canInitiateTrade(state, player, recipeId) {
-  const recipe = getTradeRecipe(state, recipeId);
+  const recipe = getTradeRecipe(state, player, recipeId);
   if (!recipe) return false;
+  const ruleset = getRulesetForPlayer(state, player);
   if (state.phase !== "main") return false;
-  if (state.tradesThisTurn >= state.ruleset.maxTrades) return false;
+  if (state.tradesThisTurn >= (ruleset.maxTrades ?? 5)) return false;
   const playerIndex = getPlayerIndex(state, player);
   if (playerIndex === -1) return false;
   {
@@ -489,14 +494,11 @@ export function canInitiateTrade(state, player, recipeId) {
       remaining[type] = (remaining[type] ?? 0) - amount;
     });
     if (recipe.choiceCost) {
-      if (
-        getChoiceCostOptionsForCost(state.ruleset, recipe, counts, cost, useEfficiency)
-          .length === 0
-      ) {
+      if (getChoiceCostOptionsForCost(ruleset, recipe, counts, cost, useEfficiency).length === 0) {
         return false;
       }
     }
-    if (recipe.poolCost && !canSatisfyPoolCost(remaining, recipe.poolCost, state.ruleset)) {
+    if (recipe.poolCost && !canSatisfyPoolCost(remaining, recipe.poolCost, ruleset)) {
       return false;
     }
     return true;
@@ -559,9 +561,7 @@ export function canInitiateTrade(state, player, recipeId) {
     return eligible >= min;
   }
   if (recipe.reward?.type === "archive") {
-    return Object.entries(deckCounts).some(
-      ([type, count]) => count > 0 && type !== "gold"
-    );
+    return Object.entries(deckCounts).some(([type, count]) => count > 0 && type !== "gold");
   }
   if (recipe.reward?.type === "archive_cards") {
     const cards = recipe.reward.cards ?? [];
@@ -589,7 +589,8 @@ export function canTrade(state, player, recipeId) {
 }
 
 export function getPlayerPlayLimit(state, playerIndex) {
-  const base = state.ruleset.maxPlays ?? 5;
+  const ruleset = getPlayerRuleset(state, playerIndex);
+  const base = ruleset.maxPlays ?? 5;
   const turnEffects = state.turnEffects;
   const bonus = turnEffects?.currentPlayBonusByPlayer?.[playerIndex] ?? 0;
   const penalty = turnEffects?.currentPlayPenaltyByPlayer?.[playerIndex] ?? 0;
@@ -597,10 +598,11 @@ export function getPlayerPlayLimit(state, playerIndex) {
 }
 
 export function canTradeWithOptions(state, player, recipeId, options = {}) {
-  const recipe = getTradeRecipe(state, recipeId);
+  const recipe = getTradeRecipe(state, player, recipeId);
   if (!recipe) return false;
+  const ruleset = getRulesetForPlayer(state, player);
   if (state.phase !== "main") return false;
-  if (state.tradesThisTurn >= state.ruleset.maxTrades) return false;
+  if (state.tradesThisTurn >= (ruleset.maxTrades ?? 5)) return false;
   const playerIndex = getPlayerIndex(state, player);
   if (playerIndex === -1) return false;
   {
@@ -716,7 +718,7 @@ export function performTrade(state, player, recipeId, options = {}) {
   if (!canTradeWithOptions(state, player, recipeId, options)) {
     return { success: false };
   }
-  const recipe = getTradeRecipe(state, recipeId);
+  const recipe = getTradeRecipe(state, player, recipeId);
   const cost = getTradeCost(state, player, recipeId, options);
   if (!cost) {
     return { success: false };
@@ -963,6 +965,7 @@ export function finalizeArchive(state, options = {}) {
   const pending = state.pendingArchive;
   if (!pending) return { winnerIndex: null };
   const player = state.players[pending.playerIndex];
+  const ruleset = getPlayerRuleset(state, pending.playerIndex);
 
   player.archive.push(...pending.playedCards);
   player.active = [];
@@ -971,7 +974,7 @@ export function finalizeArchive(state, options = {}) {
 
   state.pendingArchive = null;
 
-  if (countCards(player.archive).gold >= state.ruleset.winCondition.goldInArchive) {
+  if (countCards(player.archive).gold >= (ruleset.winCondition?.goldInArchive ?? 5)) {
     state.winner = pending.playerIndex;
     return { winnerIndex: pending.playerIndex };
   }

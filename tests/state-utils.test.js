@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { createInitialState, createPlayerState } from "../src/game/state.js";
+import { createInitialState, createPlayerState, getPlayerFormat, getPlayerRuleset } from "../src/game/state.js";
 import { createDeck, createCard } from "../src/game/cards.js";
 import {
   baseRuleset,
@@ -32,6 +32,7 @@ describe("state", () => {
     expect(state.pendingArchive).toBe(null);
     expect(state.mode).toBe(null);
     expect(state.format).toBe("core");
+    expect(state.formatsByPlayer).toEqual(["core", "core"]);
     expect(state.cpu).toEqual({ difficulty: null });
     expect(state.online).toEqual({
       roomId: null,
@@ -67,6 +68,25 @@ describe("state", () => {
     const state = createInitialState({ format: "foundry" });
     expect(state.format).toBe("foundry");
     expect(state.players[0].deck.length).toBe(180);
+  });
+
+  it("creates mixed cpu decks from each player's selected format", () => {
+    const state = createInitialState({
+      mode: "cpu",
+      format: "expanded",
+      cpuFormat: "mystic",
+      playerNames: ["You", "CPU"],
+    });
+    const playerCounts = countCards(state.players[0].deck, expandedRuleset.displayOrder);
+    const cpuCounts = countCards(state.players[1].deck, mysticRuleset.displayOrder);
+
+    expect(state.formatsByPlayer).toEqual(["expanded", "mystic"]);
+    expect(getPlayerFormat(state, 0)).toBe("expanded");
+    expect(getPlayerFormat(state, 1)).toBe("mystic");
+    expect(getPlayerRuleset(state, 0)).toBe(expandedRuleset);
+    expect(getPlayerRuleset(state, 1)).toBe(mysticRuleset);
+    expect(playerCounts.ruby).toBe(5);
+    expect(cpuCounts.pearl).toBe(5);
   });
 
   it("initializes turn effects for both players", () => {

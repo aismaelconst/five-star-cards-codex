@@ -6,6 +6,7 @@ import {
   getWoodSubstitutionOptions,
 } from "../../game/rules.js";
 import { countCards } from "../../shared/utils.js";
+import { getPlayerRuleset } from "../../game/state.js";
 import {
   formatPoolLabel,
   formatTradeToast,
@@ -33,6 +34,28 @@ export function createTradeFlow(options) {
   let pendingArchiveTutorMode = null;
   let pendingHandArchive = null;
 
+  function getPlayerIndex(player) {
+    const playerIndex = state.players.findIndex(
+      (entry) => entry === player || entry?.id === player?.id
+    );
+    return playerIndex === -1 ? state.currentPlayer : playerIndex;
+  }
+
+  function getLocalRuleset() {
+    return getPlayerRuleset(state, getPlayerIndex(getLocalPlayer()));
+  }
+
+  function getOpponentPlayer(player = getLocalPlayer()) {
+    return (
+      state.players.find((entry) => entry.id !== player.id) ??
+      state.players[getPlayerIndex(player) === 0 ? 1 : 0]
+    );
+  }
+
+  function getOpponentRuleset(player = getLocalPlayer()) {
+    return getPlayerRuleset(state, getPlayerIndex(getOpponentPlayer(player)));
+  }
+
   function getEfficiencyTypesForRecipe(recipe) {
     if (!recipe?.cost) return [];
     const candidates = new Set();
@@ -46,7 +69,8 @@ export function createTradeFlow(options) {
       candidates.add("ledger");
       candidates.add("alloy");
     }
-    return Array.from(candidates).filter((type) => Boolean(state.ruleset.cardTypes?.[type]));
+    const localRuleset = getLocalRuleset();
+    return Array.from(candidates).filter((type) => Boolean(localRuleset.cardTypes?.[type]));
   }
 
   function resetPending() {
@@ -94,7 +118,8 @@ export function createTradeFlow(options) {
     };
     hideTradesModal();
     const woodOptions = getWoodSubstitutionOptions(state, player, recipeId);
-    const recipe = state.ruleset.tradeRecipes?.[recipeId];
+    const localRuleset = getLocalRuleset();
+    const recipe = localRuleset.tradeRecipes?.[recipeId];
     const baseCost = recipe?.cost ?? {};
     const archiveCounts = countCards(player.archive);
     const canPayBase =
@@ -154,7 +179,7 @@ export function createTradeFlow(options) {
     const result = sendOrApply({ type: ActionTypes.TRADE, payload });
     resetPending();
     if (state.mode !== "online" && result?.event?.success) {
-      const recipe = state.ruleset.tradeRecipes?.[payload.recipeId];
+      const recipe = getLocalRuleset().tradeRecipes?.[payload.recipeId];
       const tradeEvent = {
         ...payload,
         ...(result.event.detail ?? {}),
@@ -262,7 +287,7 @@ export function createTradeFlow(options) {
     if (elements.efficiencyOverlay) elements.efficiencyOverlay.hidden = true;
     pendingEfficiencyChoice = null;
     const player = getLocalPlayer();
-    const recipe = state.ruleset.tradeRecipes?.[pendingTrade.recipeId];
+    const recipe = getLocalRuleset().tradeRecipes?.[pendingTrade.recipeId];
     const baseCost = recipe?.cost ?? {};
     const archiveCounts = countCards(player.archive);
     const canPayBase =
@@ -325,7 +350,7 @@ export function createTradeFlow(options) {
     }
     if (elements.woodOverlay) elements.woodOverlay.hidden = true;
     pendingWoodChoice = null;
-    const recipe = state.ruleset.tradeRecipes?.[pendingTrade.recipeId];
+    const recipe = getLocalRuleset().tradeRecipes?.[pendingTrade.recipeId];
     if (recipe?.choiceCost) {
       openChoiceCostOverlay();
       return;
@@ -361,7 +386,7 @@ export function createTradeFlow(options) {
   function openGemTutorOverlay(recipe) {
     if (!elements.gemTutorOptions || !elements.gemTutorOverlay) return;
     const player = getLocalPlayer();
-    const displayOrder = state.ruleset.displayOrder ?? ["bronze", "silver", "gold"];
+    const displayOrder = getLocalRuleset().displayOrder ?? ["bronze", "silver", "gold"];
     const allowed =
       Array.isArray(recipe?.rewardOptions) && recipe.rewardOptions.length > 0
         ? recipe.rewardOptions.filter((type) => displayOrder.includes(type))
@@ -412,7 +437,7 @@ export function createTradeFlow(options) {
   function openChoiceCostOverlay() {
     if (!pendingTrade || !elements.choiceCostOptions || !elements.choiceCostOverlay) return;
     const player = getLocalPlayer();
-    const recipe = state.ruleset.tradeRecipes?.[pendingTrade.recipeId];
+    const recipe = getLocalRuleset().tradeRecipes?.[pendingTrade.recipeId];
     const archiveCounts = countCards(player.archive);
     const options = getChoiceCostOptions(state, player, pendingTrade.recipeId, {
       useWood: pendingTrade.useWood,
@@ -458,7 +483,7 @@ export function createTradeFlow(options) {
     pendingTrade.choiceType = pendingChoiceSelection;
     if (elements.choiceCostOverlay) elements.choiceCostOverlay.hidden = true;
     pendingChoiceSelection = null;
-    const recipe = state.ruleset.tradeRecipes?.[pendingTrade.recipeId];
+    const recipe = getLocalRuleset().tradeRecipes?.[pendingTrade.recipeId];
     if (recipe?.poolCost) {
       openPoolCostOverlay();
       return;
@@ -489,10 +514,10 @@ export function createTradeFlow(options) {
 
   function openPoolCostOverlay() {
     if (!pendingTrade || !elements.poolCostOptions || !elements.poolCostOverlay) return;
-    const recipe = state.ruleset.tradeRecipes?.[pendingTrade.recipeId];
+    const recipe = getLocalRuleset().tradeRecipes?.[pendingTrade.recipeId];
     if (!recipe?.poolCost) return;
     const player = getLocalPlayer();
-    const displayOrder = state.ruleset.displayOrder ?? ["bronze", "silver", "gold"];
+    const displayOrder = getLocalRuleset().displayOrder ?? ["bronze", "silver", "gold"];
     const archiveCounts = countCards(player.archive, displayOrder);
     const options = resolvePoolTypes(recipe.poolCost.pool, displayOrder);
     const hasCopper = (archiveCounts.copper ?? 0) > 0;
@@ -564,7 +589,7 @@ export function createTradeFlow(options) {
     pendingTrade.poolTypes = [...selected];
     if (elements.poolCostOverlay) elements.poolCostOverlay.hidden = true;
     pendingPoolSelection = null;
-    const recipe = state.ruleset.tradeRecipes?.[pendingTrade.recipeId];
+    const recipe = getLocalRuleset().tradeRecipes?.[pendingTrade.recipeId];
     if (recipe?.reward === "any" && elements.gemTutorOverlay) {
       openGemTutorOverlay(recipe);
       return;
@@ -587,10 +612,10 @@ export function createTradeFlow(options) {
 
   function openHandArchiveOverlay() {
     if (!pendingTrade || !elements.handArchiveOptions || !elements.handArchiveOverlay) return;
-    const recipe = state.ruleset.tradeRecipes?.[pendingTrade.recipeId];
+    const recipe = getLocalRuleset().tradeRecipes?.[pendingTrade.recipeId];
     if (!recipe?.reward || recipe.reward.type !== "archive_hand") return;
     const player = getLocalPlayer();
-    const displayOrder = state.ruleset.displayOrder ?? ["bronze", "silver", "gold"];
+    const displayOrder = getLocalRuleset().displayOrder ?? ["bronze", "silver", "gold"];
     const handCounts = countCards(player.hand, displayOrder);
     const allowed = (recipe.reward.allowed ?? []).filter(
       (type) => (handCounts[type] ?? 0) > 0
@@ -714,10 +739,11 @@ export function createTradeFlow(options) {
   function openArchiveTutorOverlay(mode = "deck_archive") {
     if (!elements.archiveTutorOptions || !elements.archiveTutorOverlay) return;
     const player = getLocalPlayer();
-    const opponent =
-      state.players.find((entry) => entry.id !== player.id) ??
-      state.players[state.currentPlayer === 0 ? 1 : 0];
-    const displayOrder = state.ruleset.displayOrder ?? ["bronze", "silver", "gold"];
+    const opponent = getOpponentPlayer(player);
+    const localDisplayOrder = getLocalRuleset().displayOrder ?? ["bronze", "silver", "gold"];
+    const opponentDisplayOrder =
+      getOpponentRuleset(player).displayOrder ?? ["bronze", "silver", "gold"];
+    const displayOrder = mode === "opponent_archive" ? opponentDisplayOrder : localDisplayOrder;
     const sourceCounts =
       mode === "opponent_archive"
         ? countCards(opponent?.archive ?? [], displayOrder)
