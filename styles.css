@@ -916,6 +916,31 @@ h3 {
   background-image: url(/assets/cards/ember-star.svg);
 }
 
+.card.prospector {
+  border-color: rgba(156, 118, 39, 0.62);
+  background-image: url(/assets/cards/prospector-star.svg);
+}
+
+.card.alloy {
+  border-color: rgba(141, 134, 102, 0.62);
+  background-image: url(/assets/cards/alloy-star.svg);
+}
+
+.card.assayer {
+  border-color: rgba(78, 127, 114, 0.62);
+  background-image: url(/assets/cards/assayer-star.svg);
+}
+
+.card.smelter {
+  border-color: rgba(183, 87, 43, 0.62);
+  background-image: url(/assets/cards/smelter-star.svg);
+}
+
+.card.refiner {
+  border-color: rgba(112, 145, 160, 0.62);
+  background-image: url(/assets/cards/refiner-star.svg);
+}
+
 body.theme-pixel .card.bronze {
   --pixel-card-bg: #c7855a;
   --pixel-card-border: #8b5633;
@@ -1029,6 +1054,32 @@ body.theme-pixel .card.ash {
 body.theme-pixel .card.ember {
   --pixel-card-bg: #cf805f;
   --pixel-card-border: #7e4027;
+}
+
+
+body.theme-pixel .card.prospector {
+  --pixel-card-bg: #d1a257;
+  --pixel-card-border: #88642c;
+}
+
+body.theme-pixel .card.alloy {
+  --pixel-card-bg: #c9c3a3;
+  --pixel-card-border: #786f53;
+}
+
+body.theme-pixel .card.assayer {
+  --pixel-card-bg: #7bb9a4;
+  --pixel-card-border: #3f6b61;
+}
+
+body.theme-pixel .card.smelter {
+  --pixel-card-bg: #cf754b;
+  --pixel-card-border: #7f3720;
+}
+
+body.theme-pixel .card.refiner {
+  --pixel-card-bg: #afc7d6;
+  --pixel-card-border: #657d8e;
 }
 
 body.theme-pixel .card.unknown {

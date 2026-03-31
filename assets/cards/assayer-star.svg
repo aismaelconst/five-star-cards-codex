@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="600" height="800" viewBox="0 0 600 800">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ebfbf4"/>
+      <stop offset="0.55" stop-color="#7dbba7"/>
+      <stop offset="1" stop-color="#345e55"/>
+    </linearGradient>
+    <filter id="grain" x="-20%" y="-20%" width="140%" height="140%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.86" numOctaves="2" seed="17"/>
+      <feColorMatrix type="saturate" values="0.4"/>
+      <feComponentTransfer>
+        <feFuncA type="table" tableValues="0 0.5"/>
+      </feComponentTransfer>
+    </filter>
+    <pattern id="measure" width="120" height="120" patternUnits="userSpaceOnUse">
+      <path d="M16 24 L104 24" stroke="#4b8f7c" stroke-width="3" opacity="0.22"/>
+      <path d="M24 56 L96 56" stroke="#3d7b6c" stroke-width="3" opacity="0.2"/>
+      <path d="M32 88 L88 88" stroke="#2c6558" stroke-width="3" opacity="0.18"/>
+      <circle cx="60" cy="60" r="12" fill="#d7eadf" opacity="0.18"/>
+    </pattern>
+    <linearGradient id="frame" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#35685e"/>
+      <stop offset="1" stop-color="#dbf2e8"/>
+    </linearGradient>
+    <radialGradient id="shine" cx="0.18" cy="0.08" r="0.88">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.62"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect x="10" y="10" width="580" height="780" rx="30" fill="url(#bg)"/>
+  <rect x="10" y="10" width="580" height="780" rx="30" filter="url(#grain)" opacity="0.58"/>
+  <rect x="10" y="10" width="580" height="780" rx="30" fill="url(#measure)" opacity="0.65"/>
+  <rect x="28" y="28" width="544" height="744" rx="24" fill="none" stroke="url(#frame)" stroke-width="6"/>
+  <rect x="45" y="45" width="510" height="710" rx="20" fill="none" stroke="#315e56" stroke-width="2" opacity="0.75"/>
+  <g transform="translate(300 360)">
+    <polygon points="0,-150 40,-45 150,-35 60,35 90,145 0,85 -90,145 -60,35 -150,-35 -40,-45" fill="#e6f6ef" stroke="#35685e" stroke-width="6"/>
+    <polygon points="0,-100 34,-24 100,-14 42,22 64,92 0,56 -64,92 -42,22 -100,-14 -34,-24" fill="#6bab95" opacity="0.94"/>
+    <circle cx="0" cy="-6" r="18" fill="#f3faf7" stroke="#335f57" stroke-width="5"/>
+    <path d="M-54 30 L0 -6 L54 30" fill="none" stroke="#e7f2ec" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  <rect x="118" y="640" width="364" height="70" rx="16" fill="#17342f" opacity="0.66"/>
+  <text x="300" y="689" text-anchor="middle" font-family="'Times New Roman', serif" font-size="46" fill="#ecfaf4" letter-spacing="5">ASSAYER</text>
+  <rect x="10" y="10" width="580" height="780" rx="30" fill="url(#shine)"/>
+</svg>

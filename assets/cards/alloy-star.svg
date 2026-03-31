@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="600" height="800" viewBox="0 0 600 800">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f8f5df"/>
+      <stop offset="0.55" stop-color="#c7ba8d"/>
+      <stop offset="1" stop-color="#6f6a53"/>
+    </linearGradient>
+    <filter id="grain" x="-20%" y="-20%" width="140%" height="140%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.82" numOctaves="2" seed="29"/>
+      <feColorMatrix type="saturate" values="0.2"/>
+      <feComponentTransfer>
+        <feFuncA type="table" tableValues="0 0.5"/>
+      </feComponentTransfer>
+    </filter>
+    <pattern id="bands" width="120" height="120" patternUnits="userSpaceOnUse">
+      <path d="M0 24 L120 24" stroke="#b6aa80" stroke-width="2" opacity="0.28"/>
+      <path d="M0 60 L120 60" stroke="#978e6f" stroke-width="2" opacity="0.24"/>
+      <path d="M0 96 L120 96" stroke="#7c7865" stroke-width="2" opacity="0.22"/>
+    </pattern>
+    <linearGradient id="frame" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#7d7554"/>
+      <stop offset="1" stop-color="#f4e7bd"/>
+    </linearGradient>
+    <linearGradient id="core" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#dcd1aa"/>
+      <stop offset="0.5" stop-color="#c8bea0"/>
+      <stop offset="1" stop-color="#9ea7af"/>
+    </linearGradient>
+    <radialGradient id="shine" cx="0.2" cy="0.1" r="0.85">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.62"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect x="10" y="10" width="580" height="780" rx="30" fill="url(#bg)"/>
+  <rect x="10" y="10" width="580" height="780" rx="30" filter="url(#grain)" opacity="0.58"/>
+  <rect x="10" y="10" width="580" height="780" rx="30" fill="url(#bands)" opacity="0.65"/>
+  <rect x="28" y="28" width="544" height="744" rx="24" fill="none" stroke="url(#frame)" stroke-width="6"/>
+  <rect x="45" y="45" width="510" height="710" rx="20" fill="none" stroke="#6d6549" stroke-width="2" opacity="0.75"/>
+  <g transform="translate(300 360)">
+    <polygon points="0,-150 40,-45 150,-35 60,35 90,145 0,85 -90,145 -60,35 -150,-35 -40,-45" fill="#f6ecd0" stroke="#7d7554" stroke-width="6"/>
+    <polygon points="0,-102 34,-26 102,-16 44,24 66,96 0,58 -66,96 -44,24 -102,-16 -34,-26" fill="url(#core)" opacity="0.95"/>
+    <path d="M-54 18 L52 -18" stroke="#8b835f" stroke-width="12" stroke-linecap="round"/>
+    <path d="M-48 48 L58 12" stroke="#59636c" stroke-width="12" stroke-linecap="round" opacity="0.9"/>
+  </g>
+  <rect x="138" y="640" width="324" height="70" rx="16" fill="#2d2618" opacity="0.64"/>
+  <text x="300" y="689" text-anchor="middle" font-family="'Times New Roman', serif" font-size="48" fill="#f7edd4" letter-spacing="6">ALLOY</text>
+  <rect x="10" y="10" width="580" height="780" rx="30" fill="url(#shine)"/>
+</svg>
