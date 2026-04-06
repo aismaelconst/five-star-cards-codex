@@ -92,7 +92,6 @@ function setupDom() {
     <div id="modeOverlay"></div>
     <button id="offlineMode"></button>
     <button id="cpuMode"></button>
-    <button id="onlineMode"></button>
     <div id="formatOverlay"></div>
     <button id="formatCore"></button>
     <button id="formatExpanded"></button>
