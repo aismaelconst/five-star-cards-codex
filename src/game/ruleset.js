@@ -390,6 +390,11 @@ export function getRulesetForFormat(format) {
   return baseRuleset;
 }
 
+export function getRandomFormat() {
+  const index = Math.floor(Math.random() * ACTIVE_FORMATS.length);
+  return ACTIVE_FORMATS[index] ?? "core";
+}
+
 export function getRandomDifferentFormat(format) {
   const resolved = resolveFormat(format);
   const options = ACTIVE_FORMATS.filter((entry) => entry !== resolved);

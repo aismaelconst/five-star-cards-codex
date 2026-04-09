@@ -573,6 +573,22 @@ describe("ui/handlers", () => {
     expect(state.formatsByPlayer).toEqual(["core", "ancient"]);
   });
 
+  it("starts a valid cpu mirror match when the same deck is selected", () => {
+    const handlers = createHandlers(state, elements, onWinner);
+
+    handlers.selectCpuMode();
+    handlers.selectMysticFormat();
+    expect(elements.cpuFormatOverlay.hidden).toBe(false);
+
+    handlers.selectCpuFormatMystic();
+    expect(elements.cpuOverlay.hidden).toBe(false);
+
+    handlers.selectCpuEasy();
+
+    expect(state.formatsByPlayer).toEqual(["mystic", "mystic"]);
+    expect(state.cpu.opponentFormat).toBe("mystic");
+  });
+
   it("selects cpu medium and hard difficulties", () => {
     const handlers = createHandlers(state, elements, onWinner);
     handlers.selectCpuMode();
@@ -585,8 +601,8 @@ describe("ui/handlers", () => {
     expect(state.cpu.difficulty).toBe("hard");
   });
 
-  it("random cpu format never mirrors the player's format", () => {
-    const randomSpy = vi.spyOn(Math, "random").mockReturnValue(0);
+  it("random cpu format can mirror the player's format", () => {
+    const randomSpy = vi.spyOn(Math, "random").mockReturnValue(0.25);
     const handlers = createHandlers(state, elements, onWinner);
 
     handlers.selectCpuMode();
@@ -595,7 +611,7 @@ describe("ui/handlers", () => {
     handlers.selectCpuEasy();
 
     expect(state.formatsByPlayer[0]).toBe("expanded");
-    expect(state.formatsByPlayer[1]).not.toBe("expanded");
+    expect(state.formatsByPlayer[1]).toBe("expanded");
     randomSpy.mockRestore();
   });
 

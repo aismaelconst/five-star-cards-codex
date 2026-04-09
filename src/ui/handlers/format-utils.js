@@ -36,7 +36,6 @@ export function updateFormatButtons(state, elements) {
 }
 
 export function updateCpuFormatButtons(state, elements) {
-  const playerFormat = SELECTABLE_FORMATS.includes(state.format) ? state.format : "core";
   const selection = state.cpu?.opponentFormatSelection ?? state.cpu?.opponentFormat ?? null;
   const cpuButtons = [
     ["core", elements.cpuFormatCore],
@@ -47,15 +46,10 @@ export function updateCpuFormatButtons(state, elements) {
   ];
 
   cpuButtons.forEach(([format, button]) => {
-    const disabled = format === playerFormat;
-    toggleButton(button, selection === format && !disabled, disabled);
+    toggleButton(button, selection === format);
     if (!button) return;
-    if (disabled) {
-      button.title = "CPU deck must be different from your deck.";
-    } else {
-      button.removeAttribute("title");
-    }
+    button.removeAttribute("title");
   });
 
-  toggleButton(elements.cpuFormatRandom, selection === "random_different");
+  toggleButton(elements.cpuFormatRandom, selection === "random_any");
 }

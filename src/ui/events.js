@@ -24,6 +24,9 @@ export function wireEvents(elements, handlers) {
   if (elements.cpuMode) {
     elements.cpuMode.addEventListener("click", handlers.selectCpuMode);
   }
+  if (elements.onlineMode) {
+    elements.onlineMode.addEventListener("click", handlers.selectOnlineMode);
+  }
   if (elements.formatCore) {
     elements.formatCore.addEventListener("click", handlers.selectCoreFormat);
   }

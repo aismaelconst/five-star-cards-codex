@@ -3,7 +3,7 @@ import { renderApp, showConfirmOverlay, showTurnOverlay } from "./render.js";
 import { createInitialState, getPlayerRuleset } from "../game/state.js";
 import { createOnlineClient } from "../online/client.js";
 import { startGame } from "../game/lifecycle.js";
-import { getRandomDifferentFormat } from "../game/ruleset.js";
+import { getRandomFormat } from "../game/ruleset.js";
 import { isMyTurn } from "../game/multiplayer.js";
 import { countCards, getCardType } from "../shared/utils.js";
 import { executeCpuTurn } from "../game/cpu.js";
@@ -260,12 +260,9 @@ export function createHandlers(state, elements, onWinner, options = {}) {
     state.cpu = overrides.cpu ?? freshState.cpu;
   }
 
-  function resolveCpuFormatSelection(playerFormat, requestedFormat) {
-    if (!requestedFormat || requestedFormat === "random_different") {
-      return getRandomDifferentFormat(playerFormat);
-    }
-    if (requestedFormat === playerFormat) {
-      return getRandomDifferentFormat(playerFormat);
+  function resolveCpuFormatSelection(requestedFormat) {
+    if (!requestedFormat || requestedFormat === "random_any") {
+      return getRandomFormat();
     }
     return requestedFormat;
   }
@@ -309,7 +306,7 @@ export function createHandlers(state, elements, onWinner, options = {}) {
       startCpuGame(
         "core",
         state.cpu?.difficulty ?? "easy",
-        getRandomDifferentFormat("core")
+        "random_any"
       );
     }
   }
@@ -328,7 +325,7 @@ export function createHandlers(state, elements, onWinner, options = {}) {
   }
 
   function startCpuGame(format, difficulty, cpuFormatSelection) {
-    const resolvedCpuFormat = resolveCpuFormatSelection(format, cpuFormatSelection);
+    const resolvedCpuFormat = resolveCpuFormatSelection(cpuFormatSelection);
     state.mode = "cpu";
     state.format = format;
     state.cpu = {
@@ -417,7 +414,6 @@ export function createHandlers(state, elements, onWinner, options = {}) {
   }
 
   function selectCpuOpponentFormat(format) {
-    if (format === state.format) return;
     state.cpu = {
       ...(state.cpu ?? {}),
       difficulty: state.cpu?.difficulty ?? "easy",
@@ -458,7 +454,7 @@ export function createHandlers(state, elements, onWinner, options = {}) {
       ...(state.cpu ?? {}),
       difficulty: state.cpu?.difficulty ?? "easy",
       opponentFormat: null,
-      opponentFormatSelection: "random_different",
+      opponentFormatSelection: "random_any",
     };
     updateCpuFormatButtons(state, elements);
     if (elements.cpuFormatOverlay) {
@@ -473,7 +469,7 @@ export function createHandlers(state, elements, onWinner, options = {}) {
     startCpuGame(
       state.format ?? "core",
       "easy",
-      state.cpu?.opponentFormatSelection ?? state.cpu?.opponentFormat ?? "random_different"
+      state.cpu?.opponentFormatSelection ?? state.cpu?.opponentFormat ?? "random_any"
     );
   }
 
@@ -481,7 +477,7 @@ export function createHandlers(state, elements, onWinner, options = {}) {
     startCpuGame(
       state.format ?? "core",
       "medium",
-      state.cpu?.opponentFormatSelection ?? state.cpu?.opponentFormat ?? "random_different"
+      state.cpu?.opponentFormatSelection ?? state.cpu?.opponentFormat ?? "random_any"
     );
   }
 
@@ -489,7 +485,7 @@ export function createHandlers(state, elements, onWinner, options = {}) {
     startCpuGame(
       state.format ?? "core",
       "hard",
-      state.cpu?.opponentFormatSelection ?? state.cpu?.opponentFormat ?? "random_different"
+      state.cpu?.opponentFormatSelection ?? state.cpu?.opponentFormat ?? "random_any"
     );
   }
 
@@ -693,7 +689,7 @@ export function createHandlers(state, elements, onWinner, options = {}) {
       state.mode === "cpu"
         ? resolveCpuFormatSelection(
             state.format ?? "core",
-            state.formatsByPlayer?.[1] ?? state.cpu?.opponentFormat ?? "random_different"
+            state.formatsByPlayer?.[1] ?? state.cpu?.opponentFormat ?? "random_any"
           )
         : undefined;
     const freshState = createInitialState({
